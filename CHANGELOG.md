@@ -3,6 +3,7 @@
 ### NEXT
 
 - `Consumer`: Fix sequence number gap ([PR #1494](https://github.com/versatica/mediasoup/pull/1494)).
+- Fix VP9 out of order packets forwarding ([PR #1486](https://github.com/versatica/mediasoup/pull/1486) by @vpalmisano).
 
 ### 3.15.4
 
