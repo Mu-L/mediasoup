@@ -2,6 +2,10 @@
 
 ### NEXT
 
+### 3.15.6
+
+- CI: Remove deprecated `ubuntu-20.04` host and add `windows-2025` and `ubuntu-22.04-arm` hosts ([PR #1500](https://github.com/versatica/mediasoup/pull/1500)).
+
 ### 3.15.5
 
 - `Consumer`: Fix sequence number gap ([PR #1494](https://github.com/versatica/mediasoup/pull/1494)).
