@@ -5,7 +5,9 @@
 [![][npm-shield-mediasoup]][npm-mediasoup]
 [![][crates-shield-mediasoup]][crates-mediasoup]
 [![][opencollective-shield-mediasoup]][opencollective-mediasoup]
-----
+
+---
+
 [![][github-actions-shield-mediasoup-node]][github-actions-mediasoup-node]
 [![][github-actions-shield-mediasoup-worker]][github-actions-mediasoup-worker]
 [![][github-actions-shield-mediasoup-rust]][github-actions-mediasoup-rust]
