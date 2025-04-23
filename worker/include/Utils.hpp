@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstring> // std::memcmp(), std::memcpy()
 #include <string>
+#include <type_traits> // std::enable_if()
 #include <vector>
 #ifdef _WIN32
 #include <ws2ipdef.h>
@@ -190,30 +191,16 @@ namespace Utils
 			data[i]     = static_cast<uint8_t>(value >> 56);
 		}
 
-		static uint16_t PadTo4Bytes(uint16_t size)
+		template<typename T>
+		typename std::enable_if<std::is_unsigned<T>::value, bool>::type static IsPaddedTo4Bytes(T size)
 		{
-			// If size is not multiple of 32 bits then pad it.
-			if (size & 0x03)
-			{
-				return (size & 0xFFFC) + 4;
-			}
-			else
-			{
-				return size;
-			}
+			return (size & 0x03) == 0u;
 		}
 
-		static uint32_t PadTo4Bytes(uint32_t size)
+		template<typename T>
+		typename std::enable_if<std::is_unsigned<T>::value, T>::type static PadTo4Bytes(T size)
 		{
-			// If size is not multiple of 32 bits then pad it.
-			if (size & 0x03)
-			{
-				return (size & 0xFFFFFFFC) + 4;
-			}
-			else
-			{
-				return size;
-			}
+			return (size + 3) & ~static_cast<T>(0x03);
 		}
 	};
 
