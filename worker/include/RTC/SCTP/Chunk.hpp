@@ -71,7 +71,6 @@ namespace RTC
 				ECNE              = 0x0C, // NOTE: Not implemented.
 				CWR               = 0x0D, // NOTE: Not implemented.
 				SHUTDOWN_COMPLETE = 0x0E,
-				// TODO: Add more.
 			};
 
 			/**

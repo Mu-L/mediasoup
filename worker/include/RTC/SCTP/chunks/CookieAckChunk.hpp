@@ -9,7 +9,7 @@ namespace RTC
 	namespace SCTP
 	{
 		/**
-		 * SCTP Cookie Acknowledgement Chunk (COOKIE ACK) (11).
+		 * SCTP Cookie Acknowledgement Chunk (COOKIE_ACK) (11).
 		 *
 		 * @see RFC 9260.
 		 *

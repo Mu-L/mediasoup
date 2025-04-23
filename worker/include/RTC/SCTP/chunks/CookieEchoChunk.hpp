@@ -9,7 +9,7 @@ namespace RTC
 	namespace SCTP
 	{
 		/**
-		 * SCTP Cookie Echo Chunk (COOKIE ECHO) (10).
+		 * SCTP Cookie Echo Chunk (COOKIE_ECHO) (10).
 		 *
 		 * @see RFC 9260.
 		 *

@@ -61,7 +61,6 @@ namespace RTC
 				RESTART_OF_AN_ASSOCIATION_WITH_NEW_ADDRESSES = 0x000B,
 				USER_INITIATED_ABORT                         = 0x000C,
 				PROTOCOL_VIOLATION                           = 0x000D,
-				// TODO: Add more.
 			};
 
 			/**

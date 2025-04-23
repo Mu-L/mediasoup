@@ -54,7 +54,8 @@ namespace RTC
 				IPV6_ADDRESS            = 0x0006,
 				COOKIE_PRESERVATIVE     = 0x0009,
 				SUPPORTED_ADDRESS_TYPES = 0x000C,
-				// TODO: Add more.
+				/* RFC 9653 */
+				ZERO_CHECKSUM_ACCEPTABLE = 0x8001, // 32769
 			};
 
 			/**

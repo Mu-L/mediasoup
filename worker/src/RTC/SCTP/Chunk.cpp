@@ -11,6 +11,7 @@
 #include "RTC/SCTP/chunkParameters/IPv6AddressChunkParameter.hpp"
 #include "RTC/SCTP/chunkParameters/SupportedAddressTypesChunkParameter.hpp"
 #include "RTC/SCTP/chunkParameters/UnknownChunkParameter.hpp"
+#include "RTC/SCTP/chunkParameters/ZeroChecksumAcceptableChunkParameter.hpp"
 #include "RTC/SCTP/errorCauses/CookieReceivedWhileShuttingDownErrorCause.hpp"
 #include "RTC/SCTP/errorCauses/InvalidMandatoryParameterErrorCause.hpp"
 #include "RTC/SCTP/errorCauses/InvalidStreamIdentifierErrorCause.hpp"
@@ -399,6 +400,14 @@ namespace RTC
 					case ChunkParameter::ChunkParameterType::SUPPORTED_ADDRESS_TYPES:
 					{
 						parameter = SupportedAddressTypesChunkParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case ChunkParameter::ChunkParameterType::ZERO_CHECKSUM_ACCEPTABLE:
+					{
+						parameter = ZeroChecksumAcceptableChunkParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;

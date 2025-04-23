@@ -9,7 +9,7 @@ namespace RTC
 	namespace SCTP
 	{
 		/**
-		 * SCTP Shutdown Acknowledgement Chunk (SHUTDOWN ACK) (8).
+		 * SCTP Shutdown Acknowledgement Chunk (SHUTDOWN_ACK) (8).
 		 *
 		 * @see RFC 9260.
 		 *
