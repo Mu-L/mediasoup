@@ -9,11 +9,15 @@
 #include "RTC/SCTP/chunks/CookieAckChunk.hpp"
 #include "RTC/SCTP/chunks/CookieEchoChunk.hpp"
 #include "RTC/SCTP/chunks/DataChunk.hpp"
+#include "RTC/SCTP/chunks/ForwardTsnChunk.hpp"
 #include "RTC/SCTP/chunks/HeartbeatAckChunk.hpp"
-#include "RTC/SCTP/chunks/HeartbeatChunk.hpp"
+#include "RTC/SCTP/chunks/HeartbeatRequestChunk.hpp"
+#include "RTC/SCTP/chunks/IDataChunk.hpp"
+#include "RTC/SCTP/chunks/IForwardTsnChunk.hpp"
 #include "RTC/SCTP/chunks/InitAckChunk.hpp"
 #include "RTC/SCTP/chunks/InitChunk.hpp"
 #include "RTC/SCTP/chunks/OperationErrorChunk.hpp"
+#include "RTC/SCTP/chunks/ReConfigChunk.hpp"
 #include "RTC/SCTP/chunks/SackChunk.hpp"
 #include "RTC/SCTP/chunks/ShutdownAckChunk.hpp"
 #include "RTC/SCTP/chunks/ShutdownChunk.hpp"
@@ -101,9 +105,10 @@ namespace RTC
 						break;
 					}
 
-					case Chunk::ChunkType::HEARTBEAT:
+					case Chunk::ChunkType::HEARTBEAT_REQUEST:
 					{
-						chunk = HeartbeatChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
+						chunk =
+						  HeartbeatRequestChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
 
 						break;
 					}
@@ -163,6 +168,34 @@ namespace RTC
 					{
 						chunk =
 						  ShutdownCompleteChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
+
+						break;
+					}
+
+					case Chunk::ChunkType::FORWARD_TSN:
+					{
+						chunk = ForwardTsnChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
+
+						break;
+					}
+
+					case Chunk::ChunkType::RE_CONFIG:
+					{
+						chunk = ReConfigChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
+
+						break;
+					}
+
+					case Chunk::ChunkType::I_DATA:
+					{
+						chunk = IDataChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
+
+						break;
+					}
+
+					case Chunk::ChunkType::I_FORWARD_TSN:
+					{
+						chunk = IForwardTsnChunk::ParseStrict(ptr, chunkLength + padding, chunkLength, padding);
 
 						break;
 					}

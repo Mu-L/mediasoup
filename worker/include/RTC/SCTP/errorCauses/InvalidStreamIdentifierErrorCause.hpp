@@ -10,7 +10,8 @@ namespace RTC
 	namespace SCTP
 	{
 		/**
-		 * SCTP Invalid Stream Identifier Error Cause (INVALID_STREAM_IDENTIFIER) (1)
+		 * SCTP Invalid Stream Identifier Error Cause (INVALID_STREAM_IDENTIFIER)
+		 * (1)
 		 *
 		 * @see RFC 9260.
 		 *
@@ -75,7 +76,7 @@ namespace RTC
 			virtual InvalidStreamIdentifierErrorCause* Clone(
 			  uint8_t* buffer, size_t bufferLength) const override final;
 
-			const uint16_t GetStreamIdentifier() const
+			uint16_t GetStreamIdentifier() const
 			{
 				return Utils::Byte::Get2Bytes(GetBuffer(), 4);
 			}

@@ -2,9 +2,9 @@
 #define MS_RTC_SCTP_CHUNK_HPP
 
 #include "common.hpp"
-#include "RTC/SCTP/ChunkParameter.hpp"
 #include "RTC/SCTP/ErrorCause.hpp"
 #include "RTC/SCTP/PacketItemBase.hpp"
+#include "RTC/SCTP/Parameter.hpp"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -47,8 +47,8 @@ namespace RTC
 			friend class Packet;
 
 		public:
-			using ChunkParametersIterator = typename std::vector<ChunkParameter*>::const_iterator;
-			using ErrorCausesIterator     = typename std::vector<ErrorCause*>::const_iterator;
+			using parametersIterator  = typename std::vector<Parameter*>::const_iterator;
+			using ErrorCausesIterator = typename std::vector<ErrorCause*>::const_iterator;
 
 		public:
 			/**
@@ -60,7 +60,7 @@ namespace RTC
 				INIT              = 0x01,
 				INIT_ACK          = 0x02,
 				SACK              = 0x03,
-				HEARTBEAT         = 0x04,
+				HEARTBEAT_REQUEST = 0x04,
 				HEARTBEAT_ACK     = 0x05,
 				ABORT             = 0x06,
 				SHUTDOWN          = 0x07,
@@ -71,6 +71,10 @@ namespace RTC
 				ECNE              = 0x0C, // NOTE: Not implemented.
 				CWR               = 0x0D, // NOTE: Not implemented.
 				SHUTDOWN_COMPLETE = 0x0E,
+				FORWARD_TSN       = 0xC0, // Type: 192, RFC 3758
+				RE_CONFIG         = 0x82, // Type 130, RFC 6525
+				I_DATA            = 0x40, // Type: 64, RFC 8260
+				I_FORWARD_TSN     = 0xC2, // Type: 194, RFC 8260
 			};
 
 			/**
@@ -202,8 +206,8 @@ namespace RTC
 			}
 
 			/**
-			 * Whether this type of Chunk can have Chunk Parameters. Subclasses must
-			 * override this method if they can have Chunk Parameters.
+			 * Whether this type of Chunk can have Parameters. Subclasses must
+			 * override this method if they can have Parameters.
 			 */
 			virtual bool CanHaveParameters() const
 			{
@@ -220,17 +224,17 @@ namespace RTC
 				return this->parameters.size();
 			}
 
-			virtual ChunkParametersIterator ParametersBegin() const final
+			virtual parametersIterator ParametersBegin() const final
 			{
 				return this->parameters.begin();
 			}
 
-			virtual ChunkParametersIterator ParametersEnd() const final
+			virtual parametersIterator ParametersEnd() const final
 			{
 				return this->parameters.end();
 			}
 
-			virtual const ChunkParameter* GetParameterAt(size_t idx) const final
+			virtual const Parameter* GetParameterAt(size_t idx) const final
 			{
 				if (idx >= this->parameters.size())
 				{
@@ -241,29 +245,26 @@ namespace RTC
 			}
 
 			/**
-			 * Clone given Chunk Parameter into Chunk's buffer.
+			 * Clone given Parameter into Chunk's buffer.
 			 *
 			 * @remarks
 			 * Once this method is called, the caller may want to free the original
-			 * given Chunk Parameter (otherwise it will leak since the Chunk manages
-			 * a clone of it).
+			 * given Parameter (otherwise it will leak since the manages a clone of
+			 * it).
 			 *
-			 * @throw MediaSoupError - If the Chunk subclass cannot have Chunk
-			 *   Parameters.
+			 * @throw MediaSoupError - If the Chunk subclass cannot have Parameters.
 			 */
-			virtual void AddParameter(const ChunkParameter* parameter) final;
+			virtual void AddParameter(const Parameter* parameter) final;
 
 			/**
-			 * Build a Chunk Parameter within the Chunk's buffer and append it to the
-			 * list of Chunk Parameters. The caller can perform modifications in that
-			 * Parameter and those will affect the Chunk body where the Parameter is
-			 * serialzed. The desired Chunk Parameter class type is given via template
-			 * argument.
+			 * Build a Parameter within the Chunk's buffer and append it to the list
+			 * of Parameters. The caller can perform modifications in that Parameter
+			 * and those will affect the Chunk body where the Parameter is serialized.
+			 * The desired Parameter class type is given via template argument.
 			 *
-			 * @returns Pointer of the created Chunk Parameter specific class.
+			 * @returns Pointer of the created Parameter specific class.
 			 *
-			 * @throw MediaSoupError - If the Chunk subclass cannot have Chunk
-			 *   Parameters.
+			 * @throw MediaSoupError - If the Chunk subclass cannot have Parameters.
 			 *
 			 * @remarks
 			 * - The caller MUST invoke `Consolidate()` once the Parameter is
@@ -277,7 +278,7 @@ namespace RTC
 			 * @example
 			 * ```c++
 			 * auto* ipv4Parameter =
-			 *   chunk->BuildParameterInPlace<IPv4AddressChunkParameter>();
+			 *   chunk->BuildParameterInPlace<IPv4AddressParameter>();
 			 * ```
 			 */
 			template<typename T>
@@ -288,8 +289,7 @@ namespace RTC
 
 				// The new Parameter will be added after other Parameters in the Chunk,
 				// this is, at the end of the Chunk, whose length we know it's padded to
-				// 4 bytes, and each Chunk Parameter total length is also multiple of 4
-				// bytes.
+				// 4 bytes, and each Parameter total length is also multiple of 4 bytes.
 				auto* ptr = const_cast<uint8_t*>(GetBuffer()) + GetLength();
 				// The remaining length in the buffer is the potential buffer length
 				// of the Parameter.
@@ -526,9 +526,8 @@ namespace RTC
 			}
 
 			/**
-			 * To be called by each subclass of Chunk if Chunk Parameters parsing is
-			 * needed. It creates ChunkParameter subclasses and adds them to the
-			 * Chunk.
+			 * To be called by each subclass of Chunk if Parameters parsing is
+			 * needed. It creates Parameter subclasses and adds them to the Chunk.
 			 *
 			 * @remarks
 			 * This method assumes that the Chunk basic parsing has been made already
@@ -583,7 +582,7 @@ namespace RTC
 				return reinterpret_cast<ChunkFlags*>(const_cast<uint8_t*>(GetBuffer()) + 1);
 			}
 
-			virtual void HandleInPlaceParameter(ChunkParameter* parameter) final;
+			virtual void HandleInPlaceParameter(Parameter* parameter) final;
 
 			virtual void HandleInPlaceErrorCause(ErrorCause* errorCause) final;
 
@@ -592,8 +591,8 @@ namespace RTC
 			virtual void AssertCanHaveErrorCauses() const final;
 
 		private:
-			// Chunk Parameters.
-			std::vector<ChunkParameter*> parameters;
+			// Parameters.
+			std::vector<Parameter*> parameters;
 			// Error Causes.
 			std::vector<ErrorCause*> errorCauses;
 		};

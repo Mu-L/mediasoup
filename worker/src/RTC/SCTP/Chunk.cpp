@@ -5,13 +5,6 @@
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
 #include "Utils.hpp"
-#include "RTC/SCTP/chunkParameters/CookiePreservativeChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/HeartbeatInfoChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/IPv4AddressChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/IPv6AddressChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/SupportedAddressTypesChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/UnknownChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/ZeroChecksumAcceptableChunkParameter.hpp"
 #include "RTC/SCTP/errorCauses/CookieReceivedWhileShuttingDownErrorCause.hpp"
 #include "RTC/SCTP/errorCauses/InvalidMandatoryParameterErrorCause.hpp"
 #include "RTC/SCTP/errorCauses/InvalidStreamIdentifierErrorCause.hpp"
@@ -26,6 +19,23 @@
 #include "RTC/SCTP/errorCauses/UnrecognizedParametersErrorCause.hpp"
 #include "RTC/SCTP/errorCauses/UnresolvableAddressErrorCause.hpp"
 #include "RTC/SCTP/errorCauses/UserInitiatedAbortErrorCause.hpp"
+#include "RTC/SCTP/parameters/AddIncomingStreamsRequestParameter.hpp"
+#include "RTC/SCTP/parameters/AddOutgoingStreamsRequestParameter.hpp"
+#include "RTC/SCTP/parameters/CookiePreservativeParameter.hpp"
+#include "RTC/SCTP/parameters/ForwardTsnSupportedParameter.hpp"
+#include "RTC/SCTP/parameters/HeartbeatInfoParameter.hpp"
+#include "RTC/SCTP/parameters/IPv4AddressParameter.hpp"
+#include "RTC/SCTP/parameters/IPv6AddressParameter.hpp"
+#include "RTC/SCTP/parameters/IncomingSsnResetRequestParameter.hpp"
+#include "RTC/SCTP/parameters/OutgoingSsnResetRequestParameter.hpp"
+#include "RTC/SCTP/parameters/ReconfigurationResponseParameter.hpp"
+#include "RTC/SCTP/parameters/SsnTsnResetRequestParameter.hpp"
+#include "RTC/SCTP/parameters/StateCookieParameter.hpp"
+#include "RTC/SCTP/parameters/SupportedAddressTypesParameter.hpp"
+#include "RTC/SCTP/parameters/SupportedExtensionsParameter.hpp"
+#include "RTC/SCTP/parameters/UnknownParameter.hpp"
+#include "RTC/SCTP/parameters/UnrecognizedParameterParameter.hpp"
+#include "RTC/SCTP/parameters/ZeroChecksumAcceptableParameter.hpp"
 
 namespace RTC
 {
@@ -40,7 +50,7 @@ namespace RTC
 			{ Chunk::ChunkType::INIT,              "INIT"              },
 			{ Chunk::ChunkType::INIT_ACK,          "INIT_ACK"          },
 			{ Chunk::ChunkType::SACK,              "SACK"              },
-			{ Chunk::ChunkType::HEARTBEAT,         "HEARTBEAT"         },
+			{ Chunk::ChunkType::HEARTBEAT_REQUEST, "HEARTBEAT_REQUEST" },
 			{ Chunk::ChunkType::HEARTBEAT_ACK,     "HEARTBEAT_ACK"     },
 			{ Chunk::ChunkType::ABORT,             "ABORT"             },
 			{ Chunk::ChunkType::SHUTDOWN,          "SHUTDOWN"          },
@@ -50,7 +60,11 @@ namespace RTC
 			{ Chunk::ChunkType::COOKIE_ACK,        "COOKIE_ACK"        },
 			{ Chunk::ChunkType::ECNE,              "ECNE"              },
 			{ Chunk::ChunkType::CWR,               "CWR"               },
-			{ Chunk::ChunkType::SHUTDOWN_COMPLETE, "SHUTDOWN_COMPLETE" }
+			{ Chunk::ChunkType::SHUTDOWN_COMPLETE, "SHUTDOWN_COMPLETE" },
+			{ Chunk::ChunkType::FORWARD_TSN,       "FORWARD_TSN"       },
+			{ Chunk::ChunkType::RE_CONFIG,         "RE_CONFIG"         },
+			{ Chunk::ChunkType::I_DATA,            "I_DATA"            },
+			{ Chunk::ChunkType::I_FORWARD_TSN,     "I_FORWARD_TSN"     },
 			// TODO: Add more.
 		};
 		// clang-format on
@@ -148,7 +162,7 @@ namespace RTC
 			}
 		}
 
-		void Chunk::AddParameter(const ChunkParameter* parameter)
+		void Chunk::AddParameter(const Parameter* parameter)
 		{
 			MS_TRACE();
 
@@ -271,7 +285,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			// Soft clone Chunk Parameters into the given Chunk.
+			// Soft clone Parameters into the given Chunk.
 			if (CanHaveParameters())
 			{
 				for (auto* parameter : this->parameters)
@@ -280,7 +294,7 @@ namespace RTC
 
 					auto* softClonedParameter = parameter->SoftClone(chunk->GetBuffer() + offset);
 
-					// ChunkParameter constructors don't freeze the ChunkParameter so we
+					// Parameter constructors don't freeze the Parameter so we
 					// must do it manually.
 					softClonedParameter->Freeze();
 
@@ -326,88 +340,167 @@ namespace RTC
 
 			// Here we assume that the Chunk buffer has been validated and
 			// GetLength() returns the fixed minimum length of the specific Chunk
-			// subclass, so GetBuffer() + GetLength() points to the beginning of
-			// the potential Chunk Parameters.
-			// And of course we assume that a Chunk cannot have both Chunk Parameters
-			// and Error Causes.
+			// subclass, so GetBuffer() + GetLength() points to the beginning of the
+			// potential Parameters. And of course we assume that a Chunk cannot have
+			// both Parameters and Error Causes.
 			auto* ptr = const_cast<uint8_t*>(GetBuffer()) + GetLength();
 
 			// Here we assume that the Chunk has been validated so Length field is
 			// reliable. We want to be ready for Length field to include or not the
-			// possible padding of the last Chunk Parameter (as per RFC
-			// recommendation). In fact, we rely on parameter->GetLength() while
-			// parsing the buffer so we want to provide each
-			// ChunkParameter::StrictParse() call with a 4-bytes padded buffer length.
+			// possible padding of the last Parameter (as per RFC recommendation). In
+			// fact, we rely on parameter->GetLength() while parsing the buffer so we
+			// want to provide each Parameter::StrictParse() call with a 4-bytes
+			// padded buffer length.
 			const auto* end = GetBuffer() + Utils::Byte::PadTo4Bytes(GetLengthField());
 
 			while (ptr < end)
 			{
 				// The remaining length in the given length is the potential buffer
-				// length of the Chunk Parameter.
+				// length of the Parameter.
 				size_t parameterMaxBufferLength = end - ptr;
 
 				// Here we must anticipate the type of each Parameter to use its
 				// appropriate parser.
-				ChunkParameter::ChunkParameterType parameterType;
+				Parameter::ParameterType parameterType;
 				uint16_t parameterLength;
 				uint8_t padding;
 
-				if (!ChunkParameter::IsChunkParameter(
+				if (!Parameter::IsParameter(
 				      ptr, parameterMaxBufferLength, parameterType, parameterLength, padding))
 				{
-					MS_WARN_TAG(sctp, "not a SCTP Chunk Parameter");
+					MS_WARN_TAG(sctp, "not a SCTP Parameter");
 
 					return false;
 				}
 
-				ChunkParameter* parameter{ nullptr };
+				Parameter* parameter{ nullptr };
 
 				// TODO: Add more.
 				switch (parameterType)
 				{
-					case ChunkParameter::ChunkParameterType::HEARTBEAT_INFO:
+					case Parameter::ParameterType::HEARTBEAT_INFO:
 					{
-						parameter = HeartbeatInfoChunkParameter::ParseStrict(
+						parameter = HeartbeatInfoParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;
 					}
 
-					case ChunkParameter::ChunkParameterType::IPV4_ADDRESS:
+					case Parameter::ParameterType::IPV4_ADDRESS:
 					{
-						parameter = IPv4AddressChunkParameter::ParseStrict(
+						parameter = IPv4AddressParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;
 					}
 
-					case ChunkParameter::ChunkParameterType::IPV6_ADDRESS:
+					case Parameter::ParameterType::IPV6_ADDRESS:
 					{
-						parameter = IPv6AddressChunkParameter::ParseStrict(
+						parameter = IPv6AddressParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;
 					}
 
-					case ChunkParameter::ChunkParameterType::COOKIE_PRESERVATIVE:
+					case Parameter::ParameterType::STATE_COOKIE:
 					{
-						parameter = CookiePreservativeChunkParameter::ParseStrict(
+						parameter = StateCookieParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;
 					}
 
-					case ChunkParameter::ChunkParameterType::SUPPORTED_ADDRESS_TYPES:
+					case Parameter::ParameterType::UNRECOGNIZED_PARAMETER:
 					{
-						parameter = SupportedAddressTypesChunkParameter::ParseStrict(
+						parameter = UnrecognizedParameterParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;
 					}
 
-					case ChunkParameter::ChunkParameterType::ZERO_CHECKSUM_ACCEPTABLE:
+					case Parameter::ParameterType::COOKIE_PRESERVATIVE:
 					{
-						parameter = ZeroChecksumAcceptableChunkParameter::ParseStrict(
+						parameter = CookiePreservativeParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::SUPPORTED_ADDRESS_TYPES:
+					{
+						parameter = SupportedAddressTypesParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::FORWARD_TSN_SUPPORTED:
+					{
+						parameter = ForwardTsnSupportedParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::SUPPORTED_EXTENSIONS:
+					{
+						parameter = SupportedExtensionsParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::ZERO_CHECKSUM_ACCEPTABLE:
+					{
+						parameter = ZeroChecksumAcceptableParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::OUTGOING_SSN_RESET_REQUEST:
+					{
+						parameter = OutgoingSsnResetRequestParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::INCOMING_SSN_RESET_REQUEST:
+					{
+						parameter = IncomingSsnResetRequestParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::SSN_TSN_RESET_REQUEST:
+					{
+						parameter = SsnTsnResetRequestParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::RECONFIGURATION_RESPONSE:
+					{
+						parameter = ReconfigurationResponseParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::ADD_OUTGOING_STREAMS_REQUEST:
+					{
+						parameter = AddOutgoingStreamsRequestParameter::ParseStrict(
+						  ptr, parameterLength + padding, parameterLength, padding);
+
+						break;
+					}
+
+					case Parameter::ParameterType::ADD_INCOMING_STREAMS_REQUEST:
+					{
+						parameter = AddIncomingStreamsRequestParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 
 						break;
@@ -415,7 +508,7 @@ namespace RTC
 
 					default:
 					{
-						parameter = UnknownChunkParameter::ParseStrict(
+						parameter = UnknownParameter::ParseStrict(
 						  ptr, parameterLength + padding, parameterLength, padding);
 					}
 				}
@@ -453,12 +546,11 @@ namespace RTC
 
 			AssertCanHaveErrorCauses();
 
-			// Here we assume that the Chunk buffer has been validated and
-			// GetLength() returns the fixed minimum length of the specific Chunk
-			// subclass, so GetBuffer() + GetLength() points to the beginning of
-			// the potential Error Causes.
-			// And of course we assume that a Chunk cannot have both Chunk Parameters
-			// and Error Causes.
+			// Here we assume that the Chunk buffer has been validated and GetLength()
+			// returns the fixed minimum length of the specific Chunk subclass, so
+			// GetBuffer() + GetLength() points to the beginning of the potential
+			// Error Causes. And of course we assume that a Chunk cannot have both
+			// Parameters and Error Causes.
 			auto* ptr = const_cast<uint8_t*>(GetBuffer()) + GetLength();
 
 			// Here we assume that the Chunk has been validated so Length field is
@@ -631,7 +723,7 @@ namespace RTC
 			return true;
 		}
 
-		void Chunk::HandleInPlaceParameter(ChunkParameter* parameter)
+		void Chunk::HandleInPlaceParameter(Parameter* parameter)
 		{
 			MS_TRACE();
 
@@ -685,7 +777,7 @@ namespace RTC
 
 			if (!CanHaveParameters())
 			{
-				MS_THROW_ERROR("this Chunk class cannot have Chunk Parameters");
+				MS_THROW_ERROR("this Chunk class cannot have Parameters");
 			}
 		}
 

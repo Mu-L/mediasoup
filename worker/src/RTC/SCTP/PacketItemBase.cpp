@@ -77,8 +77,12 @@ namespace RTC
 			MS_TRACE();
 
 			MS_DUMP_CLEAN(
-			  indentation, "  length + padding: %zu (buffer length: %zu)", GetLength(), GetBufferLength());
-			MS_DUMP_CLEAN(indentation, "  length field: %" PRIu16, GetLengthField());
+			  indentation,
+			  "  length field: %" PRIu16 " (padding: %zu, buffer length: %zu)",
+			  GetLengthField(),
+			  GetLength() - GetLengthField(),
+			  GetBufferLength());
+			MS_DUMP_CLEAN(indentation, "  frozen: %s", IsFrozen() ? "yes" : "no");
 		}
 
 		void PacketItemBase::InitializePacketBaseItemHeader(uint16_t lengthFieldValue)

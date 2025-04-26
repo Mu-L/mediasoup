@@ -1,10 +1,10 @@
 #include "common.hpp"
 #include "MediaSoupErrors.hpp"
 #include "RTC/SCTP/Chunk.hpp"
-#include "RTC/SCTP/ChunkParameter.hpp"
-#include "RTC/SCTP/chunkParameters/IPv4AddressChunkParameter.hpp"
+#include "RTC/SCTP/Parameter.hpp"
 #include "RTC/SCTP/chunks/DataChunk.hpp"
 #include "RTC/SCTP/common.hpp" // in worker/test/include/
+#include "RTC/SCTP/parameters/IPv4AddressParameter.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cstring> // std::memset()
 
@@ -27,7 +27,7 @@ SCENARIO("SCTP Payload Data Chunk (0)", "[sctp][serializable]")
 			0xFF, 0x00, 0x66, 0x77,
 			// Payload Protocol Identifier: 0x12341234
 			0x12, 0x34, 0x12, 0x34,
-			// User Data (2 bytes): 0xABCD, 1 byte of padding
+			// User Data (3 bytes): 0xABCDEF, 1 byte of padding
 			0xAB, 0xCD, 0xEF, 0x00,
 			// Extra bytes that should be ignored
 			0xAA, 0xBB, 0xCC, 0xDD,
@@ -57,8 +57,8 @@ SCENARIO("SCTP Payload Data Chunk (0)", "[sctp][serializable]")
 
 		REQUIRE(chunk->GetI() == true);
 		REQUIRE(chunk->GetU() == false);
-		REQUIRE(chunk->GetI() == true);
-		REQUIRE(chunk->GetI() == true);
+		REQUIRE(chunk->GetB() == true);
+		REQUIRE(chunk->GetE() == true);
 		REQUIRE(chunk->GetTsn() == 0x11223344);
 		REQUIRE(chunk->GetStreamIdentifierS() == 0xFF00);
 		REQUIRE(chunk->GetStreamSequenceNumberN() == 0x6677);
@@ -104,8 +104,8 @@ SCENARIO("SCTP Payload Data Chunk (0)", "[sctp][serializable]")
 
 		REQUIRE(chunk->GetI() == true);
 		REQUIRE(chunk->GetU() == false);
-		REQUIRE(chunk->GetI() == true);
-		REQUIRE(chunk->GetI() == true);
+		REQUIRE(chunk->GetB() == true);
+		REQUIRE(chunk->GetE() == true);
 		REQUIRE(chunk->GetTsn() == 0x11223344);
 		REQUIRE(chunk->GetStreamIdentifierS() == 0xFF00);
 		REQUIRE(chunk->GetStreamSequenceNumberN() == 0x6677);
@@ -143,8 +143,8 @@ SCENARIO("SCTP Payload Data Chunk (0)", "[sctp][serializable]")
 
 		REQUIRE(clonedChunk->GetI() == true);
 		REQUIRE(clonedChunk->GetU() == false);
-		REQUIRE(clonedChunk->GetI() == true);
-		REQUIRE(clonedChunk->GetI() == true);
+		REQUIRE(clonedChunk->GetB() == true);
+		REQUIRE(clonedChunk->GetE() == true);
 		REQUIRE(clonedChunk->GetTsn() == 0x11223344);
 		REQUIRE(clonedChunk->GetStreamIdentifierS() == 0xFF00);
 		REQUIRE(clonedChunk->GetStreamSequenceNumberN() == 0x6677);
@@ -181,8 +181,8 @@ SCENARIO("SCTP Payload Data Chunk (0)", "[sctp][serializable]")
 
 		REQUIRE(chunk->GetI() == false);
 		REQUIRE(chunk->GetU() == false);
-		REQUIRE(chunk->GetI() == false);
-		REQUIRE(chunk->GetI() == false);
+		REQUIRE(chunk->GetB() == false);
+		REQUIRE(chunk->GetE() == false);
 		REQUIRE(chunk->GetTsn() == 0);
 		REQUIRE(chunk->GetStreamIdentifierS() == 0);
 		REQUIRE(chunk->GetStreamSequenceNumberN() == 0);
@@ -305,7 +305,7 @@ SCENARIO("SCTP Payload Data Chunk (0)", "[sctp][serializable]")
 		  /*canHaveErrorCauses*/ false,
 		  /*errorCausesCount*/ 0);
 
-		REQUIRE_THROWS_AS(chunk->SetUserData(ThrowBuffer, 65535), MediaSoupError);
+		REQUIRE_THROWS_AS(chunk->SetUserData(DataBuffer, 65535), MediaSoupError);
 
 		CHECK_CHUNK(
 		  /*chunk*/ chunk,

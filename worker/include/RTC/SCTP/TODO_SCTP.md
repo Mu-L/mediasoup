@@ -17,4 +17,4 @@ Same in `PipeTransport` and `PlainTransport`.
 
 - Try to remove all `friend class`.
 
-- In `HeartbeatChunk` the `HeartbeatInfoChunkParameter` should be mandatory when parsing. Or should we add some `Validate()` method?
+- In `HeartbeatChunk` the `HeartbeatInfoParameter` should be mandatory when parsing. Or should we add some `Validate()` method?

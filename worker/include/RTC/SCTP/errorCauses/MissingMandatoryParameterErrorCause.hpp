@@ -3,15 +3,16 @@
 
 #include "common.hpp"
 #include "Utils.hpp"
-#include "RTC/SCTP/ChunkParameter.hpp"
 #include "RTC/SCTP/ErrorCause.hpp"
+#include "RTC/SCTP/Parameter.hpp"
 
 namespace RTC
 {
 	namespace SCTP
 	{
 		/**
-		 * SCTP Missing Mandatory Parameter (MISSING_MANDATORY_PARAMETER) (2)
+		 * SCTP Missing Mandatory Parameter Error Cause
+		 * (MISSING_MANDATORY_PARAMETER) (2)
 		 *
 		 * @see RFC 9260.
 		 *
@@ -80,18 +81,18 @@ namespace RTC
 			virtual MissingMandatoryParameterErrorCause* Clone(
 			  uint8_t* buffer, size_t bufferLength) const override final;
 
-			const uint32_t GetNumberOfMissingParameters() const
+			uint32_t GetNumberOfMissingParameters() const
 			{
 				return Utils::Byte::Get4Bytes(GetBuffer(), 4);
 			}
 
-			ChunkParameter::ChunkParameterType GetMissingParameterTypeAt(uint32_t idx) const
+			Parameter::ParameterType GetMissingParameterTypeAt(uint32_t idx) const
 			{
-				return static_cast<ChunkParameter::ChunkParameterType>(
+				return static_cast<Parameter::ParameterType>(
 				  Utils::Byte::Get2Bytes(GetVariableLengthValuePointer(), (idx * 2)));
 			}
 
-			void AddMissingParameterType(ChunkParameter::ChunkParameterType parameterType);
+			void AddMissingParameterType(Parameter::ParameterType parameterType);
 
 		protected:
 			virtual MissingMandatoryParameterErrorCause* SoftClone(const uint8_t* buffer) const final override;
