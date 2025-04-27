@@ -3,8 +3,8 @@
 
 #include "common.hpp"
 #include "RTC/SCTP/ErrorCause.hpp"
-#include "RTC/SCTP/PacketItemBase.hpp"
 #include "RTC/SCTP/Parameter.hpp"
+#include "RTC/SCTP/TLV.hpp"
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -41,7 +41,7 @@ namespace RTC
 		// Forward declaration.
 		class Packet;
 
-		class Chunk : public PacketItemBase
+		class Chunk : public TLV
 		{
 			// We need that Packet calls protected and private methods in this class.
 			friend class Packet;

@@ -80,7 +80,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			if (!PacketItemBase::IsPacketItemBase(buffer, bufferLength, chunkLength, padding))
+			if (!TLV::IsTLV(buffer, bufferLength, chunkLength, padding))
 			{
 				return false;
 			}
@@ -108,7 +108,7 @@ namespace RTC
 
 		/* Instance methods. */
 
-		Chunk::Chunk(uint8_t* buffer, size_t bufferLength) : PacketItemBase(buffer, bufferLength)
+		Chunk::Chunk(uint8_t* buffer, size_t bufferLength) : TLV(buffer, bufferLength)
 		{
 			MS_TRACE();
 		}
@@ -221,7 +221,7 @@ namespace RTC
 			  HasUnknownType() ? "yes" : "no");
 			MS_DUMP_CLEAN(
 			  indentation, "  flags: " MS_UINT8_TO_BINARY_PATTERN, MS_UINT8_TO_BINARY(GetFlags()));
-			PacketItemBase::DumpCommon(indentation);
+			TLV::DumpCommon(indentation);
 		}
 
 		void Chunk::DumpParameters(int indentation) const
@@ -329,7 +329,7 @@ namespace RTC
 
 			SetType(chunkType);
 			SetFlags(flags);
-			InitializePacketBaseItemHeader(lengthFieldValue);
+			InitializeTLVHeader(lengthFieldValue);
 		}
 
 		bool Chunk::ParseParameters()

@@ -2,7 +2,7 @@
 #define MS_RTC_SCTP_PARAMETER_HPP
 
 #include "common.hpp"
-#include "RTC/SCTP/PacketItemBase.hpp"
+#include "RTC/SCTP/TLV.hpp"
 #include <string>
 #include <unordered_map>
 
@@ -38,7 +38,7 @@ namespace RTC
 		// Forward declaration.
 		class Chunk;
 
-		class Parameter : public PacketItemBase
+		class Parameter : public TLV
 		{
 			// We need that Chunk calls protected and private methods in this class.
 			friend class Chunk;

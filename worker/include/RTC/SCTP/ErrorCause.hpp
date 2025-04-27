@@ -2,7 +2,7 @@
 #define MS_RTC_SCTP_ERROR_CAUSE_HPP
 
 #include "common.hpp"
-#include "RTC/SCTP/PacketItemBase.hpp"
+#include "RTC/SCTP/TLV.hpp"
 #include <string>
 #include <unordered_map>
 
@@ -37,7 +37,7 @@ namespace RTC
 		// Forward declaration.
 		class Chunk;
 
-		class ErrorCause : public PacketItemBase
+		class ErrorCause : public TLV
 		{
 			// We need that Chunk calls protected and private methods in this class.
 			friend class Chunk;

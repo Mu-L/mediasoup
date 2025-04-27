@@ -42,7 +42,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			if (!PacketItemBase::IsPacketItemBase(buffer, bufferLength, causeLength, padding))
+			if (!TLV::IsTLV(buffer, bufferLength, causeLength, padding))
 			{
 				return false;
 			}
@@ -70,8 +70,7 @@ namespace RTC
 
 		/* Instance methods. */
 
-		ErrorCause::ErrorCause(uint8_t* buffer, size_t bufferLength)
-		  : PacketItemBase(buffer, bufferLength)
+		ErrorCause::ErrorCause(uint8_t* buffer, size_t bufferLength) : TLV(buffer, bufferLength)
 		{
 			MS_TRACE();
 		}
@@ -99,7 +98,7 @@ namespace RTC
 			  static_cast<uint16_t>(GetCode()),
 			  ErrorCause::ErrorCauseCode2String(GetCode()).c_str(),
 			  HasUnknownCode() ? "yes" : "no");
-			PacketItemBase::DumpCommon(indentation);
+			TLV::DumpCommon(indentation);
 		}
 
 		void ErrorCause::SoftSerialize(const uint8_t* buffer)
@@ -114,7 +113,7 @@ namespace RTC
 			MS_TRACE();
 
 			SetCode(causeCode);
-			InitializePacketBaseItemHeader(lengthFieldValue);
+			InitializeTLVHeader(lengthFieldValue);
 		}
 	} // namespace SCTP
 } // namespace RTC

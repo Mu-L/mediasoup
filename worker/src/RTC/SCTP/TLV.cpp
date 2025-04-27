@@ -1,7 +1,7 @@
-#define MS_CLASS "RTC::SCTP::PacketItemBase"
+#define MS_CLASS "RTC::SCTP::TLV"
 // #define MS_LOG_DEV_LEVEL 3
 
-#include "RTC/SCTP/PacketItemBase.hpp"
+#include "RTC/SCTP/TLV.hpp"
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
 #include <cstring> // std::memmove()
@@ -13,12 +13,11 @@ namespace RTC
 	{
 		/* Class methods. */
 
-		bool PacketItemBase::IsPacketItemBase(
-		  const uint8_t* buffer, size_t bufferLength, uint16_t& itemLength, uint8_t& padding)
+		bool TLV::IsTLV(const uint8_t* buffer, size_t bufferLength, uint16_t& itemLength, uint8_t& padding)
 		{
 			MS_TRACE();
 
-			if (bufferLength < PacketItemBase::PacketItemBaseHeaderLength)
+			if (bufferLength < TLV::TLVHeaderLength)
 			{
 				MS_WARN_TAG(sctp, "no space for Header [bufferLength:%zu]", bufferLength);
 
@@ -27,12 +26,10 @@ namespace RTC
 
 			itemLength = Utils::Byte::Get2Bytes(buffer, 2);
 
-			if (itemLength < PacketItemBase::PacketItemBaseHeaderLength)
+			if (itemLength < TLV::TLVHeaderLength)
 			{
 				MS_WARN_TAG(
-				  sctp,
-				  "Length field must have value greater or equal than %zu",
-				  PacketItemBase::PacketItemBaseHeaderLength);
+				  sctp, "Length field must have value greater or equal than %zu", TLV::TLVHeaderLength);
 
 				return false;
 			}
@@ -61,18 +58,17 @@ namespace RTC
 
 		/* Instance methods. */
 
-		PacketItemBase::PacketItemBase(uint8_t* buffer, size_t bufferLength)
-		  : Serializable(buffer, bufferLength)
+		TLV::TLV(uint8_t* buffer, size_t bufferLength) : Serializable(buffer, bufferLength)
 		{
 			MS_TRACE();
 		}
 
-		PacketItemBase::~PacketItemBase()
+		TLV::~TLV()
 		{
 			MS_TRACE();
 		}
 
-		void PacketItemBase::DumpCommon(int indentation) const
+		void TLV::DumpCommon(int indentation) const
 		{
 			MS_TRACE();
 
@@ -85,7 +81,7 @@ namespace RTC
 			MS_DUMP_CLEAN(indentation, "  frozen: %s", IsFrozen() ? "yes" : "no");
 		}
 
-		void PacketItemBase::InitializePacketBaseItemHeader(uint16_t lengthFieldValue)
+		void TLV::InitializeTLVHeader(uint16_t lengthFieldValue)
 		{
 			MS_TRACE();
 
@@ -94,7 +90,7 @@ namespace RTC
 			SetLengthField(lengthFieldValue);
 		}
 
-		void PacketItemBase::SetLengthField(size_t lengthField)
+		void TLV::SetLengthField(size_t lengthField)
 		{
 			MS_TRACE();
 
@@ -106,7 +102,7 @@ namespace RTC
 			Utils::Byte::Set2Bytes(const_cast<uint8_t*>(GetBuffer()), 2, lengthField);
 		}
 
-		void PacketItemBase::SetVariableLengthValue(const uint8_t* value, size_t valueLength)
+		void TLV::SetVariableLengthValue(const uint8_t* value, size_t valueLength)
 		{
 			MS_TRACE();
 
@@ -119,7 +115,7 @@ namespace RTC
 			std::memmove(GetVariableLengthValuePointer(), value, valueLength);
 		}
 
-		void PacketItemBase::SetVariableLengthValueLength(size_t valueLength)
+		void TLV::SetVariableLengthValueLength(size_t valueLength)
 		{
 			MS_TRACE();
 
@@ -155,7 +151,7 @@ namespace RTC
 			FillPadding(newPaddedLength - newNotPaddedLength);
 		}
 
-		void PacketItemBase::AddItem(const PacketItemBase* item)
+		void TLV::AddItem(const TLV* item)
 		{
 			MS_TRACE();
 

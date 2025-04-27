@@ -1,5 +1,5 @@
-#ifndef MS_RTC_SCTP_PACKET_ITEM_BASE_HPP
-#define MS_RTC_SCTP_PACKET_ITEM_BASE_HPP
+#ifndef MS_RTC_SCTP_TLV_HPP
+#define MS_RTC_SCTP_TLV_HPP
 
 #include "common.hpp"
 #include "Utils.hpp"
@@ -10,14 +10,14 @@ namespace RTC
 	namespace SCTP
 	{
 		/**
-		 * SCTP Packet Item Base.
+		 * SCTP TLV (Type-Length-Value).
 		 *
 		 * This is the base class of all items in a SCTP Packet, this is:
 		 * - SCTP Chunk,
 		 * - SCTP Parameter, and
 		 * - SCTP Error Cause.
 		 *
-		 * All those items have the same Length field with same meaning.
+		 * All those items have the same Length field and 4-byte padded length.
 		 *
 		 *  0                   1                   2                   3
 		 *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -30,23 +30,23 @@ namespace RTC
 		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 		 */
 
-		class PacketItemBase : public Serializable
+		class TLV : public Serializable
 		{
 		public:
-			static const size_t PacketItemBaseHeaderLength{ 4 };
+			static const size_t TLVHeaderLength{ 4 };
 
 		public:
 			/**
-			 * Whether given buffer could be a a valid SCTP PacketItemBase.
+			 * Whether given buffer could be a a valid SCTP TLV.
 			 */
-			static bool IsPacketItemBase(
+			static bool IsTLV(
 			  const uint8_t* buffer, size_t bufferLength, uint16_t& itemLength, uint8_t& padding);
 
 		protected:
-			PacketItemBase(uint8_t* buffer, size_t bufferLength);
+			TLV(uint8_t* buffer, size_t bufferLength);
 
 		public:
-			virtual ~PacketItemBase() override;
+			virtual ~TLV() override;
 
 		protected:
 			/**
@@ -54,7 +54,7 @@ namespace RTC
 			 */
 			virtual void DumpCommon(int indentation) const;
 
-			virtual void InitializePacketBaseItemHeader(uint16_t lengthFieldValue) final;
+			virtual void InitializeTLVHeader(uint16_t lengthFieldValue) final;
 
 			/**
 			 * Subclasses with header bigger than default one (4 bytes) must override
@@ -64,7 +64,7 @@ namespace RTC
 			 */
 			virtual size_t GetHeaderLength() const
 			{
-				return PacketItemBase::PacketItemBaseHeaderLength;
+				return TLV::TLVHeaderLength;
 			}
 
 			/**
@@ -153,7 +153,7 @@ namespace RTC
 			 * value of the Length field by incrementing it with the length of the
 			 * given item.
 			 */
-			virtual void AddItem(const PacketItemBase* item) final;
+			virtual void AddItem(const TLV* item) final;
 
 		private:
 			/**
