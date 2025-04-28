@@ -9,7 +9,7 @@
 #include "FBS/webRtcTransport.h"
 // TODO: For testing purposes. Must be removed.
 #ifdef MS_SCTP_STACK
-#include "RTC/SCTP/Packet.hpp"
+#include "RTC/SCTP/packet/Packet.hpp"
 #endif
 #include <cmath> // std::pow()
 

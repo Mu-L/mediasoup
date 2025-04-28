@@ -23,7 +23,7 @@
 #include "RTC/FuzzerStunPacket.hpp"
 #include "RTC/FuzzerTrendCalculator.hpp"
 #include "RTC/RTCP/FuzzerPacket.hpp"
-#include "RTC/SCTP/FuzzerPacket.hpp"
+#include "RTC/SCTP/packet/FuzzerPacket.hpp"
 #include <cstdlib> // std::getenv()
 #include <iostream>
 #include <sstream> // std::istringstream()

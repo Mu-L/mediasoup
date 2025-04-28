@@ -5,12 +5,12 @@
 #include "MediaSoupErrors.hpp"
 #include "Utils.hpp"
 #include "helpers.hpp" // in worker/test/include/
-#include "RTC/SCTP/Chunk.hpp"
-#include "RTC/SCTP/ErrorCause.hpp"
-#include "RTC/SCTP/Packet.hpp"
-#include "RTC/SCTP/Parameter.hpp"
-#include "RTC/SCTP/errorCauses/InvalidStreamIdentifierErrorCause.hpp"
-#include "RTC/SCTP/parameters/HeartbeatInfoParameter.hpp"
+#include "RTC/SCTP/packet/Chunk.hpp"
+#include "RTC/SCTP/packet/ErrorCause.hpp"
+#include "RTC/SCTP/packet/Packet.hpp"
+#include "RTC/SCTP/packet/Parameter.hpp"
+#include "RTC/SCTP/packet/errorCauses/InvalidStreamIdentifierErrorCause.hpp"
+#include "RTC/SCTP/packet/parameters/HeartbeatInfoParameter.hpp"
 #include <catch2/catch_test_macros.hpp>
 
 using namespace RTC::SCTP;
