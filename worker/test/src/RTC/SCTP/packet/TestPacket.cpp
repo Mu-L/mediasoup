@@ -789,4 +789,48 @@ SCENARIO("SCTP Packet", "[sctp][serializable]")
 
 		delete packet;
 	}
+
+	SECTION("Packet::BuildChunkInPlace() throws if given Chunk exceeds Packet buffer length")
+	{
+		auto* packet = Packet::Factory(FactoryBuffer, 28);
+
+		CHECK_PACKET(
+		  /*packet*/ packet,
+		  /*buffer*/ FactoryBuffer,
+		  /*bufferLength*/ 28,
+		  /*length*/ 12,
+		  /*frozen*/ false,
+		  /*sourcePort*/ 0,
+		  /*destinationPort*/ 0,
+		  /*verificationTag*/ 0,
+		  /*checksum*/ 0,
+		  /*hasValidCrc32cChecksum*/ false,
+		  /*chunksCount*/ 0);
+
+		// Chunk 1: DATA, length: 16 bytes.
+		auto* chunk1 = packet->BuildChunkInPlace<DataChunk>();
+
+		// Adding user data 10 bytes, must throw.
+		REQUIRE_THROWS_AS(chunk1->SetUserData(DataBuffer, 10), MediaSoupError);
+
+		delete chunk1;
+
+		// Chunk 2: INIT, length: 20 bytes. Must throw.
+		REQUIRE_THROWS_AS(packet->BuildChunkInPlace<InitChunk>(), MediaSoupError);
+
+		CHECK_PACKET(
+		  /*packet*/ packet,
+		  /*buffer*/ FactoryBuffer,
+		  /*bufferLength*/ 28,
+		  /*length*/ 12,
+		  /*frozen*/ false,
+		  /*sourcePort*/ 0,
+		  /*destinationPort*/ 0,
+		  /*verificationTag*/ 0,
+		  /*checksum*/ 0,
+		  /*hasValidCrc32cChecksum*/ false,
+		  /*chunksCount*/ 0);
+
+		delete packet;
+	}
 }
