@@ -353,8 +353,6 @@ namespace RTC
 			  packet->GetSequenceNumber(),
 			  packet->GetTimestamp());
 
-			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
-
 #ifdef MS_RTC_LOGGER_RTP
 			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::DROPPED_BY_CODEC);
 #endif

@@ -813,6 +813,7 @@ namespace RTC
 #endif
 
 			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+
 			return;
 		}
 

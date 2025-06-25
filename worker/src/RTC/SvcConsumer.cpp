@@ -733,11 +733,11 @@ namespace RTC
 
 		if (!packet->ProcessPayload(this->encodingContext.get(), marker))
 		{
-			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
-
 #ifdef MS_RTC_LOGGER_RTP
 			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::DROPPED_BY_CODEC);
 #endif
+
+			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
 
 			return;
 		}
