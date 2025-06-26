@@ -6,9 +6,16 @@
 #include "MediaSoupErrors.hpp"
 #include "Utils.hpp"
 #include "RTC/Codecs/Tools.hpp"
+#ifdef MS_RTC_LOGGER_RTP
+#include "RTC/RtcLogger.hpp"
+#endif
 
 namespace RTC
 {
+	/* Static. */
+
+	static constexpr size_t TargetLayerRetransmissionBufferSize{ 15u };
+
 	/* Instance methods. */
 
 	PipeConsumer::PipeConsumer(
@@ -52,9 +59,13 @@ namespace RTC
 		{
 			delete rtpStream;
 		}
+
 		this->rtpStreams.clear();
 		this->mapMappedSsrcSsrc.clear();
 		this->mapSsrcRtpStream.clear();
+		this->mapRtpStreamSyncRequired.clear();
+		this->mapRtpStreamRtpSeqManager.clear();
+		this->mapRtpStreamTargetLayerRetransmissionBuffer.clear();
 	}
 
 	flatbuffers::Offset<FBS::Consumer::DumpResponse> PipeConsumer::FillBuffer(
@@ -226,6 +237,8 @@ namespace RTC
 		auto* rtpStream     = this->mapSsrcRtpStream.at(ssrc);
 		auto& syncRequired  = this->mapRtpStreamSyncRequired.at(rtpStream);
 		auto& rtpSeqManager = this->mapRtpStreamRtpSeqManager.at(rtpStream);
+		auto& targetLayerRetransmissionBuffer =
+		  this->mapRtpStreamTargetLayerRetransmissionBuffer.at(rtpStream);
 
 		if (!IsActive())
 		{
@@ -249,6 +262,11 @@ namespace RTC
 			// NOTE: No need to drop the packet in the RTP sequence manager since here
 			// we are blocking all packets but the key frame that would trigger sync
 			// below.
+
+			// Store the packet for the scenario in which this packet is part of the
+			// key frame and it arrived before the first packet of the key frame.
+			StorePacketInTargetLayerRetransmissionBuffer(
+			  targetLayerRetransmissionBuffer, packet, sharedPacket);
 
 			return;
 		}
@@ -285,6 +303,10 @@ namespace RTC
 		// Whether this is the first packet after re-sync.
 		const bool isSyncPacket = syncRequired;
 
+		// Whether packets stored in the target layer retransmission buffer must be
+		// sent once this packet is sent.
+		bool sendPacketsInTargetLayerRetransmissionBuffer{ false };
+
 		// Sync sequence number and timestamp if required.
 		if (isSyncPacket)
 		{
@@ -296,6 +318,8 @@ namespace RTC
 				  packet->GetSsrc(),
 				  packet->GetSequenceNumber(),
 				  packet->GetTimestamp());
+
+				sendPacketsInTargetLayerRetransmissionBuffer = true;
 			}
 
 			rtpSeqManager->Sync(packet->GetSequenceNumber() - 1);
@@ -334,8 +358,9 @@ namespace RTC
 			  origSeq);
 		}
 
-		// Process the packet.
-		if (rtpStream->ReceivePacket(packet, sharedPacket))
+		const bool sent = rtpStream->ReceivePacket(packet, sharedPacket);
+
+		if (sent)
 		{
 			// Send the packet.
 			this->listener->OnConsumerSendRtpPacket(this, packet);
@@ -363,6 +388,37 @@ namespace RTC
 		// Restore packet fields.
 		packet->SetSsrc(origSsrc);
 		packet->SetSequenceNumber(origSeq);
+
+		// If sent packet was the first packet of a key frame, let's send buffered
+		// packets belonging to the same key frame that arrived earlier due to
+		// packet misorder.
+		if (sendPacketsInTargetLayerRetransmissionBuffer)
+		{
+			// NOTE: Only send buffered packets if the first packet containing the key
+			// frame was sent.
+			if (sent)
+			{
+				for (auto& kv : targetLayerRetransmissionBuffer)
+				{
+					auto& bufferedSharedPacket = kv.second;
+					auto* bufferedPacket       = bufferedSharedPacket.get();
+
+					if (bufferedPacket->GetSequenceNumber() > origSeq)
+					{
+						MS_DEBUG_DEV(
+						  "sending packet buffered in the target layer retransmission buffer [ssrc:%" PRIu32
+						  ", seq:%" PRIu16 ", ts:%" PRIu32 "]",
+						  bufferedPacket->GetSsrc(),
+						  bufferedPacket->GetSequenceNumber(),
+						  bufferedPacket->GetTimestamp());
+
+						SendRtpPacket(bufferedPacket, bufferedSharedPacket);
+					}
+				}
+			}
+
+			targetLayerRetransmissionBuffer.clear();
+		}
 	}
 
 	bool PipeConsumer::GetRtcp(RTC::RTCP::CompoundPacket* packet, uint64_t nowMs)
@@ -574,6 +630,13 @@ namespace RTC
 		{
 			rtpStream->Pause();
 		}
+
+		for (auto& kv : this->mapRtpStreamTargetLayerRetransmissionBuffer)
+		{
+			auto& targetLayerRetransmissionBuffer = kv.second;
+
+			targetLayerRetransmissionBuffer.clear();
+		}
 	}
 
 	void PipeConsumer::UserOnPaused()
@@ -583,6 +646,13 @@ namespace RTC
 		for (auto* rtpStream : this->rtpStreams)
 		{
 			rtpStream->Pause();
+		}
+
+		for (auto& kv : this->mapRtpStreamTargetLayerRetransmissionBuffer)
+		{
+			auto& targetLayerRetransmissionBuffer = kv.second;
+
+			targetLayerRetransmissionBuffer.clear();
 		}
 	}
 
@@ -707,6 +777,8 @@ namespace RTC
 
 			this->mapRtpStreamRtpSeqManager[rtpStream].reset(
 			  new RTC::SeqManager<uint16_t>(initialOutputSeq));
+
+			this->mapRtpStreamTargetLayerRetransmissionBuffer[rtpStream];
 		}
 	}
 
@@ -724,6 +796,36 @@ namespace RTC
 			auto mappedSsrc = consumableRtpEncoding.ssrc;
 
 			this->listener->OnConsumerKeyFrameRequested(this, mappedSsrc);
+		}
+	}
+
+	void PipeConsumer::StorePacketInTargetLayerRetransmissionBuffer(
+	  std::map<uint16_t, std::shared_ptr<RTC::RtpPacket>, RTC::SeqManager<uint16_t>::SeqLowerThan>&
+	    targetLayerRetransmissionBuffer,
+	  RTC::RtpPacket* packet,
+	  std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	{
+		MS_TRACE();
+
+		MS_DEBUG_DEV(
+		  "storing packet in target layer retransmission buffer [ssrc:%" PRIu32 ", seq:%" PRIu16
+		  ", ts:%" PRIu32 "]",
+		  packet->GetSsrc(),
+		  packet->GetSequenceNumber(),
+		  packet->GetTimestamp());
+
+		// Store original packet into the buffer. Only clone once and only if
+		// necessary.
+		if (!sharedPacket)
+		{
+			sharedPacket.reset(packet->Clone());
+		}
+
+		targetLayerRetransmissionBuffer[packet->GetSequenceNumber()] = sharedPacket;
+
+		if (targetLayerRetransmissionBuffer.size() > TargetLayerRetransmissionBufferSize)
+		{
+			targetLayerRetransmissionBuffer.erase(targetLayerRetransmissionBuffer.begin());
 		}
 	}
 
