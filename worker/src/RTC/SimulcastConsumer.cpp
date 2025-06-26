@@ -732,24 +732,36 @@ namespace RTC
 		packet->logger.consumerId = this->id;
 #endif
 
+		auto spatialLayer = this->mapMappedSsrcSpatialLayer.at(packet->GetSsrc());
+
 		if (!IsActive())
 		{
+			// Only drop the packet in the RTP sequence manager if it belongs to the
+			// current spatial layer.
+			if (spatialLayer == this->currentSpatialLayer)
+			{
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::CONSUMER_INACTIVE);
+				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::CONSUMER_INACTIVE);
 #endif
 
-			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+			}
 
 			return;
 		}
 
 		if (this->targetTemporalLayer == -1)
 		{
+			// Only drop the packet in the RTP sequence manager if it belongs to the
+			// current spatial layer.
+			if (spatialLayer == this->currentSpatialLayer)
+			{
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::INVALID_TARGET_LAYER);
+				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::INVALID_TARGET_LAYER);
 #endif
 
-			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+			}
 
 			return;
 		}
@@ -760,16 +772,22 @@ namespace RTC
 		// in the corresponding Producer.
 		if (!this->supportedCodecPayloadTypes[payloadType])
 		{
-			MS_DEBUG_DEV("payload type not supported [payloadType:%" PRIu8 "]", payloadType);
+			// Only drop the packet in the RTP sequence manager if it belongs to the
+			// current spatial layer.
+			if (spatialLayer == this->currentSpatialLayer)
+			{
+				MS_WARN_DEV("payload type not supported [payloadType:%" PRIu8 "]", payloadType);
 
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::UNSUPPORTED_PAYLOAD_TYPE);
+				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::UNSUPPORTED_PAYLOAD_TYPE);
 #endif
+
+				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+			}
 
 			return;
 		}
 
-		auto spatialLayer = this->mapMappedSsrcSpatialLayer.at(packet->GetSsrc());
 		bool shouldSwitchCurrentSpatialLayer{ false };
 
 		// Check whether this is the packet we are waiting for in order to update
@@ -779,11 +797,8 @@ namespace RTC
 			// Ignore if not a key frame.
 			if (!packet->IsKeyFrame())
 			{
-#ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::NOT_A_KEYFRAME);
-#endif
-
-				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+				// NOTE: Don't drop the packet in the RTP sequence manager since this
+				// packet doesn't belong to the current spatial layer.
 
 				return;
 			}
@@ -798,34 +813,44 @@ namespace RTC
 		// drop it.
 		else if (spatialLayer != this->currentSpatialLayer)
 		{
-#ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::SPATIAL_LAYER_MISMATCH);
-#endif
+			// NOTE: Don't drop the packet in the RTP sequence manager since this
+			// packet doesn't belong to the current spatial layer.
 
 			return;
 		}
 
 		// If we need to sync and this is not a key frame, ignore the packet.
+		// NOTE: syncRequired is true if packet is a key frame of the target spatial
+		// layer or if transport just connected or consumer resumed.
 		if (this->syncRequired && !packet->IsKeyFrame())
 		{
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::NOT_A_KEYFRAME);
+			packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::NOT_A_KEYFRAME);
 #endif
 
-			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+			// Only drop the packet in the RTP sequence manager if it belongs to the
+			// current spatial layer.
+			if (spatialLayer == this->currentSpatialLayer)
+			{
+				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+			}
 
 			return;
 		}
 
-		// If the packet belongs to current spatial layer being sent and packet does
-		// not have payload other than padding, then drop it.
-		if (spatialLayer == this->currentSpatialLayer && packet->GetPayloadLength() == 0)
+		// Packets with only padding are not forwarded.
+		if (packet->GetPayloadLength() == 0)
 		{
+			// Only drop the packet in the RTP sequence manager if it belongs to the
+			// current spatial layer.
+			if (spatialLayer == this->currentSpatialLayer)
+			{
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::EMPTY_PAYLOAD);
+				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::EMPTY_PAYLOAD);
 #endif
 
-			this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+			}
 
 			return;
 		}
@@ -834,11 +859,16 @@ namespace RTC
 		const bool isSyncPacket = this->syncRequired;
 
 		// Sync sequence number and timestamp if required.
-		if (isSyncPacket && (this->spatialLayerToSync == -1 || this->spatialLayerToSync == spatialLayer))
+		if (isSyncPacket && (this->spatialLayerToSync == -1 || spatialLayer == this->spatialLayerToSync))
 		{
 			if (packet->IsKeyFrame())
 			{
-				MS_DEBUG_TAG(rtp, "sync key frame received");
+				MS_DEBUG_TAG(
+				  rtp,
+				  "sync key frame received [ssrc:%" PRIu32 ", seq:%" PRIu16 ", ts:%" PRIu32 "]",
+				  packet->GetSsrc(),
+				  packet->GetSequenceNumber(),
+				  packet->GetTimestamp());
 			}
 
 			uint32_t tsOffset{ 0u };
@@ -942,10 +972,12 @@ namespace RTC
 					this->spatialLayerToSync = -1;
 
 #ifdef MS_RTC_LOGGER_RTP
-					packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::TOO_HIGH_TIMESTAMP_EXTRA_NEEDED);
+					packet->logger.Discarded(
+					  RtcLogger::RtpPacket::DiscardReason::TOO_HIGH_TIMESTAMP_EXTRA_NEEDED);
 #endif
 
-					this->rtpSeqManager->Drop(packet->GetSequenceNumber());
+					// NOTE: Don't drop the packet in the RTP sequence manager since this
+					// packet doesn't belong to the current spatial layer.
 
 					return;
 				}
@@ -983,13 +1015,16 @@ namespace RTC
 
 		if (!shouldSwitchCurrentSpatialLayer && this->checkingForOldPacketsInSpatialLayer)
 		{
-			// If this is a packet previous to the spatial layer switch, ignore the packet.
+			// If this is a packet previous to the spatial layer switch, ignore the
+			// packet.
+			// NOTE: We drop it in RTP sequence manager because this packet belongs
+			// to current spatial layer.
 			if (SeqManager<uint16_t>::IsSeqLowerThan(
 			      packet->GetSequenceNumber(), this->snReferenceSpatialLayer))
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Dropped(
-				  RtcLogger::RtpPacket::DropReason::PACKET_PREVIOUS_TO_SPATIAL_LAYER_SWITCH);
+				packet->logger.Discarded(
+				  RtcLogger::RtpPacket::DiscardReason::PACKET_PREVIOUS_TO_SPATIAL_LAYER_SWITCH);
 #endif
 
 				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
@@ -1034,10 +1069,12 @@ namespace RTC
 			auto previousTemporalLayer = this->encodingContext->GetCurrentTemporalLayer();
 
 			// Rewrite payload if needed. Drop packet if necessary.
+			// NOTE: We drop it in RTP sequence manager because this packet belongs
+			// to current spatial layer.
 			if (!packet->ProcessPayload(this->encodingContext.get(), marker))
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::DROPPED_BY_CODEC);
+				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::DROPPED_BY_CODEC);
 #endif
 
 				this->rtpSeqManager->Drop(packet->GetSequenceNumber());
@@ -1114,7 +1151,7 @@ namespace RTC
 			  origTimestamp);
 
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Dropped(RtcLogger::RtpPacket::DropReason::SEND_RTP_STREAM_DISCARDED);
+			packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::SEND_RTP_STREAM_DISCARDED);
 #endif
 		}
 
@@ -1641,7 +1678,7 @@ namespace RTC
 		}
 	}
 
-	inline bool SimulcastConsumer::CanSwitchToSpatialLayer(int16_t spatialLayer) const
+	bool SimulcastConsumer::CanSwitchToSpatialLayer(int16_t spatialLayer) const
 	{
 		MS_TRACE();
 
@@ -1667,7 +1704,7 @@ namespace RTC
 		// clang-format on
 	}
 
-	inline void SimulcastConsumer::EmitScore() const
+	void SimulcastConsumer::EmitScore() const
 	{
 		MS_TRACE();
 
@@ -1683,7 +1720,7 @@ namespace RTC
 		  notificationOffset);
 	}
 
-	inline void SimulcastConsumer::EmitLayersChange() const
+	void SimulcastConsumer::EmitLayersChange() const
 	{
 		MS_TRACE();
 
@@ -1713,7 +1750,7 @@ namespace RTC
 		  notificationOffset);
 	}
 
-	inline RTC::RtpStreamRecv* SimulcastConsumer::GetProducerCurrentRtpStream() const
+	RTC::RtpStreamRecv* SimulcastConsumer::GetProducerCurrentRtpStream() const
 	{
 		MS_TRACE();
 
@@ -1726,7 +1763,7 @@ namespace RTC
 		return this->producerRtpStreams.at(this->currentSpatialLayer);
 	}
 
-	inline RTC::RtpStreamRecv* SimulcastConsumer::GetProducerTargetRtpStream() const
+	RTC::RtpStreamRecv* SimulcastConsumer::GetProducerTargetRtpStream() const
 	{
 		MS_TRACE();
 
@@ -1739,7 +1776,7 @@ namespace RTC
 		return this->producerRtpStreams.at(this->targetSpatialLayer);
 	}
 
-	inline RTC::RtpStreamRecv* SimulcastConsumer::GetProducerTsReferenceRtpStream() const
+	RTC::RtpStreamRecv* SimulcastConsumer::GetProducerTsReferenceRtpStream() const
 	{
 		MS_TRACE();
 
@@ -1752,7 +1789,7 @@ namespace RTC
 		return this->producerRtpStreams.at(this->tsReferenceSpatialLayer);
 	}
 
-	inline void SimulcastConsumer::OnRtpStreamScore(
+	void SimulcastConsumer::OnRtpStreamScore(
 	  RTC::RtpStream* /*rtpStream*/, uint8_t /*score*/, uint8_t /*previousScore*/)
 	{
 		MS_TRACE();
@@ -1772,7 +1809,7 @@ namespace RTC
 		}
 	}
 
-	inline void SimulcastConsumer::OnRtpStreamRetransmitRtpPacket(
+	void SimulcastConsumer::OnRtpStreamRetransmitRtpPacket(
 	  RTC::RtpStreamSend* /*rtpStream*/, RTC::RtpPacket* packet)
 	{
 		MS_TRACE();
