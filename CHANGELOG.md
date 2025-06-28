@@ -1,5 +1,9 @@
 # Changelog
 
+### NEXT
+
+- Revert "add target layer retransmission buffer" ([PR #1550](https://github.com/versatica/mediasoup/pull/1550)) until [issue #1554] (https://github.com/versatica/mediasoup/issues/1554) is fixed ([PR #1555](https://github.com/versatica/mediasoup/pull/1555)).
+
 ### 3.16.1
 
 - libuv: Update to v1.51.0 ([PR #1543](https://github.com/versatica/mediasoup/pull/1543)).
