@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.16.3
+
 - Fix "add target layer retransmission buffer" ([PR #1555](https://github.com/versatica/mediasoup/pull/1555)).
 
 ### 3.16.2
