@@ -34,6 +34,7 @@ cargo publish
 
 ## Notes
 
+- Depending on the state in `worker` directory you may need to run `invoke clean-all` or `make clean-all` in `worker` directory first.
 - `cargo publish` will create the crate package, check if all necessary dependencies are already present on [crates.io](https://crates.io/), will then compile the package (to ensure that you don't publish a broken version) and will upload it to [crates.io](https://crates.io/).
 - Never publish from random branches or local state that is not on GitHub. If you have local files modified Cargo will refuse to publish until you commit all the changes.
 
@@ -41,7 +42,7 @@ cargo publish
 
 ### Check crate without publishing
 
-If you want to do everything except publishing itself, `cargo package` command exists. You can also run `cargo package --dry-run` to avoid package generation.
+If you want to do everything except publishing itself, `cargo package` command exists. You can also run `cargo package --dry-run` to avoid package generation or `cargo publish --dry-run`.
 
 ### Update required Rust version
 
