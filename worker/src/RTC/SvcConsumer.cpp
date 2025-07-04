@@ -637,7 +637,7 @@ namespace RTC
 		return desiredBitrate;
 	}
 
-	void SvcConsumer::SendRtpPacket(RTC::RtpPacket* packet, std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	void SvcConsumer::SendRtpPacket(RTC::RtpPacket* packet, RTC::SharedRtpPacket& sharedPacket)
 	{
 		MS_TRACE();
 
@@ -685,10 +685,7 @@ namespace RTC
 
 			// Store the packet for the scenario in which this packet is part of the
 			// key frame and it arrived before the first packet of the key frame.
-			//
-			// TODO: Uncomment once this issue is fixed:
-			// https://github.com/versatica/mediasoup/issues/1554
-			// StorePacketInTargetLayerRetransmissionBuffer(packet, sharedPacket);
+			StorePacketInTargetLayerRetransmissionBuffer(packet, sharedPacket);
 
 			return;
 		}
@@ -813,9 +810,10 @@ namespace RTC
 			  origSeq);
 		}
 
-		const bool sent = this->rtpStream->ReceivePacket(packet, sharedPacket);
+		const RTC::RtpStreamSend::ReceivePacketResult result =
+		  this->rtpStream->ReceivePacket(packet, sharedPacket);
 
-		if (sent)
+		if (result != RTC::RtpStreamSend::ReceivePacketResult::DISCARDED)
 		{
 			// Send the packet.
 			this->listener->OnConsumerSendRtpPacket(this, packet);
@@ -848,6 +846,13 @@ namespace RTC
 		// Restore the original payload if needed.
 		packet->RestorePayload();
 
+		// If sharedPacket doesn't have a packet inside and it has been stored we
+		// need to clone the packet into it.
+		if (!sharedPacket.HasPacket() && result == RTC::RtpStreamSend::ReceivePacketResult::ACCEPTED_AND_STORED)
+		{
+			sharedPacket.Assign(packet);
+		}
+
 		// If sent packet was the first packet of a key frame, let's send buffered
 		// packets belonging to the same key frame that arrived earlier due to
 		// packet misorder.
@@ -855,12 +860,12 @@ namespace RTC
 		{
 			// NOTE: Only send buffered packets if the first packet containing the key
 			// frame was sent.
-			if (sent)
+			if (result != RTC::RtpStreamSend::ReceivePacketResult::DISCARDED)
 			{
 				for (auto& kv : this->targetLayerRetransmissionBuffer)
 				{
 					auto& bufferedSharedPacket = kv.second;
-					auto* bufferedPacket       = bufferedSharedPacket.get();
+					auto* bufferedPacket       = bufferedSharedPacket.GetPacket();
 
 					if (bufferedPacket->GetSequenceNumber() > origSeq)
 					{
@@ -1331,7 +1336,7 @@ namespace RTC
 	}
 
 	void SvcConsumer::StorePacketInTargetLayerRetransmissionBuffer(
-	  RTC::RtpPacket* packet, std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	  RTC::RtpPacket* packet, RTC::SharedRtpPacket& sharedPacket)
 	{
 		MS_TRACE();
 
@@ -1344,9 +1349,15 @@ namespace RTC
 
 		// Store original packet into the buffer. Only clone once and only if
 		// necessary.
-		if (!sharedPacket)
+		if (!sharedPacket.HasPacket())
 		{
-			sharedPacket.reset(packet->Clone());
+			sharedPacket.Assign(packet);
+		}
+		// Assert that, if sharedPacket was already filled, both packet and
+		// sharedPacket are the very same RTP packet.
+		else
+		{
+			sharedPacket.AssertSamePacket(packet);
 		}
 
 		this->targetLayerRetransmissionBuffer[packet->GetSequenceNumber()] = sharedPacket;

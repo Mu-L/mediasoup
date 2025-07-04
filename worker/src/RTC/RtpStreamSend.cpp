@@ -97,7 +97,8 @@ namespace RTC
 		this->rtxSeq = Utils::Crypto::GetRandomUInt(0u, 0xFFFF);
 	}
 
-	bool RtpStreamSend::ReceivePacket(RTC::RtpPacket* packet, std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	RtpStreamSend::ReceivePacketResult RtpStreamSend::ReceivePacket(
+	  RTC::RtpPacket* packet, const RTC::SharedRtpPacket& sharedPacket)
 	{
 		MS_TRACE();
 
@@ -107,19 +108,25 @@ namespace RTC
 		// Call the parent method.
 		if (!RtpStream::ReceiveStreamPacket(packet))
 		{
-			return false;
+			return ReceivePacketResult::DISCARDED;
 		}
+
+		bool stored{ false };
 
 		// If NACK is enabled, store the packet into the buffer.
 		if (this->retransmissionBuffer)
 		{
-			StorePacket(packet, sharedPacket);
+			if (StorePacket(packet, sharedPacket))
+			{
+				stored = true;
+			}
 		}
 
 		// Increase transmission counter.
 		this->transmissionCounter.Update(packet);
 
-		return true;
+		return stored ? ReceivePacketResult::ACCEPTED_AND_STORED
+		              : ReceivePacketResult::ACCEPTED_AND_NOT_STORED;
 	}
 
 	void RtpStreamSend::ReceiveNack(RTC::RTCP::FeedbackRtpNackPacket* nackPacket)
@@ -151,7 +158,15 @@ namespace RTC
 					break;
 				}
 
-				auto* packet = item->sharedPacket.get();
+				MS_ASSERT(
+				  item->sharedPacket.HasPacket(),
+				  "item in retransmission container doesn't contain a packet [ssrc:%" PRIu32
+				  ", seq:%" PRIu16 ", timestamp:%" PRIu32 "]",
+				  item->ssrc,
+				  item->sequenceNumber,
+				  item->timestamp);
+
+				auto* packet = item->sharedPacket.GetPacket();
 
 				// Keep the values of the original packet received by the Consumer.
 				auto origSsrc      = packet->GetSsrc();
@@ -419,7 +434,7 @@ namespace RTC
 		MS_ABORT("invalid method call");
 	}
 
-	void RtpStreamSend::StorePacket(RTC::RtpPacket* packet, std::shared_ptr<RTC::RtpPacket>& sharedPacket)
+	bool RtpStreamSend::StorePacket(RTC::RtpPacket* packet, const RTC::SharedRtpPacket& sharedPacket)
 	{
 		MS_TRACE();
 
@@ -432,10 +447,10 @@ namespace RTC
 			  packet->GetSequenceNumber(),
 			  packet->GetSize());
 
-			return;
+			return false;
 		}
 
-		this->retransmissionBuffer->Insert(packet, sharedPacket);
+		return this->retransmissionBuffer->Insert(packet, sharedPacket);
 	}
 
 	// This method looks for the requested RTP packets and inserts them into the
