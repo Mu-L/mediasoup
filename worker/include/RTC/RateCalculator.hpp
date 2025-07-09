@@ -23,7 +23,7 @@ namespace RTC
 		  uint16_t windowItems = DefaultWindowItems)
 		  : windowSizeMs(windowSizeMs), scale(scale), windowItems(windowItems)
 		{
-			this->itemSizeMs = std::max(windowSizeMs / windowItems, static_cast<size_t>(1));
+			this->itemSizeMs = std::max(windowSizeMs / windowItems, size_t{ 1 });
 			this->buffer.resize(windowItems);
 		}
 		void Update(size_t size, uint64_t nowMs);

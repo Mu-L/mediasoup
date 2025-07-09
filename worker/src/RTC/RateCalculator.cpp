@@ -87,7 +87,7 @@ namespace RTC
 		return this->lastRate;
 	}
 
-	inline void RateCalculator::RemoveOldData(uint64_t nowMs)
+	void RateCalculator::RemoveOldData(uint64_t nowMs)
 	{
 		MS_TRACE();
 
