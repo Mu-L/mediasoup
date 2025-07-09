@@ -256,7 +256,12 @@ namespace RTC
 
 			// If packet spatial or temporal layer is higher than maximum announced
 			// one, drop the packet.
-			if (packetSpatialLayer >= context->GetSpatialLayers() || packetTemporalLayer >= context->GetTemporalLayers())
+			// clang-format off
+			if (
+				packetSpatialLayer >= context->GetSpatialLayers() ||
+				packetTemporalLayer >= context->GetTemporalLayers()
+			)
+			// clang-format off
 			{
 				MS_WARN_TAG(
 				  rtp, "too high packet layers %" PRIu8 ":%" PRIu8, packetSpatialLayer, packetTemporalLayer);
