@@ -15,6 +15,8 @@ namespace RTC
 		// Ignore too old data. Should never happen.
 		if (nowMs < this->oldestItemStartTime)
 		{
+			MS_WARN_DEV("nowMs < this->oldestItemStartTime, should never happen");
+
 			return;
 		}
 
@@ -32,6 +34,8 @@ namespace RTC
 
 			if (this->newestItemIndex >= this->windowItems)
 			{
+				MS_DEBUG_DEV("this->newestItemIndex >= this->windowItems, setting this->newestItemIndex = 0");
+
 				this->newestItemIndex = 0;
 			}
 
@@ -57,6 +61,9 @@ namespace RTC
 		// Set the oldest item index and time, if not set.
 		if (this->oldestItemIndex < 0)
 		{
+			MS_DEBUG_DEV(
+			  "this->oldestItemIndex < 0, setting this->oldestItemIndex and this->oldestItemStartTime");
+
 			this->oldestItemIndex     = this->newestItemIndex;
 			this->oldestItemStartTime = nowMs;
 		}
@@ -75,6 +82,8 @@ namespace RTC
 
 		if (nowMs == this->lastTime)
 		{
+			MS_DEBUG_DEV("nowMs == this->lastTime, early return");
+
 			return this->lastRate;
 		}
 
@@ -109,6 +118,8 @@ namespace RTC
 		// A whole window size time has elapsed since last entry. Reset the buffer.
 		if (newOldestTime >= this->newestItemStartTime)
 		{
+			MS_DEBUG_DEV("newOldestTime >= this->newestItemStartTime, resetting the buffer");
+
 			Reset();
 
 			return;
