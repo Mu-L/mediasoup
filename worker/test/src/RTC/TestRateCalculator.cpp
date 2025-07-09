@@ -6,14 +6,14 @@
 
 using namespace RTC;
 
-struct data
+struct TestRateCalculatorData
 {
 	uint32_t offset;
 	uint32_t size;
 	uint32_t rate;
 };
 
-void validate(RateCalculator& rate, uint64_t timeBase, std::vector<data>& input)
+void validate(RateCalculator& rate, uint64_t timeBase, std::vector<TestRateCalculatorData>& input)
 {
 	for (auto& item : input)
 	{
@@ -32,7 +32,7 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 		RateCalculator rate;
 
 		// clang-format off
-		std::vector<data> input =
+		std::vector<TestRateCalculatorData> input =
 		{
 			{ 0, 5, 40 }
 		};
@@ -46,7 +46,7 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 		RateCalculator rate;
 
 		// clang-format off
-		std::vector<data> input =
+		std::vector<TestRateCalculatorData> input =
 		{
 			{ 0,   5, 40  },
 			{ 100, 2, 56  },
@@ -63,7 +63,7 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 		RateCalculator rate(1000, 8000, 100);
 
 		// clang-format off
-		std::vector<data> input =
+		std::vector<TestRateCalculatorData> input =
 		{
 			{ 0,    5, 40 },
 			{ 1000, 5, 40 },
@@ -79,7 +79,7 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 		RateCalculator rate(1000, 8000, 1000);
 
 		// clang-format off
-		std::vector<data> input =
+		std::vector<TestRateCalculatorData> input =
 		{
 			{ 0,    5, 40 },
 			{ 999,  2, 56 },
@@ -99,7 +99,7 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 		RateCalculator rate(1000, 8000, 100);
 
 		// clang-format off
-		std::vector<data> input =
+		std::vector<TestRateCalculatorData> input =
 		{
 			{ 0,    5, 40 },
 			{ 999,  2, 56 },
@@ -122,7 +122,7 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 		RateCalculator rate(1000, 8000, 5);
 
 		// clang-format off
-		std::vector<data> input =
+		std::vector<TestRateCalculatorData> input =
 		{
 			{ 1000, 1, 1*8 },
 			{ 1200, 1, 1*8 + 1*8 },
