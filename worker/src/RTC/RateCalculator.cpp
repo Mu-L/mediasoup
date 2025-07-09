@@ -136,7 +136,9 @@ namespace RTC
 		MS_TRACE();
 
 		std::memset(
-		  static_cast<void*>(&this->buffer.front()), 0, sizeof(BufferItem) * this->buffer.size());
+		  static_cast<void*>(std::addressof(this->buffer.front())),
+		  0,
+		  sizeof(BufferItem) * this->buffer.size());
 
 		this->newestItemStartTime = 0u;
 		this->newestItemIndex     = -1;
