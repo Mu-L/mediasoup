@@ -8,7 +8,7 @@ using namespace RTC;
 
 struct TestRateCalculatorData
 {
-	uint32_t offset;
+	int64_t offset;
 	uint32_t size;
 	uint32_t rate;
 };
