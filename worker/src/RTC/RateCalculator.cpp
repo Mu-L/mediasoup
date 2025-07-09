@@ -3,7 +3,8 @@
 
 #include "RTC/RateCalculator.hpp"
 #include "Logger.hpp"
-#include <cmath> // std::trunc()
+#include <cmath>   // std::trunc()
+#include <cstring> // std::memset()
 
 namespace RTC
 {
@@ -128,6 +129,22 @@ namespace RTC
 			const BufferItem& newOldestItem = this->buffer[this->oldestItemIndex];
 			this->oldestItemStartTime       = newOldestItem.time;
 		}
+	}
+
+	void RateCalculator::Reset()
+	{
+		MS_TRACE();
+
+		std::memset(
+		  static_cast<void*>(&this->buffer.front()), 0, sizeof(BufferItem) * this->buffer.size());
+
+		this->newestItemStartTime = 0u;
+		this->newestItemIndex     = -1;
+		this->oldestItemStartTime = 0u;
+		this->oldestItemIndex     = -1;
+		this->totalCount          = 0u;
+		this->lastRate            = 0u;
+		this->lastTime            = 0u;
 	}
 
 	void RtpDataCounter::Update(RTC::RtpPacket* packet)

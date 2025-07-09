@@ -26,8 +26,11 @@ namespace RTC
 			this->itemSizeMs = std::max(windowSizeMs / windowItems, size_t{ 1 });
 			this->buffer.resize(windowItems);
 		}
+
 		void Update(size_t size, uint64_t nowMs);
+
 		uint32_t GetRate(uint64_t nowMs);
+
 		size_t GetBytes() const
 		{
 			return this->bytes;
@@ -35,19 +38,8 @@ namespace RTC
 
 	private:
 		void RemoveOldData(uint64_t nowMs);
-		void Reset()
-		{
-			std::memset(
-			  static_cast<void*>(&this->buffer.front()), 0, sizeof(BufferItem) * this->buffer.size());
 
-			this->newestItemStartTime = 0u;
-			this->newestItemIndex     = -1;
-			this->oldestItemStartTime = 0u;
-			this->oldestItemIndex     = -1;
-			this->totalCount          = 0u;
-			this->lastRate            = 0u;
-			this->lastTime            = 0u;
-		}
+		void Reset();
 
 	private:
 		struct BufferItem
@@ -94,14 +86,17 @@ namespace RTC
 
 	public:
 		void Update(RTC::RtpPacket* packet);
+
 		uint32_t GetBitrate(uint64_t nowMs)
 		{
 			return this->rate.GetRate(nowMs);
 		}
+
 		size_t GetPacketCount() const
 		{
 			return this->packets;
 		}
+
 		size_t GetBytes() const
 		{
 			return this->rate.GetBytes();
