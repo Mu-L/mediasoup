@@ -2,6 +2,7 @@
 #include "DepLibUV.hpp"
 #include "RTC/RateCalculator.hpp"
 #include <catch2/catch_test_macros.hpp>
+#include <limits> // std::numeric_limits()
 #include <vector>
 
 using namespace RTC;
@@ -21,9 +22,29 @@ void validate(RateCalculator& rate, uint64_t timeBase, std::vector<TestRateCalcu
 
 		REQUIRE(rate.GetRate(timeBase + item.offset) == item.rate);
 	}
+
+	// Repeat forcing nowMs to be 0.
+	rate.Reset();
+
+	for (auto& item : input)
+	{
+		rate.Update(item.size, timeBase + item.offset);
+
+		REQUIRE(rate.GetRate(0 + item.offset) == item.rate);
+	}
+
+	// Repeat forcing nowMs to be std::numeric_limits<uint64_t>::max() - 100.
+	rate.Reset();
+
+	for (auto& item : input)
+	{
+		rate.Update(item.size, timeBase + item.offset);
+
+		REQUIRE(rate.GetRate(std::numeric_limits<uint64_t>::max() - 100 + item.offset) == item.rate);
+	}
 }
 
-SCENARIO("Bitrate calculator", "[rtp][bitrate]")
+SCENARIO("Rate calculator", "[rtp][RateCalculator]")
 {
 	uint64_t nowMs = DepLibUV::GetTimeMs();
 
@@ -135,6 +156,26 @@ SCENARIO("Bitrate calculator", "[rtp][bitrate]")
 			{ 2600, 1, 1*8 + (8-4)*8 },
 			{ 2800, 1, 1*8 + (9-5)*8 },
 		};
+		// clang-format on
+
+		validate(rate, nowMs, input);
+	}
+
+	// NOTE: This test reproduces a crash (now fixed):
+	//   https://github.com/versatica/mediasoup/issues/1316
+	SECTION("buffer overflow should not crash")
+	{
+		// window: 1000ms, items: 3 (granularity: 333ms)
+		RateCalculator rate(1000, 8000, 3);
+
+		// clang-format off
+		std::vector<TestRateCalculatorData> input =
+		{
+			{ 0,   1, 8  },
+			{ 333, 1, 16  },
+			{ 666, 1, 24  },
+			{ 999, 1, 32 },
+  	};
 		// clang-format on
 
 		validate(rate, nowMs, input);
