@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.16.6
+
 - Remove H265 codec and deprecated frame-marking RTP extension ([PR #1564](https://github.com/versatica/mediasoup/pull/1564)).
 - `SimulcastConsumer`: Fix selecting spatial layer higher than preferred one ([PR #1565](https://github.com/versatica/mediasoup/pull/1565)).
 - Remove H264-SVC codec ([PR #1568](https://github.com/versatica/mediasoup/pull/1568)).
