@@ -627,7 +627,7 @@ namespace RTC
 			if (!rtpStream->ReceiveRtxPacket(packet))
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::RECV_RTP_STREAM_NOT_FOUND);
+				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::RECV_RTP_RTX_STREAM_DISCARDED);
 #endif
 
 				return result;

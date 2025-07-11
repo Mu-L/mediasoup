@@ -15,6 +15,7 @@ namespace RTC
 			{ RtpPacket::DiscardReason::PRODUCER_NOT_FOUND,                      "ProducerNotFound"                   },
 			{ RtpPacket::DiscardReason::RECV_RTP_STREAM_NOT_FOUND,               "RecvRtpStreamNotFound"              },
 			{ RtpPacket::DiscardReason::RECV_RTP_STREAM_DISCARDED,               "RecvRtpStreamDiscarded"             },
+			{ RtpPacket::DiscardReason::RECV_RTP_RTX_STREAM_DISCARDED,           "RecvRtpRtxStreamDiscarded"          },
 			{ RtpPacket::DiscardReason::CONSUMER_INACTIVE,                       "ConsumerInactive"                   },
 			{ RtpPacket::DiscardReason::INVALID_TARGET_LAYER,                    "InvalidTargetLayer"                 },
 			{ RtpPacket::DiscardReason::UNSUPPORTED_PAYLOAD_TYPE,                "UnsupportedPayloadType"             },
