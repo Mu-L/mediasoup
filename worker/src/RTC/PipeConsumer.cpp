@@ -252,17 +252,17 @@ namespace RTC
 			return;
 		}
 
-		// If we need to sync, support key frames and this is not a key frame, ignore
-		// the packet.
+		// If we need to sync, support key frames and this is not a key frame,
+		// ignore the packet.
 		if (syncRequired && this->keyFrameSupported && !packet->IsKeyFrame())
 		{
 #ifdef MS_RTC_LOGGER_RTP
 			packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::NOT_A_KEYFRAME);
 #endif
 
-			// NOTE: No need to drop the packet in the RTP sequence manager since here
-			// we are blocking all packets but the key frame that would trigger sync
-			// below.
+			// NOTE: No need to drop the packet in the RTP sequence manager since
+			// here we are blocking all packets but the key frame that would trigger
+			// sync below.
 
 			// Store the packet for the scenario in which this packet is part of the
 			// key frame and it arrived before the first packet of the key frame.
@@ -274,8 +274,8 @@ namespace RTC
 
 		auto payloadType = packet->GetPayloadType();
 
-		// NOTE: This may happen if this Consumer supports just some codecs of those
-		// in the corresponding Producer.
+		// NOTE: This may happen if this Consumer supports just some codecs of
+		// those in the corresponding Producer.
 		if (!this->supportedCodecPayloadTypes[payloadType])
 		{
 			MS_WARN_DEV("payload type not supported [payloadType:%" PRIu8 "]", payloadType);
@@ -403,8 +403,8 @@ namespace RTC
 		// packet misorder.
 		if (sendPacketsInTargetLayerRetransmissionBuffer)
 		{
-			// NOTE: Only send buffered packets if the first packet containing the key
-			// frame was sent.
+			// NOTE: Only send buffered packets if the first packet containing the
+			// key frame was sent.
 			if (result != RTC::RtpStreamSend::ReceivePacketResult::DISCARDED)
 			{
 				for (auto& kv : targetLayerRetransmissionBuffer)
@@ -449,8 +449,8 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		// Special condition for PipeConsumer since this method will be called in a loop for
-		// each stream in this PipeConsumer.
+		// Special condition for PipeConsumer since this method will be called in a
+		// loop for each stream in this PipeConsumer.
 		// clang-format off
 		if (
 			nowMs != this->lastRtcpSentTime &&
