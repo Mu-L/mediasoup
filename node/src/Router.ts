@@ -775,7 +775,7 @@ export class RouterImpl<RouterAppData extends AppData = AppData>
 
 		response.body(data);
 
-		const plainTransportData = parsePipeTransportDumpResponse(data);
+		const pipeTransportData = parsePipeTransportDumpResponse(data);
 
 		const transport: PipeTransport<PipeTransportAppData> =
 			new PipeTransportImpl({
@@ -783,7 +783,7 @@ export class RouterImpl<RouterAppData extends AppData = AppData>
 					...this.#internal,
 					transportId,
 				},
-				data: plainTransportData,
+				data: pipeTransportData,
 				channel: this.#channel,
 				appData,
 				getRouterRtpCapabilities: (): RtpCapabilities =>
