@@ -409,7 +409,7 @@ namespace Utils
 		void PutBits(uint32_t offset, uint32_t count, uint32_t bits);
 
 	private:
-		uint8_t* data;
+		uint8_t* data{ nullptr };
 		uint32_t len{ 0 };
 		uint32_t offset{ 0 };
 	};
