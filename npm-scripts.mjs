@@ -55,7 +55,7 @@ const PRETTIER_PATHS = [
 ].join(' ');
 
 const task = process.argv[2];
-const args = process.argv.slice(3).join(' ');
+const taskArgs = process.argv.slice(3).join(' ');
 
 // PYTHONPATH env must be updated now so all invoke calls below will find the
 // pip invoke module.
@@ -72,17 +72,19 @@ if (process.env.PYTHONPATH) {
 void run();
 
 async function run() {
-	logInfo(args ? `[args:"${args}"]` : '');
+	logInfo(taskArgs ? `[args:"${taskArgs}"]` : '');
 
 	switch (task) {
 		// As per NPM documentation (https://docs.npmjs.com/cli/v9/using-npm/scripts)
 		// `prepare` script:
 		//
-		// - Runs BEFORE the package is packed, i.e. during `npm publish` and `npm pack`.
+		// - Runs BEFORE the package is packed, i.e. during `npm publish` and
+		//   `npm pack`.
 		// - Runs on local `npm install` without any arguments.
-		// - NOTE: If a package being installed through git contains a `prepare` script,
-		//   its dependencies and devDependencies will be installed, and the `prepare`
-		//   script will be run, before the package is packaged and installed.
+		// - NOTE: If a package being installed through git contains a `prepare`
+		//   script, its dependencies and devDependencies will be installed, and
+		//   the `prepare` script will be run, before the package is packaged and
+		//   installed.
 		//
 		// So here we generate flatbuffers definitions for TypeScript and compile
 		// TypeScript to JavaScript.
@@ -103,8 +105,8 @@ async function run() {
 			}
 			// If MEDIASOUP_LOCAL_DEV is given, or if MEDIASOUP_SKIP_WORKER_PREBUILT_DOWNLOAD
 			// env is given, or if mediasoup package is being installed via git+ssh
-			// (instead of via npm), and if MEDIASOUP_FORCE_PREBUILT_WORKER_DOWNLOAD env is
-			// not set, then skip mediasoup-worker prebuilt download.
+			// (instead of via npm), and if MEDIASOUP_FORCE_PREBUILT_WORKER_DOWNLOAD
+			// env is not set, then skip mediasoup-worker prebuilt download.
 			else if (
 				(process.env.MEDIASOUP_LOCAL_DEV ||
 					process.env.MEDIASOUP_SKIP_WORKER_PREBUILT_DOWNLOAD ||
@@ -218,7 +220,7 @@ async function run() {
 		}
 
 		case 'coverage:node': {
-			executeCmd(`jest --coverage ${args}`);
+			executeCmd(`jest --coverage ${taskArgs}`);
 			executeCmd('open-cli coverage/lcov-report/index.html');
 
 			break;
@@ -341,7 +343,7 @@ function buildTypescript({ force }) {
 
 	deleteNodeLib();
 
-	executeCmd(`tsc ${args}`);
+	executeCmd(`tsc ${taskArgs}`);
 }
 
 function watchTypescript() {
@@ -349,7 +351,7 @@ function watchTypescript() {
 
 	deleteNodeLib();
 
-	executeCmd(`tsc --watch ${args}`);
+	executeCmd(`tsc --watch ${taskArgs}`);
 }
 
 function buildWorker() {
@@ -465,7 +467,7 @@ function flatcWorker() {
 function testNode() {
 	logInfo('testNode()');
 
-	executeCmd(`jest --silent false --detectOpenHandles ${args}`);
+	executeCmd(`jest --silent false --detectOpenHandles ${taskArgs}`);
 }
 
 function testWorker() {
@@ -518,21 +520,34 @@ async function prebuildWorker() {
 	const workerPrebuildTar = getWorkerPrebuildTarName();
 	const workerPrebuildTarPath = `${WORKER_PREBUILD_DIR}/${workerPrebuildTar}`;
 
-	return new Promise((resolve, reject) => {
-		// Generate a gzip file which just contains mediasoup-worker binary without
-		// any folder.
-		tar
-			.create(
-				{
-					cwd: WORKER_RELEASE_DIR,
-					gzip: true,
-				},
-				[WORKER_RELEASE_BIN]
-			)
-			.pipe(fs.createWriteStream(workerPrebuildTarPath))
-			.on('finish', resolve)
-			.on('error', reject);
-	});
+	try {
+		await new Promise((resolve, reject) => {
+			// Generate a gzip file which just contains mediasoup-worker binary
+			// without any folder.
+			tar
+				.create(
+					{
+						cwd: WORKER_RELEASE_DIR,
+						gzip: true,
+						strict: true,
+					},
+					[WORKER_RELEASE_BIN]
+				)
+				// This is needed for the case in which tar.create() fails before
+				// invoking pipe() on its result.
+				.on('error', reject)
+				.pipe(fs.createWriteStream(workerPrebuildTarPath))
+				.on('finish', resolve)
+				.on('error', reject);
+		});
+	} catch (error) {
+		logError(
+			'prebuildWorker() | failed to create mediasoup-worker prebuilt tar file:',
+			error
+		);
+
+		exitWithError();
+	}
 }
 
 // Returns a Promise resolving to true if a mediasoup-worker prebuilt binary
@@ -586,8 +601,9 @@ async function downloadPrebuiltWorker() {
 		res.body
 			.pipe(
 				tar.extract({
-					newer: false,
 					cwd: WORKER_RELEASE_DIR,
+					newer: false,
+					strict: true,
 				})
 			)
 			.on('finish', () => {
@@ -607,8 +623,8 @@ async function downloadPrebuiltWorker() {
 				// Let's confirm that the fetched mediasoup-worker prebuit binary does
 				// run in current host. This is to prevent weird issues related to
 				// different versions of libc in the system and so on.
-				// So run mediasoup-worker without the required MEDIASOUP_VERSION env and
-				// expect exit code 41 (see main.cpp).
+				// So run mediasoup-worker without the required MEDIASOUP_VERSION env
+				// and expect exit code 41 (see main.cpp).
 
 				logInfo(
 					'downloadPrebuiltWorker() | checking fetched mediasoup-worker prebuilt binary in current host'
@@ -646,7 +662,8 @@ async function downloadPrebuiltWorker() {
 			})
 			.on('error', error => {
 				logError(
-					`downloadPrebuiltWorker() | failed to uncompress downloaded mediasoup-worker prebuilt binary: ${error}`
+					`downloadPrebuiltWorker() | failed to extract downloaded mediasoup-worker prebuilt binary:`,
+					error
 				);
 
 				resolve(false);
@@ -706,19 +723,19 @@ function executeCmd(command) {
 	}
 }
 
-function logInfo(message) {
+function logInfo(...args) {
 	// eslint-disable-next-line no-console
-	console.log(`npm-scripts.mjs \x1b[36m[INFO] [${task}]\x1b[0m`, message);
+	console.log(`npm-scripts.mjs \x1b[36m[INFO] [${task}]\x1b[0m`, ...args);
 }
 
-function logWarn(message) {
+function logWarn(...args) {
 	// eslint-disable-next-line no-console
-	console.warn(`npm-scripts.mjs \x1b[33m[WARN] [${task}]\x1b\0m`, message);
+	console.warn(`npm-scripts.mjs \x1b[33m[WARN] [${task}]\x1b\0m`, ...args);
 }
 
-function logError(message) {
+function logError(...args) {
 	// eslint-disable-next-line no-console
-	console.error(`npm-scripts.mjs \x1b[31m[ERROR] [${task}]\x1b[0m`, message);
+	console.error(`npm-scripts.mjs \x1b[31m[ERROR] [${task}]\x1b[0m`, ...args);
 }
 
 function exitWithError() {
