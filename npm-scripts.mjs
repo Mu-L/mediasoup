@@ -262,7 +262,7 @@ async function run() {
 				draft: false,
 			});
 
-			executeCmd('npm publish');
+			executeInteractiveCmd('npm publish');
 
 			break;
 		}
@@ -718,6 +718,18 @@ function executeCmd(command) {
 		execSync(command, { stdio: ['ignore', process.stdout, process.stderr] });
 	} catch (error) {
 		logError(`executeCmd() failed, exiting: ${error}`);
+
+		exitWithError();
+	}
+}
+
+function executeInteractiveCmd(command) {
+	logInfo(`executeInteractiveCmd(): ${command}`);
+
+	try {
+		execSync(command, { stdio: 'inherit', env: process.env });
+	} catch (error) {
+		logError(`executeInteractiveCmd() failed, exiting: ${error}`);
 
 		exitWithError();
 	}
