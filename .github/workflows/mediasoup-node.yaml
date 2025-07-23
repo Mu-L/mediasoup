@@ -123,7 +123,7 @@ jobs:
           restore-keys: |
             ${{ matrix.build.os }}-node-
 
-      - name: npm ci
+      - name: npm ci --foreground-scripts
         run: npm ci --foreground-scripts
         env:
           # Disable leak detection because it's detected by the tool flatc uses
