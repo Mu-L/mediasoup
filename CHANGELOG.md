@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.16.8
+
 - Node: Fix `PipeConsumerOptions` TypeScript type (make `ConsumerAppData` TS argument optional) ([PR #1581](https://github.com/versatica/mediasoup/pull/1581)).
 
 ### 3.16.7
