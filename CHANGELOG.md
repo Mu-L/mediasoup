@@ -2,6 +2,8 @@
 
 ### NEXT
 
+- Node: Fix `PipeConsumerOptions` TypeScript type (make `ConsumerAppData` TS argument optional) ([PR #1581](https://github.com/versatica/mediasoup/pull/1581)).
+
 ### 3.16.7
 
 - `Router`: Add `updateMediaCodecs()` method to dynamically change Router's RTP capabilities ([PR #1571](https://github.com/versatica/mediasoup/pull/1571)).
