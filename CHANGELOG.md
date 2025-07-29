@@ -3,7 +3,7 @@
 ### NEXT
 
 - Worker: Update Meson subprojects ([PR #1582](https://github.com/versatica/mediasoup/pull/1582)).
-- `ListenInfo`: Add `exposeInternalIp` which, if set to `true` and `announcedAddress` is set, exposes an additional ICE candidate in `WebRtcTransport` whose IP is `listenInfo.ip` rather than `listenInfo.announcedAddress` ([PR #XXXX](https://github.com/versatica/mediasoup/pull/XXXX)).
+- `ListenInfo`: Add `exposeInternalIp` which, if set to `true` and `announcedAddress` is set, exposes an additional ICE candidate in `WebRtcTransport` whose IP is `listenInfo.ip` rather than `listenInfo.announcedAddress` ([PR #1583](https://github.com/versatica/mediasoup/pull/1583)).
 
 ### 3.16.8
 
