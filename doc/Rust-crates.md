@@ -1,11 +1,12 @@
 # Rust crates
 
-There are two crates: `mediasoup` and `mediasoup-sys`:
+There are 3 crates: `mediasoup`, `mediasoup-sys` and `mediasoup-types`:
 
 - `mediasoup-sys` crate wraps C++ worker into Rust.
-- `mediasoup` crate uses `mediasoup-sys` and it exposes nice user API in idiomatic Rust.
-- `mediasoup-sys` is the only one that needs updating if changes are purely inside the worker. You can bump both, but it is not required.
-- If `mediasoup-sys`'s API changes in a breaking way, then its minor version needs to be changed, otherwise patch version needs to be changed.
+- `mediasoup-types` crate defines and exposes mediasoup Rust types.
+- `mediasoup` crate uses `mediasoup-sys` and `mediasoup-types` and it exposes nice user API in idiomatic Rust.
+- `mediasoup-sys` is the only one that needs updating if changes are purely inside the worker or inside the `mediasoup-types` crate. You can bump them all, but it is not required.
+- If `mediasoup-sys`'s API changes in a breaking way, then its minor version needs to be changed, otherwise patch version needs to be changed. Same for `mediasoup-types` crate.
 
 **Important:** adding new APIs that `mediasoup` crate has to understand to continue working normally is a breaking change because it'll start crashing/printing errors if unexpected things happen.
 
@@ -25,13 +26,13 @@ git push origin rust-X.X.X
 6. Publish crates (you need an account and permissions and so on):
 
 ```sh
+cd rust/types
+cargo publish
+
 cd worker
 cargo publish
 
-cd ../rust
-cargo publish
-
-cd ../rust/types
+cd rust
 cargo publish
 ```
 

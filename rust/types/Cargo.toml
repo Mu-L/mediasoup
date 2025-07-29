@@ -1,7 +1,12 @@
 [package]
 name = "mediasoup-types"
-version = "0.1.0"
+version = "0.2.0"
 description = "Type definitions and shared data structures for the mediasoup crate"
+authors = [
+    "Nazar Mokrynskyi <nazar@mokrynskyi.com>",
+    "José Luis Millán <jmillan@aliax.net>",
+    "Iñaki Baz Castillo <ibc@aliax.net>"
+]
 edition = "2021"
 license = "ISC"
 documentation = "https://docs.rs/mediasoup-types"
