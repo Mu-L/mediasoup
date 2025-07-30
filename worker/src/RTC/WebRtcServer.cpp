@@ -64,10 +64,6 @@ namespace RTC
 		{
 			MS_THROW_TYPE_ERROR("wrong listenInfos (empty array)");
 		}
-		else if (listenInfos->size() > 8)
-		{
-			MS_THROW_TYPE_ERROR("wrong listenInfos (too many entries)");
-		}
 
 		try
 		{

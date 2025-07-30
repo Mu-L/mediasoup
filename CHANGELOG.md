@@ -2,6 +2,10 @@
 
 ### NEXT
 
+### 3.17.1
+
+- `WebRtcServer`: Remove the limit of 8 `listenInfos`.
+
 ### 3.17.0
 
 - Worker: Update Meson subprojects ([PR #1582](https://github.com/versatica/mediasoup/pull/1582)).
