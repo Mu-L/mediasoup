@@ -68,7 +68,7 @@ export type RtpCodecCapability = {
 	 * and 'profile-level-id' in H264 or 'profile-id' in VP9) are critical for
 	 * codec matching.
 	 */
-	parameters?: any;
+	parameters?: Record<string, unknown>;
 
 	/**
 	 * Transport layer and codec-specific feedback messages for this codec.
@@ -216,7 +216,7 @@ export type RtpCodecParameters = {
 	 * as 'packetization-mode' and 'profile-level-id' in H264 or 'profile-id' in
 	 * VP9) are critical for codec matching.
 	 */
-	parameters?: any;
+	parameters?: Record<string, unknown>;
 
 	/**
 	 * Transport layer and codec-specific feedback messages for this codec.
@@ -284,9 +284,8 @@ export type RtpEncodingParameters = {
 	scalabilityMode?: string;
 
 	/**
-	 * Others.
+	 * Maximum bitrate (bps) announced for this stream.
 	 */
-	scaleResolutionDownBy?: number;
 	maxBitrate?: number;
 };
 
@@ -330,7 +329,7 @@ export type RtpHeaderExtensionParameters = {
 	/**
 	 * Configuration parameters for the header extension.
 	 */
-	parameters?: any;
+	parameters?: Record<string, unknown>;
 };
 
 /**
