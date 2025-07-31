@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.18.0
+
 - Node: Make `RtpCodecCapability.preferredPayloadType` mandatory and add `RouterRtpCodecCapability` type (in which `preferredPayloadType` is optional) and `RouterRtpCapabilities` type ([PR #15XX](https://github.com/versatica/mediasoup/pull/15XX)).
 
 ### 3.17.1
