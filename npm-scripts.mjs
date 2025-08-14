@@ -6,12 +6,10 @@ import { execSync } from 'node:child_process';
 import fetch from 'node-fetch';
 import * as tar from 'tar';
 import * as ini from 'ini';
+import pkg from './package.json' with { type: 'json' };
 
-const PKG = JSON.parse(
-	fs.readFileSync('./package.json', { encoding: 'utf-8' })
-);
 const IS_WINDOWS = os.platform() === 'win32';
-const MAYOR_VERSION = PKG.version.split('.')[0];
+const MAYOR_VERSION = pkg.version.split('.')[0];
 const PYTHON = getPython();
 const PIP_INVOKE_DIR = path.resolve('worker/pip_invoke');
 const WORKER_RELEASE_DIR = 'worker/out/Release';
@@ -246,19 +244,19 @@ async function run() {
 			}
 
 			checkRelease();
-			executeCmd(`git commit -am '${PKG.version}'`);
-			executeCmd(`git tag -a ${PKG.version} -m '${PKG.version}'`);
+			executeCmd(`git commit -am '${pkg.version}'`);
+			executeCmd(`git tag -a ${pkg.version} -m '${pkg.version}'`);
 			executeCmd(`git push origin v${MAYOR_VERSION}`);
-			executeCmd(`git push origin '${PKG.version}'`);
+			executeCmd(`git push origin '${pkg.version}'`);
 
 			logInfo('creating release in GitHub');
 
 			await octokit.repos.createRelease({
 				owner: GH_OWNER,
 				repo: GH_REPO,
-				name: PKG.version,
+				name: pkg.version,
 				body: versionChanges,
-				tag_name: PKG.version,
+				tag_name: pkg.version,
 				draft: false,
 			});
 
@@ -291,7 +289,7 @@ function getPython() {
 }
 
 function getWorkerPrebuildTarName() {
-	let workerPrebuildTarName = `mediasoup-worker-${PKG.version}-${os.platform()}-${os.arch()}`;
+	let workerPrebuildTarName = `mediasoup-worker-${pkg.version}-${os.platform()}-${os.arch()}`;
 
 	// In Linux we want to know about kernel version since kernel >= 6 supports
 	// io-uring.
@@ -555,12 +553,12 @@ async function prebuildWorker() {
 async function downloadPrebuiltWorker() {
 	const releaseBase =
 		process.env.MEDIASOUP_WORKER_PREBUILT_DOWNLOAD_BASE_URL ||
-		`${PKG.repository.url
+		`${pkg.repository.url
 			.replace(/^git\+/, '')
 			.replace(/\.git$/, '')}/releases/download`;
 
 	const workerPrebuildTar = getWorkerPrebuildTarName();
-	const workerPrebuildTarUrl = `${releaseBase}/${PKG.version}/${workerPrebuildTar}`;
+	const workerPrebuildTarUrl = `${releaseBase}/${pkg.version}/${workerPrebuildTar}`;
 
 	logInfo(
 		`downloadPrebuiltWorker() [workerPrebuildTarUrl:${workerPrebuildTarUrl}]`
@@ -698,7 +696,7 @@ async function getVersionChanges() {
 	for (let idx = 0; idx < entries.length; ++idx) {
 		const entry = entries[idx];
 
-		if (entry.type === 'heading' && entry.text === PKG.version) {
+		if (entry.type === 'heading' && entry.text === pkg.version) {
 			const changes = entries[idx + 1].raw;
 
 			return changes;
@@ -707,7 +705,7 @@ async function getVersionChanges() {
 
 	// This should not happen (unless author forgot to update CHANGELOG).
 	throw new Error(
-		`no entry found in CHANGELOG.md for version '${PKG.version}'`
+		`no entry found in CHANGELOG.md for version '${pkg.version}'`
 	);
 }
 
