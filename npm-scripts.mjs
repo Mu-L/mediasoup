@@ -231,36 +231,7 @@ async function run() {
 		}
 
 		case 'release': {
-			let octokit;
-			let versionChanges;
-
-			try {
-				octokit = await getOctokit();
-				versionChanges = await getVersionChanges();
-			} catch (error) {
-				logError(error.message);
-
-				exitWithError();
-			}
-
-			checkRelease();
-			executeCmd(`git commit -am '${pkg.version}'`);
-			executeCmd(`git tag -a ${pkg.version} -m '${pkg.version}'`);
-			executeCmd(`git push origin v${MAYOR_VERSION}`);
-			executeCmd(`git push origin '${pkg.version}'`);
-
-			logInfo('creating release in GitHub');
-
-			await octokit.repos.createRelease({
-				owner: GH_OWNER,
-				repo: GH_REPO,
-				name: pkg.version,
-				body: versionChanges,
-				tag_name: pkg.version,
-				draft: false,
-			});
-
-			executeInteractiveCmd('npm publish');
+			release();
 
 			break;
 		}
@@ -500,6 +471,41 @@ function checkRelease() {
 	lintWorker();
 	testNode();
 	testWorker();
+}
+
+async function release() {
+	logInfo('release()');
+
+	let octokit;
+	let versionChanges;
+
+	try {
+		octokit = await getOctokit();
+		versionChanges = await getVersionChanges();
+	} catch (error) {
+		logError(error.message);
+
+		exitWithError();
+	}
+
+	checkRelease();
+	executeCmd(`git commit -am '${pkg.version}'`);
+	executeCmd(`git tag -a ${pkg.version} -m '${pkg.version}'`);
+	executeCmd(`git push origin v${MAYOR_VERSION}`);
+	executeCmd(`git push origin '${pkg.version}'`);
+
+	logInfo('creating release in GitHub');
+
+	await octokit.repos.createRelease({
+		owner: GH_OWNER,
+		repo: GH_REPO,
+		name: pkg.version,
+		body: versionChanges,
+		tag_name: pkg.version,
+		draft: false,
+	});
+
+	executeInteractiveCmd('npm publish');
 }
 
 function ensureDir(dir) {
