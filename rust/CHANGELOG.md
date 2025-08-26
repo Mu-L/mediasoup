@@ -2,6 +2,8 @@
 
 # NEXT
 
+# 0.20.0
+
 - Make `parameters` and `rtcp_feedback` optional in `RtpCodecParameters` and `RtpCodecCapability` during deserialization (PR #1597).
 - Make codec `mime_type` case insensitive during deserialization (PR #1599).
 - Only expose `data_structures`, `rtp_parameters`, `sctp_parameters` and `srtp_parameters` through the `mediasoup-types` crate (PR #1600).
