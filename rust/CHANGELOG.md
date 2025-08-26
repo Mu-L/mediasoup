@@ -2,6 +2,11 @@
 
 # NEXT
 
+# 0.19.1
+
+- Fix installation in paths with spaces (PR #1596).
+- Updates from mediasoup TypeScript `3.17.1.=3.18.1`.
+
 # 0.19.0
 
 - Enable AV1 codec (PR #1563).
