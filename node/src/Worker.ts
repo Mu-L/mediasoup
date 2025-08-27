@@ -618,9 +618,7 @@ export class WorkerImpl<WorkerAppData extends AppData = AppData>
 	}
 }
 
-export function parseWorkerDumpResponse(
-	binary: FbsWorker.DumpResponse
-): WorkerDump {
+function parseWorkerDumpResponse(binary: FbsWorker.DumpResponse): WorkerDump {
 	const dump: WorkerDump = {
 		pid: binary.pid(),
 		webRtcServerIds: fbsUtils.parseVector(binary, 'webRtcServerIds'),

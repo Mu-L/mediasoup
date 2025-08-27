@@ -1399,9 +1399,7 @@ export class RouterImpl<RouterAppData extends AppData = AppData>
 	}
 }
 
-export function parseRouterDumpResponse(
-	binary: FbsRouter.DumpResponse
-): RouterDump {
+function parseRouterDumpResponse(binary: FbsRouter.DumpResponse): RouterDump {
 	return {
 		id: binary.id()!,
 		transportIds: fbsUtils.parseVector(binary, 'transportIds'),
