@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.0
+
 - Node: Improve worker binary location detection ([PR #1603](https://github.com/versatica/mediasoup/pull/1603)).
 - `router.pipeToRouter()` can now connect two `Routers` in the same `Worker` if `keepId` is set to `false` ([PR #1604](https://github.com/versatica/mediasoup/pull/1604)).
 
