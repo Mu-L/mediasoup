@@ -1126,3 +1126,29 @@ test('router.pipeToRouter() called in two Routers passing one to each other as a
 	expect(pipeTransportsA.size).toBe(0);
 	expect(pipeTransportsB.size).toBe(0);
 }, 2000);
+
+test('router.pipeToRouter() with neither producerId nor dataProducerId fails', async () => {
+	const router1bis = await ctx.worker1!.createRouter({
+		mediaCodecs: ctx.mediaCodecs,
+	});
+
+	await expect(
+		ctx.router1!.pipeToRouter({
+			router: router1bis,
+		})
+	).rejects.toThrow(Error);
+}, 2000);
+
+test('router.pipeToRouter() with both producerId and dataProducerId fails', async () => {
+	const router1bis = await ctx.worker1!.createRouter({
+		mediaCodecs: ctx.mediaCodecs,
+	});
+
+	await expect(
+		ctx.router1!.pipeToRouter({
+			producerId: '1234',
+			dataProducerId: '5678',
+			router: router1bis,
+		})
+	).rejects.toThrow(Error);
+}, 2000);
