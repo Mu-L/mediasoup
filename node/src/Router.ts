@@ -1179,6 +1179,8 @@ export class RouterImpl<RouterAppData extends AppData = AppData>
 				throw error;
 			}
 		} else {
+			// NOTE: This cannot happen since it's guaranteed that producer or
+			// dataProducer exists, but TypeScript is not that smart.
 			throw new Error('internal error');
 		}
 	}
