@@ -2,6 +2,9 @@
 
 ### NEXT
 
+Worker: Fix retransmissions, set proper marker bit
+([PR #1606](https://github.com/versatica/mediasoup/pull/1606)).
+
 ### 3.19.0
 
 - Node: Improve worker binary location detection ([PR #1603](https://github.com/versatica/mediasoup/pull/1603)).
