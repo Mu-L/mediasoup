@@ -2,8 +2,9 @@
 
 ### NEXT
 
-Worker: Fix retransmissions, set proper marker bit
-([PR #1606](https://github.com/versatica/mediasoup/pull/1606)).
+### 3.19.1
+
+- Worker: Fix retransmissions, set proper marker bit ([PR #1606](https://github.com/versatica/mediasoup/pull/1606)).
 
 ### 3.19.0
 
