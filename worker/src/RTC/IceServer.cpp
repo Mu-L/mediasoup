@@ -15,37 +15,31 @@ namespace RTC
 	static constexpr uint8_t ConsentCheckMinTimeoutSec{ 10u };
 	static constexpr uint8_t ConsentCheckMaxTimeoutSec{ 60u };
 
-	/* Class methods. */
-	IceServer::IceState IceStateFromFbs(FBS::WebRtcTransport::IceState state)
+	/* Class variables. */
+
+	// clang-format off
+	std::unordered_map<IceServer::IceState, std::string> IceServer::iceStateToString =
 	{
-		switch (state)
-		{
-			case FBS::WebRtcTransport::IceState::NEW:
-			{
-				return IceServer::IceState::NEW;
-			}
+		{ IceServer::IceState::NEW,          "new"          },
+		{ IceServer::IceState::CONNECTED,    "connected"    },
+		{ IceServer::IceState::COMPLETED,    "completed"    },
+		{ IceServer::IceState::DISCONNECTED, "disconnected" },
+	};
+	// clang-format on
 
-			case FBS::WebRtcTransport::IceState::CONNECTED:
-			{
-				return IceServer::IceState::CONNECTED;
-			}
+	/* Class methods. */
 
-			case FBS::WebRtcTransport::IceState::COMPLETED:
-			{
-				return IceServer::IceState::COMPLETED;
-			}
+	const std::string& IceServer::IceStateToString(IceState iceState)
+	{
+		MS_TRACE();
 
-			case FBS::WebRtcTransport::IceState::DISCONNECTED:
-			{
-				return IceServer::IceState::DISCONNECTED;
-			}
-
-				NO_DEFAULT_GCC();
-		}
+		return IceServer::iceStateToString.at(iceState);
 	}
 
 	FBS::WebRtcTransport::IceState IceServer::IceStateToFbs(IceServer::IceState state)
 	{
+		MS_TRACE();
+
 		switch (state)
 		{
 			case IceServer::IceState::NEW:
@@ -150,6 +144,27 @@ namespace RTC
 		// Delete the ICE consent check timer.
 		delete this->consentCheckTimer;
 		this->consentCheckTimer = nullptr;
+	}
+
+	void IceServer::Dump(int indentation) const
+	{
+		MS_TRACE();
+
+		MS_DUMP_CLEAN(indentation, "<IceServer>");
+		MS_DUMP_CLEAN(indentation, "  state: %s", IceServer::IceStateToString(this->state).c_str());
+		MS_DUMP_CLEAN(indentation, "  tuples:");
+		for (const auto& tuple : this->tuples)
+		{
+			tuple.Dump(indentation + 2);
+		}
+		if (this->selectedTuple)
+		{
+			MS_DUMP_CLEAN(indentation, "  selected tuple:");
+			this->selectedTuple->Dump(indentation + 2);
+		}
+		MS_DUMP_CLEAN(indentation, "  consent timeout (ms): %" PRIu16, this->consentTimeoutMs);
+		MS_DUMP_CLEAN(indentation, "  remote nomination: %" PRIu32, this->remoteNomination);
+		MS_DUMP_CLEAN(indentation, "</IceServer>");
 	}
 
 	void IceServer::ProcessStunPacket(RTC::StunPacket* packet, RTC::TransportTuple* tuple)
