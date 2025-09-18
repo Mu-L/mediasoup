@@ -487,7 +487,8 @@ namespace RTC
 					return false;
 				}
 
-				// `-1` because we have 14 elements total 0..13 and `id` is in the range 1..14.
+				// `-1` because we have 14 elements total 0..13 and `id` is in the
+				// range 1..14.
 				return this->oneByteExtensions[id - 1] != nullptr;
 			}
 			else if (HasTwoBytesExtensions())
@@ -501,7 +502,8 @@ namespace RTC
 
 				auto* extension = it->second;
 
-				// In Two-Byte extensions value length may be zero. If so, return false.
+				// In Two-Byte extensions value length may be zero. If so, return
+				// false.
 				return extension->len != 0u;
 			}
 			else
@@ -525,7 +527,8 @@ namespace RTC
 					return nullptr;
 				}
 
-				// `-1` because we have 14 elements total 0..13 and `id` is in the range 1..14.
+				// `-1` because we have 14 elements total 0..13 and `id` is in the
+				// range 1..14.
 				auto* extension = this->oneByteExtensions[id - 1];
 
 				if (!extension)
@@ -551,7 +554,8 @@ namespace RTC
 
 				len = extension->len;
 
-				// In Two-Byte extensions value length may be zero. If so, return nullptr.
+				// In Two-Byte extensions value length may be zero. If so, return
+				// nullptr.
 				if (extension->len == 0u)
 				{
 					return nullptr;
@@ -653,7 +657,8 @@ namespace RTC
 		uint8_t* csrcList{ nullptr };
 		HeaderExtension* headerExtension{ nullptr };
 		// There might be up to 14 one-byte header extensions
-		// (https://datatracker.ietf.org/doc/html/rfc5285#section-4.2), use std::array.
+		// (https://datatracker.ietf.org/doc/html/rfc5285#section-4.2), use
+		// std::array.
 		std::array<OneByteExtension*, 14> oneByteExtensions{};
 		absl::flat_hash_map<uint8_t, TwoBytesExtension*> mapTwoBytesExtensions;
 		uint8_t midExtensionId{ 0u };
