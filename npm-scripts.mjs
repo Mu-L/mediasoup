@@ -25,6 +25,7 @@ const GH_REPO = 'mediasoup';
 const ESLINT_PATHS = [
 	'eslint.config.mjs',
 	'jest.config.mjs',
+	'knip.config.mjs',
 	'node/src',
 	'npm-scripts.mjs',
 	'worker/scripts',
@@ -45,6 +46,7 @@ const PRETTIER_PATHS = [
 	'doc',
 	'eslint.config.mjs',
 	'jest.config.mjs',
+	'knip.config.mjs',
 	'node/src',
 	'npm-scripts.mjs',
 	'package.json',
@@ -355,6 +357,8 @@ function lintNode() {
 	);
 
 	executeCmd(`prettier --check ${PRETTIER_PATHS}`);
+
+	executeCmd('knip --config knip.config.mjs --treat-config-hints-as-errors');
 }
 
 function lintWorker() {

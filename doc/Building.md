@@ -32,7 +32,7 @@ Runs both `lint:node` and `lint:worker` tasks.
 
 ### `npm run lint:node`
 
-Validates mediasoup TypeScript files using [ESLint](https://eslint.org).
+Validates mediasoup TypeScript files using [ESLint](https://eslint.org), [Prettier](https://prettier.io) and [Knip](https://knip.dev/).
 
 ### `npm run lint:worker`
 
