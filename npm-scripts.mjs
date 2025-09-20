@@ -186,9 +186,7 @@ async function run() {
 		}
 
 		case 'format:worker': {
-			installInvoke();
-
-			executeCmd(`"${PYTHON}" -m invoke -r worker format`);
+			formatWorker();
 
 			break;
 		}
@@ -218,8 +216,7 @@ async function run() {
 		}
 
 		case 'coverage:node': {
-			executeCmd(`jest --coverage ${taskArgs}`);
-			executeCmd('open-cli coverage/lcov-report/index.html');
+			coverageNode();
 
 			break;
 		}
@@ -374,6 +371,14 @@ function formatNode() {
 	executeCmd(`prettier --write ${PRETTIER_PATHS}`);
 }
 
+function formatWorker() {
+	logInfo('formatWorker()');
+
+	installInvoke();
+
+	executeCmd(`"${PYTHON}" -m invoke -r worker format`);
+}
+
 function flatcNode() {
 	logInfo('flatcNode()');
 
@@ -445,6 +450,13 @@ function testWorker() {
 	installInvoke();
 
 	executeCmd(`"${PYTHON}" -m invoke -r worker test`);
+}
+
+function coverageNode() {
+	logInfo('coverageNode()');
+
+	executeCmd(`jest --coverage ${taskArgs}`);
+	executeCmd('open-cli coverage/lcov-report/index.html');
 }
 
 function installNodeDeps() {
