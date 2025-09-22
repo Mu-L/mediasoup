@@ -2,6 +2,8 @@
 
 ### NEXT
 
+- CI: Remove `macos-13` hosts.
+
 ### 3.19.2
 
 - `IceServer`: Fix active tuple selection when in "completed" state ([PR #1608](https://github.com/versatica/mediasoup/pull/1608), credits to @pangsimon).
