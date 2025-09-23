@@ -94,11 +94,11 @@
 		"@types/ini": "^4.1.1",
 		"debug": "^4.4.3",
 		"flatbuffers": "^25.2.10",
-		"h264-profile-level-id": "^2.2.3",
+		"h264-profile-level-id": "^2.3.1",
 		"ini": "^5.0.0",
 		"node-fetch": "^3.3.2",
 		"supports-color": "^10.2.2",
-		"tar": "^7.4.4"
+		"tar": "^7.5.0"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.36.0",
@@ -115,7 +115,7 @@
 		"knip": "^5.64.0",
 		"marked": "^16.3.0",
 		"open-cli": "^8.0.0",
-		"pick-port": "^2.1.2",
+		"pick-port": "^2.2.0",
 		"prettier": "^3.6.2",
 		"sctp": "^1.0.0",
 		"ts-jest": "^29.4.4",
