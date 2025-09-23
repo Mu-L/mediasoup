@@ -12,7 +12,8 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 {
 	SECTION("parse payload descriptor")
 	{
-		/** VP8 Payload Descriptor
+		/**
+		 * VP8 Payload Descriptor
 		 *
 		 * 1 = X bit: Extended control bits present (I L T K)
 		 * 1 = R bit: Reserved for future use (Error should be zero)
@@ -49,13 +50,13 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 		REQUIRE(payloadDescriptor->start == 1);
 		REQUIRE(payloadDescriptor->partitionIndex == 0);
 
-		// optional field flags.
+		// Optional field flags.
 		REQUIRE(payloadDescriptor->i == 1);
 		REQUIRE(payloadDescriptor->l == 0);
 		REQUIRE(payloadDescriptor->t == 0);
 		REQUIRE(payloadDescriptor->k == 0);
 
-		// optional fields.
+		// Optional fields.
 		REQUIRE(payloadDescriptor->pictureId == 17);
 		REQUIRE(payloadDescriptor->tl0PictureIndex == 0);
 		REQUIRE(payloadDescriptor->tlIndex == 0);
@@ -83,7 +84,8 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 
 	SECTION("parse payload descriptor 2")
 	{
-		/** VP8 Payload Descriptor
+		/**
+		 * VP8 Payload Descriptor
 		 *
 		 * 1 = X bit: Extended control bits present (I L T K)
 		 * 0 = R bit: Reserved for future use
@@ -123,13 +125,13 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 		REQUIRE(payloadDescriptor->start == 0);
 		REQUIRE(payloadDescriptor->partitionIndex == 0);
 
-		// optional field flags.
+		// Optional field flags.
 		REQUIRE(payloadDescriptor->i == 0);
 		REQUIRE(payloadDescriptor->l == 0);
 		REQUIRE(payloadDescriptor->t == 1);
 		REQUIRE(payloadDescriptor->k == 1);
 
-		// optional fields.
+		// Optional fields.
 		REQUIRE(payloadDescriptor->pictureId == 0);
 		REQUIRE(payloadDescriptor->tl0PictureIndex == 0);
 		REQUIRE(payloadDescriptor->tlIndex == 3);
@@ -157,7 +159,8 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 
 	SECTION("parse payload descriptor, encode")
 	{
-		/** VP8 Payload Descriptor
+		/**
+		 * VP8 Payload Descriptor
 		 *
 		 * 1 = X bit: Extended control bits present (I L T K)
 		 * 1 = R bit: Reserved for future use (Error should be zero)
@@ -218,7 +221,9 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 
 	SECTION("parse payload descriptor. I flag set but no space for pictureId")
 	{
-		/** VP8 Payload Descriptor
+		/**
+		 * VP8 Payload Descriptor
+		 *
 		 * 1 = X bit: Extended control bits present (I L T K)
 		 * 1 = R bit: Reserved for future use (Error should be zero)
 		 * 0 = N bit: Reference frame
@@ -245,7 +250,8 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 
 	SECTION("parse payload descriptor. X flag is not set, no keyframe")
 	{
-		/** VP8 Payload Descriptor
+		/**
+		 * VP8 Payload Descriptor
 		 *
 		 * 0 = X bit: Extended control bits present (I L T K)
 		 * 1 = R bit: Reserved for future use (Error should be zero)
@@ -278,7 +284,7 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 		REQUIRE(payloadDescriptor->t == 0);
 		REQUIRE(payloadDescriptor->k == 0);
 
-		// optional fields.
+		// Optional fields.
 		REQUIRE(payloadDescriptor->pictureId == 0);
 		REQUIRE(payloadDescriptor->tl0PictureIndex == 0);
 		REQUIRE(payloadDescriptor->tlIndex == 0);
@@ -295,7 +301,8 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 
 	SECTION("parse payload descriptor. X flag is not set, keyframe")
 	{
-		/** VP8 Payload Descriptor
+		/**
+		 * VP8 Payload Descriptor
 		 *
 		 * 0 = X bit: Extended control bits present (I L T K)
 		 * 1 = R bit: Reserved for future use (Error should be zero)
@@ -328,7 +335,7 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 		REQUIRE(payloadDescriptor->t == 0);
 		REQUIRE(payloadDescriptor->k == 0);
 
-		// optional fields.
+		// Optional fields.
 		REQUIRE(payloadDescriptor->pictureId == 0);
 		REQUIRE(payloadDescriptor->tl0PictureIndex == 0);
 		REQUIRE(payloadDescriptor->tlIndex == 0);
@@ -529,7 +536,8 @@ SCENARIO("process VP8 payload descriptor", "[codecs][vp8]")
 
 SCENARIO("encode VP8 payload descriptor", "[codecs][vp8]")
 {
-	/** VP8 Payload Descriptor
+	/**
+	 * VP8 Payload Descriptor
 	 *
 	 * 1 = X bit: Extended control bits present (I L T K)
 	 * 0 = R bit: Reserved for future use
