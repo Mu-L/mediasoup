@@ -201,6 +201,9 @@ jobs:
       - name: invoke -r worker mediasoup-worker
         run: invoke -r worker mediasoup-worker
 
+      - name: npm run worker:prebuild
+        run: npm run worker:prebuild
+
       - if: ${{ matrix.build.run-test }}
         name: invoke -r worker test
         run: invoke -r worker test
