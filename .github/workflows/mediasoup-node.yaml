@@ -112,7 +112,8 @@ jobs:
       - name: npm run worker:prebuild-name
         run: npm run worker:prebuild-name
 
-      - name: npm run worker:prebuild
+      - if: ${{ matrix.build-type == 'Release' }}
+        name: npm run worker:prebuild
         run: npm run worker:prebuild
 
       - name: npm run lint:node
