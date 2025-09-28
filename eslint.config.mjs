@@ -15,7 +15,6 @@ const config = tsEslint.config(
 			reportUnusedDisableDirectives: 'error',
 		},
 	},
-	prettierRecommendedEslint,
 	eslint.configs.recommended,
 	{
 		rules: {
@@ -182,7 +181,8 @@ const config = tsEslint.config(
 			'jest/prefer-expect-assertions': 0,
 			'@typescript-eslint/no-unnecessary-type-assertion': 0,
 		},
-	}
+	},
+	prettierRecommendedEslint
 );
 
 export default config;
