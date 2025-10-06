@@ -1356,6 +1356,23 @@ namespace RTC
 				{
 					std::memcpy(bufferPtr, extenValue, extenLen);
 
+					// Make place for the active decode target bitmask.
+					// clang-format off
+					if (
+					  (packet->HasOneByteExtensions() &&
+					   	extenLen + 5 <= RTC::Consts::OneByteRtpExtensionMaxLength) ||
+					  (packet->HasTwoBytesExtensions() &&
+					   	extenLen + 5 <= RTC::Consts::TwoBytesRtpExtensionMaxLength)
+					)
+					// clang-format on
+					{
+						extenLen += 5;
+					}
+					else
+					{
+						MS_WARN_DEV("cannot increase DD extension header length, current length %zu", extenLen);
+					}
+
 					extensions.emplace_back(
 					  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::DEPENDENCY_DESCRIPTOR),
 					  extenLen,

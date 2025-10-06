@@ -1,5 +1,6 @@
 #define MS_CLASS "RTC::RtpPacket"
 // #define MS_LOG_DEV_LEVEL 3
+// #define DUMP_PAYLOAD_DESCRIPTOR 1
 
 #include "RTC/RtpPacket.hpp"
 #ifdef MS_RTC_LOGGER_RTP
@@ -316,6 +317,21 @@ namespace RTC
 				  maxDelay);
 			}
 		}
+		if (this->dependencyDescriptorExtensionId != 0u)
+		{
+			uint8_t extenLen;
+			uint8_t* extenValue = GetExtension(this->dependencyDescriptorExtensionId, extenLen);
+
+			if (extenValue)
+			{
+				MS_DUMP_CLEAN(
+				  indentation,
+				  "  dependencyDescriptor: extId:%" PRIu8 ", length:%" PRIu8,
+				  this->dependencyDescriptorExtensionId,
+				  extenLen);
+			}
+		}
+
 		MS_DUMP_CLEAN(indentation, "  csrc count: %" PRIu8, this->header->csrcCount);
 		MS_DUMP_CLEAN(indentation, "  marker: %s", HasMarker() ? "true" : "false");
 		MS_DUMP_CLEAN(indentation, "  payload type: %" PRIu8, GetPayloadType());
@@ -330,6 +346,12 @@ namespace RTC
 		MS_DUMP_CLEAN(indentation, "  packet size: %zu bytes", GetSize());
 		MS_DUMP_CLEAN(indentation, "  spatial layer: %" PRIu8, GetSpatialLayer());
 		MS_DUMP_CLEAN(indentation, "  temporal layer: %" PRIu8, GetTemporalLayer());
+#ifdef DUMP_PAYLOAD_DESCRIPTOR
+		if (this->payloadDescriptorHandler)
+		{
+			this->payloadDescriptorHandler->Dump(indentation + 1);
+		}
+#endif
 		MS_DUMP_CLEAN(indentation, "</RtpPacket>");
 	}
 
@@ -595,6 +617,25 @@ namespace RTC
 		std::memcpy(extenValue, mid.c_str(), midLen);
 
 		SetExtensionLength(this->midExtensionId, midLen);
+	}
+
+	void RtpPacket::UpdateDependencyDescriptor(const uint8_t* data, size_t len)
+	{
+		MS_TRACE();
+
+		uint8_t extenLen;
+		uint8_t* extenValue = GetExtension(this->dependencyDescriptorExtensionId, extenLen);
+
+		if (!extenValue)
+		{
+			MS_WARN_TAG(rtp, "dependency description not found");
+
+			return;
+		}
+
+		std::memcpy(extenValue, data, len);
+
+		SetExtensionLength(this->dependencyDescriptorExtensionId, len);
 	}
 
 	/**
@@ -1059,5 +1100,12 @@ namespace RTC
 				}
 			}
 		}
+	}
+
+	void RtpPacket::OnDependencyDescriptorUpdated(const uint8_t* data, size_t len)
+	{
+		MS_TRACE();
+
+		UpdateDependencyDescriptor(data, len);
 	}
 } // namespace RTC

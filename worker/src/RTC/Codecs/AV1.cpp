@@ -1,10 +1,8 @@
-#include <cstdint>
 #define MS_CLASS "RTC::Codecs::AV1"
 // #define MS_LOG_DEV_LEVEL 3
 
-#include "Logger.hpp"
 #include "RTC/Codecs/AV1.hpp"
-#include <limits> // std::numeric_limits
+#include "Logger.hpp"
 
 namespace RTC
 {
@@ -12,7 +10,7 @@ namespace RTC
 	{
 		/* Class methods. */
 
-		AV1::PayloadDescriptor* AV1::Parse(Codecs::DependencyDescriptor* dependencyDescriptor)
+		AV1::PayloadDescriptor* AV1::Parse(std::unique_ptr<Codecs::DependencyDescriptor>& dependencyDescriptor)
 		{
 			MS_TRACE();
 
@@ -38,7 +36,7 @@ namespace RTC
 			// Read dependency descriptor.
 			packet->ReadDependencyDescriptor(dependencyDescriptor, templateDependencyStructure);
 
-			PayloadDescriptor* payloadDescriptor = AV1::Parse(dependencyDescriptor.get());
+			PayloadDescriptor* payloadDescriptor = AV1::Parse(dependencyDescriptor);
 
 			if (!payloadDescriptor)
 			{
@@ -52,7 +50,8 @@ namespace RTC
 
 		/* Instance methods. */
 
-		AV1::PayloadDescriptor::PayloadDescriptor(Codecs::DependencyDescriptor* dependencyDescriptor)
+		AV1::PayloadDescriptor::PayloadDescriptor(
+		  std::unique_ptr<Codecs::DependencyDescriptor>& dependencyDescriptor)
 		{
 			MS_TRACE();
 
@@ -63,6 +62,8 @@ namespace RTC
 			this->spatialLayer  = dependencyDescriptor->spatialLayer;
 			this->temporalLayer = dependencyDescriptor->temporalLayer;
 			this->isKeyFrame    = dependencyDescriptor->isKeyFrame;
+
+			this->dependencyDescriptor.reset(dependencyDescriptor.release());
 		}
 
 		void AV1::PayloadDescriptor::Dump(int indentation) const
@@ -70,55 +71,44 @@ namespace RTC
 			MS_TRACE();
 
 			MS_DUMP_CLEAN(indentation, "<AV1::PayloadDescriptor>");
-			MS_DUMP_CLEAN(
-			  indentation,
-			  "  startOfFrame:%" PRIu8 "|endOfFrame:%" PRIu8,
-			  this->startOfFrame,
-			  this->endOfFrame);
-			MS_DUMP_CLEAN(indentation, "  spatialLayer: %" PRIu8, this->spatialLayer);
-			MS_DUMP_CLEAN(indentation, "  frameNumber: %" PRIu16, this->frameNumber);
-			MS_DUMP_CLEAN(indentation, "  temporalLayer: %" PRIu8, this->temporalLayer);
-			MS_DUMP_CLEAN(indentation, "  isKeyFrame: %s", this->isKeyFrame ? "true" : "false");
+			this->dependencyDescriptor->Dump(indentation + 1);
 			MS_DUMP_CLEAN(indentation, "</AV1::PayloadDescriptor>");
 		}
 
-		void AV1::PayloadDescriptor::Encode(uint8_t* data, uint16_t frameNumber) const
-		{
-			MS_TRACE();
-
-			// We are overriding a value, we don't need the real buffer length.
-			static const uint8_t len = 64;
-
-			Utils::BitStream bitStream{ data, len };
-
-			static unsigned maxFrameNumber = std::numeric_limits<uint16_t>::max();
-
-			bitStream.Write(8, maxFrameNumber + 1, frameNumber);
-		}
-
-		void AV1::PayloadDescriptor::Encode(uint8_t* data) const
+		void AV1::PayloadDescriptor::Encode()
 		{
 			MS_TRACE();
 
 			if (!this->encoder.has_value())
 			{
-				MS_WARN_DEV("there is no encoder present")
+				MS_WARN_DEV("there is no encoder present");
+
+				return;
 			}
 
-			this->encoder->Encode(data, this);
+			UpdateActiveDecodeTargets(
+			  this->encoder->encodingData.maxSpatialLayer, this->encoder->encodingData.maxTemporalLayer);
 		}
 
-		void AV1::PayloadDescriptor::Restore(uint8_t* data) const
+		void AV1::PayloadDescriptor::Restore() const
 		{
 			MS_TRACE();
 
-			Encode(data, this->frameNumber);
+			// Nothing to do as next time this packet is sent will rewrite
+			// the active decode targets mask.
 		}
 
-		void AV1::PayloadDescriptor::Encoder::Encode(
-		  uint8_t* data, const PayloadDescriptor* payloadDescriptor) const
+		void AV1::PayloadDescriptor::UpdateActiveDecodeTargets(uint16_t spatialLayer, uint16_t temporalLayer)
 		{
-			payloadDescriptor->Encode(data, this->encodingData.frameNumber);
+			MS_TRACE();
+
+			this->dependencyDescriptor->UpdateActiveDecodeTargets(spatialLayer, temporalLayer);
+		}
+
+		void AV1::PayloadDescriptor::Encoder::Encode(PayloadDescriptor* payloadDescriptor) const
+		{
+			payloadDescriptor->UpdateActiveDecodeTargets(
+			  this->encodingData.maxSpatialLayer, this->encodingData.maxTemporalLayer);
 		}
 
 		AV1::PayloadDescriptorHandler::PayloadDescriptorHandler(AV1::PayloadDescriptor* payloadDescriptor)
@@ -158,14 +148,6 @@ namespace RTC
 				return false;
 			}
 
-			// Check whether frameNumber sync is required.
-			if (context->syncRequired)
-			{
-				context->frameNumberManager.Sync(this->payloadDescriptor->frameNumber - 1);
-
-				context->syncRequired = false;
-			}
-
 			// Upgrade current spatial layer if needed.
 			if (context->GetTargetSpatialLayer() > context->GetCurrentSpatialLayer())
 			{
@@ -187,10 +169,10 @@ namespace RTC
 			else if (context->GetTargetSpatialLayer() < context->GetCurrentSpatialLayer())
 			{
 				// clang-format off
-					if (
-						packetSpatialLayer == context->GetTargetSpatialLayer() &&
-						this->payloadDescriptor->endOfFrame
-					)
+				if (
+					packetSpatialLayer == context->GetTargetSpatialLayer() &&
+					this->payloadDescriptor->endOfFrame
+				)
 				// clang-format on
 				{
 					MS_DEBUG_DEV(
@@ -209,18 +191,13 @@ namespace RTC
 			// Filter spatial layers higher than current one.
 			if (packetSpatialLayer > tmpSpatialLayer)
 			{
-				context->frameNumberManager.Drop(this->payloadDescriptor->frameNumber);
-
 				return false;
 			}
 
 			// Upgrade current temporal layer if needed.
 			if (context->GetTargetTemporalLayer() > context->GetCurrentTemporalLayer())
 			{
-				// clang-format off
-					if (
-						packetTemporalLayer >= context->GetCurrentTemporalLayer() + 1)
-				// clang-format on
+				if (packetTemporalLayer > context->GetCurrentTemporalLayer())
 				{
 					MS_DEBUG_DEV(
 					  "upgrading tmpTemporalLayer from %" PRIu16 " to %" PRIu8 " (packet:%" PRIu8 ":%" PRIu8
@@ -237,10 +214,10 @@ namespace RTC
 			else if (context->GetTargetTemporalLayer() < context->GetCurrentTemporalLayer())
 			{
 				// clang-format off
-					if (
-						packetTemporalLayer == context->GetTargetTemporalLayer() &&
-						this->payloadDescriptor->endOfFrame
-					)
+				if (
+					packetTemporalLayer == context->GetTargetTemporalLayer() &&
+					this->payloadDescriptor->endOfFrame
+				)
 				// clang-format on
 				{
 					MS_DEBUG_DEV(
@@ -251,15 +228,13 @@ namespace RTC
 					  packetSpatialLayer,
 					  packetTemporalLayer);
 
-					tmpTemporalLayer = context->GetTargetTemporalLayer();
+					tmpTemporalLayer = packetTemporalLayer;
 				}
 			}
 
 			// Filter temporal layers higher than current one.
 			if (packetTemporalLayer > tmpTemporalLayer)
 			{
-				context->frameNumberManager.Drop(this->payloadDescriptor->frameNumber);
-
 				return false;
 			}
 
@@ -281,15 +256,14 @@ namespace RTC
 				context->SetCurrentTemporalLayer(tmpTemporalLayer);
 			}
 
-			uint16_t frameNumber;
-
-			context->frameNumberManager.Input(this->payloadDescriptor->frameNumber, frameNumber);
-
 			// Store the encoding data for retransmissions.
-			this->payloadDescriptor->CreateEncoder({ frameNumber });
-
-			uint8_t len;
-			this->payloadDescriptor->Encode(packet->GetDependencyDescriptionExtension(len));
+			// clang-format off
+			this->payloadDescriptor->CreateEncoder({
+			  static_cast<uint32_t>(context->GetCurrentSpatialLayer()),
+			  static_cast<uint32_t>(context->GetCurrentTemporalLayer())
+			});
+			// clang-format on
+			this->payloadDescriptor->Encode();
 
 			return true;
 		}
@@ -301,19 +275,14 @@ namespace RTC
 
 			auto* av1Encoder = static_cast<AV1::PayloadDescriptor::Encoder*>(encoder);
 
-			uint8_t len;
-
-			av1Encoder->Encode(
-			  packet->GetDependencyDescriptionExtension(len), this->payloadDescriptor.get());
+			av1Encoder->Encode(this->payloadDescriptor.get());
 		}
 
 		void AV1::PayloadDescriptorHandler::Restore(RtpPacket* packet)
 		{
 			MS_TRACE();
 
-			uint8_t len;
-
-			this->payloadDescriptor->Encode(packet->GetDependencyDescriptionExtension(len));
+			this->payloadDescriptor->Restore();
 		}
 	} // namespace Codecs
 } // namespace RTC

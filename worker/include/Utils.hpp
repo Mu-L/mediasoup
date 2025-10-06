@@ -2,13 +2,13 @@
 #define MS_UTILS_HPP
 
 #include "common.hpp"
+#include "RTC/Consts.hpp"
 #include <openssl/evp.h>
 #include <cmath>
 #include <cstring> // std::memcmp(), std::memcpy()
 #include <limits>  // std::numeric_limits
 #include <string>
 #include <type_traits> // std::enable_if, std::is_same_v
-#include <vector>
 #ifdef _WIN32
 #include <ws2ipdef.h>
 // https://stackoverflow.com/a/24550632/2085408
@@ -422,18 +422,26 @@ namespace Utils
 		BitStream(uint8_t* data, size_t len);
 		~BitStream() = default;
 
+		const uint8_t* GetData() const;
+		size_t GetLength() const;
+		uint32_t GetOffset() const;
+		void Reset();
 		uint8_t GetBit();
 		uint32_t GetBits(size_t count);
 		uint32_t GetLeftBits() const;
+		uint32_t GetNumBits(uint32_t n) const;
+		std::optional<uint32_t> ReadNs(uint32_t n);
 		void SkipBits(size_t count);
 		void Write(uint32_t offset, uint32_t n, uint32_t v);
+		void PutBit(uint8_t bit);
+		void PutBits(uint32_t count, uint32_t bits);
 
 	private:
 		void PutBit(uint32_t offset, uint8_t bit);
 		void PutBits(uint32_t offset, uint32_t count, uint32_t bits);
 
 	private:
-		uint8_t* data{ nullptr };
+		uint8_t data[RTC::Consts::TwoBytesRtpExtensionMaxLength];
 		uint32_t len{ 0 };
 		uint32_t offset{ 0 };
 	};
