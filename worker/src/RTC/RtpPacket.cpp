@@ -1,4 +1,3 @@
-#include <cstdint>
 #define MS_CLASS "RTC::RtpPacket"
 // #define MS_LOG_DEV_LEVEL 3
 // #define DUMP_PAYLOAD_DESCRIPTOR 1
