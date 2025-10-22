@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.5
+
 - Add custom 'urn:mediasoup:params:rtp-hdrext:packet-id' (mediasoup-packet-id) header extension ([#1631](https://github.com/versatica/mediasoup/pull/1631)).
 
 ### 3.19.4
