@@ -2,6 +2,8 @@
 
 ### NEXT
 
+- Add custom 'urn:mediasoup:params:rtp-hdrext:packet-id' (mediasoup-packet-id) header extension ([#1631](https://github.com/versatica/mediasoup/pull/1631)).
+
 ### 3.19.4
 
 - AV1: Add support for DD extension header forwarding ([#1610](https://github.com/versatica/mediasoup/pull/1610)).
