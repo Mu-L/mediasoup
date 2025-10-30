@@ -83,6 +83,7 @@ fn audio_producer_options() -> ProducerOptions {
                 cname: Some("FOOBAR".to_string()),
                 ..RtcpParameters::default()
             },
+            msid: None,
         },
     );
 
@@ -142,6 +143,7 @@ fn video_producer_options() -> ProducerOptions {
                 cname: Some("FOOBAR".to_string()),
                 ..RtcpParameters::default()
             },
+            msid: Some("aaaa-bbbb".to_string()),
         },
     );
 
@@ -1023,6 +1025,10 @@ fn consume_for_pipe_producer_succeeds() {
         assert_eq!(video_consumer.rtp_parameters().encodings.len(), 1);
         assert!(video_consumer.rtp_parameters().encodings[0].ssrc.is_some());
         assert!(video_consumer.rtp_parameters().encodings[0].rtx.is_some());
+        assert_eq!(
+            video_consumer.rtp_parameters().msid,
+            Some("aaaa-bbbb".to_string())
+        );
         assert_eq!(video_consumer.r#type(), ConsumerType::Simulcast);
         assert!(!video_consumer.paused());
         assert!(video_consumer.producer_paused());
