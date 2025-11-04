@@ -512,7 +512,7 @@ def tidy(ctx):
         mediasoup_tidy_checks = '-*,' + mediasoup_tidy_checks;
 
     if not mediasoup_tidy_files:
-        mediasoup_tidy_files = 'src/*.cpp src/**/*.cpp src/**/**.cpp';
+        mediasoup_tidy_files = 'src/*.cpp src/**/*.cpp src/**/**.cpp src/**/**/**.cpp src/**/**/**/**.cpp src/**/**/**/**/**.cpp';
 
     with cd_worker():
         ctx.run(
