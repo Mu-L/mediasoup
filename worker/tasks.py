@@ -22,6 +22,7 @@ import sys;
 import os;
 import inspect;
 import shutil;
+import glob;
 from contextlib import contextmanager;
 # We import this from a custom location and pylint doesn't know.
 from invoke import task, call; # pylint: disable=import-error
@@ -511,12 +512,14 @@ def tidy(ctx):
     if mediasoup_tidy_checks:
         mediasoup_tidy_checks = '-*,' + mediasoup_tidy_checks;
 
-    if not mediasoup_tidy_files:
-        mediasoup_tidy_files = 'src/*.cpp src/**/*.cpp src/**/**.cpp src/**/**/**.cpp src/**/**/**/**.cpp src/**/**/**/**/**.cpp';
+    if mediasoup_tidy_files:
+        mediasoup_tidy_files = mediasoup_tidy_files.split()
+    else:
+        mediasoup_tidy_files = glob.glob("src/**/*.cpp", recursive=True)
 
     with cd_worker():
         ctx.run(
-            f'"{PYTHON}" "{mediasoup_clang_tidy_dir}/run-clang-tidy" -clang-tidy-binary="{mediasoup_clang_tidy_dir}/clang-tidy" -clang-apply-replacements-binary="{mediasoup_clang_tidy_dir}/clang-apply-replacements" -p="{BUILD_DIR}" -j={NUM_CORES} -fix -checks={mediasoup_tidy_checks} {mediasoup_tidy_files}',
+            f'"{PYTHON}" "{mediasoup_clang_tidy_dir}/run-clang-tidy" -clang-tidy-binary="{mediasoup_clang_tidy_dir}/clang-tidy" -clang-apply-replacements-binary="{mediasoup_clang_tidy_dir}/clang-apply-replacements" -p="{BUILD_DIR}" -j={NUM_CORES} -fix -checks={mediasoup_tidy_checks} {" ".join(mediasoup_tidy_files)}',
             echo=True,
             pty=PTY_SUPPORTED,
             shell=SHELL
