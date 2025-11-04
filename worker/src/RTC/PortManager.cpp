@@ -5,7 +5,6 @@
 #include "DepLibUV.hpp"
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
-#include "Settings.hpp"
 #include "Utils.hpp"
 #include <tuple>   // std:make_tuple()
 #include <utility> // std::piecewise_construct
@@ -120,6 +119,12 @@ namespace RTC
 
 				break;
 			}
+
+			// This cannot happen.
+			default:
+			{
+				MS_THROW_ERROR("unknown IP family");
+			}
 		}
 
 		// Try to bind on it.
@@ -179,7 +184,7 @@ namespace RTC
 				if (err != 0)
 				{
 					// If it failed, close the handle and check the reason.
-					uv_close(reinterpret_cast<uv_handle_t*>(uvHandle), static_cast<uv_close_cb>(onCloseUdp));
+					uv_close(uvHandle, static_cast<uv_close_cb>(onCloseUdp));
 
 					MS_THROW_ERROR(
 					  "uv_udp_bind() failed [protocol:%s, ip:'%s', port:%" PRIu16 "]: %s",
@@ -202,7 +207,7 @@ namespace RTC
 				if (err != 0)
 				{
 					// If it failed, close the handle and check the reason.
-					uv_close(reinterpret_cast<uv_handle_t*>(uvHandle), static_cast<uv_close_cb>(onCloseTcp));
+					uv_close(uvHandle, static_cast<uv_close_cb>(onCloseTcp));
 
 					MS_THROW_ERROR(
 					  "uv_tcp_bind() failed [protocol:%s, ip:'%s', port:%" PRIu16 "]: %s",
@@ -222,7 +227,7 @@ namespace RTC
 				if (err != 0)
 				{
 					// If it failed, close the handle and check the reason.
-					uv_close(reinterpret_cast<uv_handle_t*>(uvHandle), static_cast<uv_close_cb>(onCloseTcp));
+					uv_close(uvHandle, static_cast<uv_close_cb>(onCloseTcp));
 
 					MS_THROW_ERROR(
 					  "uv_listen() failed [protocol:%s, ip:'%s', port:%" PRIu16 "]: %s",
@@ -239,7 +244,7 @@ namespace RTC
 		MS_DEBUG_DEV(
 		  "bind succeeded [protocol:%s, ip:'%s', port:%" PRIu16 "]", protocolStr.c_str(), ip.c_str(), port);
 
-		return static_cast<uv_handle_t*>(uvHandle);
+		return uvHandle;
 	}
 
 	uv_handle_t* PortManager::Bind(
@@ -396,6 +401,12 @@ namespace RTC
 
 					break;
 				}
+
+				// This cannot happen.
+				default:
+				{
+					MS_THROW_ERROR("unknown IP family");
+				}
 			}
 
 			// Try to bind on it.
@@ -520,14 +531,14 @@ namespace RTC
 			{
 				case Protocol::UDP:
 				{
-					uv_close(reinterpret_cast<uv_handle_t*>(uvHandle), static_cast<uv_close_cb>(onCloseUdp));
+					uv_close(uvHandle, static_cast<uv_close_cb>(onCloseUdp));
 
 					break;
 				};
 
 				case Protocol::TCP:
 				{
-					uv_close(reinterpret_cast<uv_handle_t*>(uvHandle), static_cast<uv_close_cb>(onCloseTcp));
+					uv_close(uvHandle, static_cast<uv_close_cb>(onCloseTcp));
 
 					break;
 				}
@@ -586,7 +597,7 @@ namespace RTC
 		  attempt,
 		  numAttempts);
 
-		return static_cast<uv_handle_t*>(uvHandle);
+		return uvHandle;
 	}
 
 	void PortManager::Unbind(uint64_t hash, uint16_t port)
@@ -700,6 +711,12 @@ namespace RTC
 				hash |= 0x0002; // AF_INET6.
 
 				break;
+			}
+
+			// This cannot happen.
+			default:
+			{
+				MS_THROW_ERROR("unknown IP family");
 			}
 		}
 
