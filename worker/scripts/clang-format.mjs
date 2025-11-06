@@ -11,10 +11,11 @@ void run();
 async function run() {
 	if (!process.env.MEDIASOUP_CLANG_FORMAT_BINARY) {
 		logInfo(
-			'MEDIASOUP_CLANG_FORMAT_BINARY not specified, using "clang-format"'
+			`MEDIASOUP_CLANG_FORMAT_BINARY not specified, using default "${clangFormatBinary}"`
 		);
 	} else {
 		clangFormatBinary = process.env.MEDIASOUP_CLANG_FORMAT_BINARY;
+
 		logInfo(
 			`MEDIASOUP_CLANG_FORMAT_BINARY specified, using "${clangFormatBinary}"`
 		);
