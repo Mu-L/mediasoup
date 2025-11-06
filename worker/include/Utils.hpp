@@ -233,10 +233,7 @@ namespace Utils
 				--max;
 			}
 
-			if (min > max)
-			{
-				min = max;
-			}
+			min = std::min(min, max);
 
 			return (((Crypto::seed >> 4) & 0x7FFF7FFF) % (max - min + 1)) + min;
 		}
@@ -248,10 +245,7 @@ namespace Utils
 				                            'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
 				                            'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
 
-			if (len > 64)
-			{
-				len = 64;
-			}
+			len = std::min<size_t>(len, 64);
 
 			for (size_t i{ 0 }; i < len; ++i)
 			{
@@ -403,7 +397,7 @@ namespace Utils
 		static uint64_t Ntp2TimeMs(Time::Ntp ntp)
 		{
 			return (
-			  static_cast<uint64_t>(ntp.seconds) * 1000 +
+			  (static_cast<uint64_t>(ntp.seconds) * 1000) +
 			  static_cast<uint64_t>(
 			    std::round((static_cast<double>(ntp.fractions) * 1000) / NtpFractionalUnit)));
 		}
