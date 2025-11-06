@@ -22,7 +22,7 @@ jobs:
           - os: ubuntu-22.04
             cc: gcc
             cxx: g++
-            run-lint: true
+            run-lint: false
             run-test: true
             run-test-asan-address: false
             run-test-asan-undefined: false
@@ -30,7 +30,7 @@ jobs:
           - os: ubuntu-22.04
             cc: clang
             cxx: clang++
-            run-lint: true
+            run-lint: false
             run-test: true
             run-test-asan-address: false
             run-test-asan-undefined: false
@@ -48,7 +48,7 @@ jobs:
             cc: gcc
             cxx: g++
             pip-break-system-packages: true
-            run-lint: true
+            run-lint: false
             run-test: true
             run-test-asan-address: false
             run-test-asan-undefined: false
@@ -59,7 +59,7 @@ jobs:
             cc: clang
             cxx: clang++
             pip-break-system-packages: true
-            run-lint: true
+            run-lint: false
             run-test: true
             run-test-asan-address: true
             run-test-asan-undefined: true
@@ -90,7 +90,7 @@ jobs:
             cc: clang
             cxx: clang++
             pip-break-system-packages: true
-            run-lint: true
+            run-lint: false
             run-test: true
             run-test-asan-address: false
             run-test-asan-undefined: false
@@ -99,6 +99,7 @@ jobs:
             cc: clang
             cxx: clang++
             pip-break-system-packages: true
+            # Run lint for the latest macos.
             run-lint: true
             run-test: true
             run-test-asan-address: false
@@ -170,6 +171,19 @@ jobs:
       - if: ${{ matrix.build.pip-break-system-packages }}
         name: pip3 install --break-system-packages invoke
         run: pip3 install --break-system-packages invoke
+
+      # Fail if run-lint is set for non macos.
+      - if: ${{ matrix.build.run-lint && !startsWith(matrix.build.os, 'macos') }}
+        name: fail if run-lint is set for non macos
+        run: |
+          echo "run-lint set for non macos"
+          exit 1
+
+      # Install clang-format on macos.
+      - if: ${{ matrix.build.run-lint && startsWith(matrix.build.os, 'macos') }}
+        name: brew install clang-format@21
+        run: |
+          brew install clang-format@21
 
       # We need to install npm deps of worker/scripts/package.json.
       - if: ${{ matrix.build.run-lint }}
