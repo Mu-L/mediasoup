@@ -40,16 +40,11 @@ namespace RTC
 		auto temporalLayer = packet->GetTemporalLayer();
 
 		// Sanity check. Do not allow spatial layers higher than defined.
-		if (spatialLayer > this->spatialLayerCounters.size() - 1)
-		{
-			spatialLayer = this->spatialLayerCounters.size() - 1;
-		}
+		spatialLayer = std::min(static_cast<size_t>(spatialLayer), this->spatialLayerCounters.size() - 1);
 
 		// Sanity check. Do not allow temporal layers higher than defined.
-		if (temporalLayer > this->spatialLayerCounters[0].size() - 1)
-		{
-			temporalLayer = this->spatialLayerCounters[0].size() - 1;
-		}
+		temporalLayer =
+		  std::min(static_cast<size_t>(temporalLayer), this->spatialLayerCounters[0].size() - 1);
 
 		auto& counter = this->spatialLayerCounters[spatialLayer][temporalLayer];
 
