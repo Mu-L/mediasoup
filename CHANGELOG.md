@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.9
+
 - Fix RTCP packets lost in stats ([PR #1651](https://github.com/versatica/mediasoup/pull/1651)).
 
 ### 3.19.8
