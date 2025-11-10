@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.8
+
 - Fix RTCP cumulative total lost computation ([PR #1650](https://github.com/versatica/mediasoup/pull/1650)).
 
 ### 3.19.7
