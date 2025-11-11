@@ -133,10 +133,8 @@ extern "C" int mediasoup_worker_run(
 		RTC::DtlsTransport::ClassInit();
 		RTC::SrtpSession::ClassInit();
 
-#ifdef MS_EXECUTABLE
 		// Ignore some signals.
 		ignoreSignals();
-#endif
 
 		// Run the Worker.
 		const Worker worker(channel.get());
@@ -177,6 +175,7 @@ extern "C" int mediasoup_worker_run(
 
 static void ignoreSignals()
 {
+#ifdef MS_EXECUTABLE
 #ifndef _WIN32
 	MS_TRACE();
 
@@ -215,5 +214,6 @@ static void ignoreSignals()
 			MS_THROW_ERROR("sigaction() failed for signal %s: %s", sigName.c_str(), std::strerror(errno));
 		}
 	}
+#endif
 #endif
 }
