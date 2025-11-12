@@ -35,7 +35,9 @@ namespace RTC
 		delete this->timer;
 	}
 
-	// Returns true if this is a found nacked packet. False otherwise.
+	/**
+	 * Returns true if this is a found nacked packet. False otherwise.
+	 */
 	bool NackGenerator::ReceivePacket(RTC::RtpPacket* packet, bool isRecovered)
 	{
 		MS_TRACE();
