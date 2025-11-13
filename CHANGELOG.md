@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.10
+
 - Add `jitter` in `Consumer` 'outbound-rtp' stats ([PR #1654](https://github.com/versatica/mediasoup/pull/1654)).
 
 ### 3.19.9
