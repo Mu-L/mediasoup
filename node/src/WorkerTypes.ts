@@ -59,7 +59,7 @@ export type WorkerSettings<WorkerAppData extends AppData = AppData> = {
 	dtlsPrivateKeyFile?: string;
 
 	/**
-	 * Absolute path of the mediasoup-worker binary. If given it overrides the
+	 * Absolute path to the mediasoup-worker binary. If given it overrides the
 	 * default location of the binary and the MEDIASOUP_WORKER_BIN environment
 	 * variable.
 	 */
