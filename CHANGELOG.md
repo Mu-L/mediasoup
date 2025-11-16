@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.11
+
 - Node: Add `workerBin` optional field in `createWorker()` ([PR #1660](https://github.com/versatica/mediasoup/pull/1660)).
 
 ### 3.19.10
