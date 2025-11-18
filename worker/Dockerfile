@@ -5,7 +5,7 @@ RUN set -x \
 	&& apt-get update \
 	&& apt-get install --yes \
 		clang pkg-config bash-completion wget curl screen python3-pip python3-yaml \
-		pkg-config zlib1g-dev libgss-dev libssl-dev libxml2-dev gdb
+		zlib1g-dev libgss-dev libssl-dev libxml2-dev gdb
 
 # Install node 22.
 RUN set -x \
