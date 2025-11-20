@@ -2,7 +2,7 @@
 
 ### NEXT
 
-- Only look up the RTP packet’s RID extension if the packet doesn’t have MID extension ([PR #XXXX](https://github.com/versatica/mediasoup/pull/XXXX)).
+- Only look up the RTP packet’s RID extension if the packet doesn’t have MID extension ([PR #1666](https://github.com/versatica/mediasoup/pull/1666)).
 
 ### 3.19.11
 
