@@ -216,7 +216,7 @@ namespace RTC
 				auto* producer = it->second;
 
 				// Fill the ssrc table.
-				// NOTE: We may be overriding an exiting SSRC here, but we don't care.
+				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 				this->ssrcTable[packet->GetSsrc()] = producer;
 
 				return producer;
@@ -234,7 +234,7 @@ namespace RTC
 				auto* producer = it->second;
 
 				// Fill the ssrc table.
-				// NOTE: We may be overriding an exiting SSRC here, but we don't care.
+				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 				this->ssrcTable[packet->GetSsrc()] = producer;
 
 				return producer;
