@@ -200,45 +200,44 @@ namespace RTC
 			}
 		}
 
+		bool hasMid{ false };
+		std::string mid;
+		std::string rid;
+
 		// Otherwise lookup into the MID table.
+		if (packet->ReadMid(mid))
 		{
-			std::string mid;
+			hasMid = true;
 
-			if (packet->ReadMid(mid))
+			auto it = this->midTable.find(mid);
+
+			if (it != this->midTable.end())
 			{
-				auto it = this->midTable.find(mid);
+				auto* producer = it->second;
 
-				if (it != this->midTable.end())
-				{
-					auto* producer = it->second;
+				// Fill the ssrc table.
+				// NOTE: We may be overriding an exiting SSRC here, but we don't care.
+				this->ssrcTable[packet->GetSsrc()] = producer;
 
-					// Fill the ssrc table.
-					// NOTE: We may be overriding an exiting SSRC here, but we don't care.
-					this->ssrcTable[packet->GetSsrc()] = producer;
-
-					return producer;
-				}
+				return producer;
 			}
 		}
 
-		// Otherwise lookup into the RID table.
+		// Otherwise lookup into the RID table but only do it if the packet doesn't
+		// have MID extension.
+		if (!hasMid && packet->ReadRid(rid))
 		{
-			std::string rid;
+			auto it = this->ridTable.find(rid);
 
-			if (packet->ReadRid(rid))
+			if (it != this->ridTable.end())
 			{
-				auto it = this->ridTable.find(rid);
+				auto* producer = it->second;
 
-				if (it != this->ridTable.end())
-				{
-					auto* producer = it->second;
+				// Fill the ssrc table.
+				// NOTE: We may be overriding an exiting SSRC here, but we don't care.
+				this->ssrcTable[packet->GetSsrc()] = producer;
 
-					// Fill the ssrc table.
-					// NOTE: We may be overriding an exiting SSRC here, but we don't care.
-					this->ssrcTable[packet->GetSsrc()] = producer;
-
-					return producer;
-				}
+				return producer;
 			}
 		}
 

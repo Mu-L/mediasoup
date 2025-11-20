@@ -2,6 +2,8 @@
 
 ### NEXT
 
+- Only look up the RTP packet’s RID extension if the packet doesn’t have MID extension ([PR #XXXX](https://github.com/versatica/mediasoup/pull/XXXX)).
+
 ### 3.19.11
 
 - Node: Add `workerBin` optional field in `createWorker()` ([PR #1660](https://github.com/versatica/mediasoup/pull/1660)).
