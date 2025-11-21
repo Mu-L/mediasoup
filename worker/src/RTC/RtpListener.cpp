@@ -216,13 +216,22 @@ namespace RTC
 				auto* producer = it->second;
 
 				// Fill the ssrc table.
-				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 
+				MS_DEBUG_DEV(
+				  "inserting entry in ssrcTable [mid:%s, ssrc:%" PRIu32 ", producerId:%s]",
+				  mid.c_str(),
+				  packet->GetSsrc(),
+				  producer.id.c_str());
+
+				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 				if (this->ssrcTable.find(packet->GetSsrc()) != this->ssrcTable.end())
 				{
 					MS_WARN_TAG(
 					  rtp,
-					  "a Producer with ssrc %" PRIu32 " already exists in the ssrcTable, overriding it anyway");
+					  "a Producer with ssrc %" PRIu32
+					  " already exists in the ssrcTable, overriding it anyway [mid:%s]",
+					  packet->GetSsrc(),
+					  mid.c_str());
 				}
 
 				this->ssrcTable[packet->GetSsrc()] = producer;
@@ -242,12 +251,22 @@ namespace RTC
 				auto* producer = it->second;
 
 				// Fill the ssrc table.
+
+				MS_DEBUG_DEV(
+				  "inserting entry in ssrcTable [rid:%s, ssrc:%" PRIu32 ", producerId:%s]",
+				  rid.c_str(),
+				  packet->GetSsrc(),
+				  producer.id.c_str());
+
 				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 				if (this->ssrcTable.find(packet->GetSsrc()) != this->ssrcTable.end())
 				{
 					MS_WARN_TAG(
 					  rtp,
-					  "a Producer with ssrc %" PRIu32 " already exists in the ssrcTable, overriding it anyway");
+					  "a Producer with ssrc %" PRIu32
+					  " already exists in the ssrcTable, overriding it anyway  [rid:%s]",
+					  packet->GetSsrc(),
+					  rid.c_str());
 				}
 
 				this->ssrcTable[packet->GetSsrc()] = producer;
