@@ -217,6 +217,14 @@ namespace RTC
 
 				// Fill the ssrc table.
 				// NOTE: Here we may override an existing key with same SSRC but it's ok.
+
+				if (this->ssrcTable.find(packet->GetSsrc()) != this->ssrcTable.end())
+				{
+					MS_WARN_TAG(
+					  rtp,
+					  "a Producer with ssrc %" PRIu32 " already exists in the ssrcTable, overriding it anyway");
+				}
+
 				this->ssrcTable[packet->GetSsrc()] = producer;
 
 				return producer;
@@ -235,6 +243,13 @@ namespace RTC
 
 				// Fill the ssrc table.
 				// NOTE: Here we may override an existing key with same SSRC but it's ok.
+				if (this->ssrcTable.find(packet->GetSsrc()) != this->ssrcTable.end())
+				{
+					MS_WARN_TAG(
+					  rtp,
+					  "a Producer with ssrc %" PRIu32 " already exists in the ssrcTable, overriding it anyway");
+				}
+
 				this->ssrcTable[packet->GetSsrc()] = producer;
 
 				return producer;
