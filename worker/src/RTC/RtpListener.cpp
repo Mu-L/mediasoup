@@ -217,11 +217,12 @@ namespace RTC
 
 				// Fill the ssrc table.
 
-				MS_DEBUG_DEV(
+				// TODO: Change this to MS_DEBUG_DEV().
+				MS_DUMP(
 				  "inserting entry in ssrcTable [mid:%s, ssrc:%" PRIu32 ", producerId:%s]",
 				  mid.c_str(),
 				  packet->GetSsrc(),
-				  producer.id.c_str());
+				  producer->id.c_str());
 
 				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 				if (this->ssrcTable.find(packet->GetSsrc()) != this->ssrcTable.end())
@@ -252,11 +253,12 @@ namespace RTC
 
 				// Fill the ssrc table.
 
-				MS_DEBUG_DEV(
+				// TODO: Change this to MS_DEBUG_DEV().
+				MS_DUMP(
 				  "inserting entry in ssrcTable [rid:%s, ssrc:%" PRIu32 ", producerId:%s]",
 				  rid.c_str(),
 				  packet->GetSsrc(),
-				  producer.id.c_str());
+				  producer->id.c_str());
 
 				// NOTE: Here we may override an existing key with same SSRC but it's ok.
 				if (this->ssrcTable.find(packet->GetSsrc()) != this->ssrcTable.end())
