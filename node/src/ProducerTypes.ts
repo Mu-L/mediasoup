@@ -155,8 +155,9 @@ export type ProducerObserverEvents = {
 	trace: [ProducerTraceEventData];
 };
 
-export interface Producer<ProducerAppData extends AppData = AppData>
-	extends EnhancedEventEmitter<ProducerEvents> {
+export interface Producer<
+	ProducerAppData extends AppData = AppData,
+> extends EnhancedEventEmitter<ProducerEvents> {
 	/**
 	 * Producer id.
 	 */

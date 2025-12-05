@@ -210,8 +210,9 @@ export type WorkerObserverEvents = {
 	newrouter: [Router];
 };
 
-export interface Worker<WorkerAppData extends AppData = AppData>
-	extends EnhancedEventEmitter<WorkerEvents> {
+export interface Worker<
+	WorkerAppData extends AppData = AppData,
+> extends EnhancedEventEmitter<WorkerEvents> {
 	/**
 	 * Worker process identifier (PID).
 	 */

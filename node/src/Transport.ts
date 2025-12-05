@@ -113,10 +113,10 @@ type TransportData =
 const logger = new Logger('Transport');
 
 export abstract class TransportImpl<
-		TransportAppData extends AppData = AppData,
-		Events extends TransportEvents = TransportEvents,
-		Observer extends TransportObserver = TransportObserver,
-	>
+	TransportAppData extends AppData = AppData,
+	Events extends TransportEvents = TransportEvents,
+	Observer extends TransportObserver = TransportObserver,
+>
 	extends EnhancedEventEmitter<Events>
 	implements Transport
 {
