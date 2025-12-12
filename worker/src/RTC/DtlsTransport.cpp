@@ -682,7 +682,7 @@ namespace RTC
 
 			ret = X509_digest(DtlsTransport::certificate, hashFunction, binaryFingerprint, &size);
 
-			if (ret == 0)
+			if (ret == 0 || size == 0)
 			{
 				MS_ERROR("X509_digest() failed");
 				MS_THROW_ERROR("Fingerprints generation failed");
@@ -1396,7 +1396,7 @@ namespace RTC
 		// Compare the remote fingerprint with the value given via signaling.
 		ret = X509_digest(certificate, hashFunction, binaryFingerprint, &size);
 
-		if (ret == 0)
+		if (ret == 0 || size == 0)
 		{
 			MS_ERROR("X509_digest() failed");
 
