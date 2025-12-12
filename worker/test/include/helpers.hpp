@@ -8,7 +8,7 @@ namespace helpers
 {
 	bool ReadBinaryFile(const char* file, uint8_t* buffer, size_t* len);
 
-	bool AddToBuffer(uint8_t* buf, int* size, const uint8_t* data, size_t len);
+	bool AddToBuffer(uint8_t* buf, size_t* size, const uint8_t* data, size_t len);
 
 	bool ReadPayloadData(const char* file, int pos, int bytes, uint8_t* payload);
 

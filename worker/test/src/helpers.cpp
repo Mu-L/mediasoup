@@ -32,7 +32,7 @@ namespace helpers
 		return true;
 	}
 
-	bool AddToBuffer(uint8_t* buf, int* size, const uint8_t* data, size_t len)
+	bool AddToBuffer(uint8_t* buf, size_t* size, const uint8_t* data, size_t len)
 	{
 		static size_t bufferSize{ 65536 };
 
@@ -104,8 +104,8 @@ namespace helpers
 
 		uint8_t buffer[16] = { 144, 111, 92, 65, 98, 245, 71, 218, 159, 113, 8, 226, 190, 222, 0, 1 };
 
-		int packetSize  = 0;
-		uint8_t oneByte = 0;
+		size_t packetSize = 0;
+		uint8_t oneByte   = 0;
 
 		// Write the RTP header.
 		// NOLINTNEXTLINE (readability-suspicious-call-argument)
@@ -193,7 +193,7 @@ namespace helpers
 
 		MS_ASSERT(
 		  written == packetSize,
-		  "[%d] should be written to file [%s], but %zu bytes were written",
+		  "[%zu] should be written to file [%s], but %zu bytes were written",
 		  packetSize,
 		  filePath.c_str(),
 		  written);
