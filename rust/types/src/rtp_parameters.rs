@@ -726,7 +726,7 @@ pub struct RtpParameters {
     /// Parameters used for RTCP.
     pub rtcp: RtcpParameters,
     /// MSID (WebRTC MediaStream Identification) as defined in
-    /// https://datatracker.ietf.org/doc/html/rfc8830
+    /// <https://datatracker.ietf.org/doc/html/rfc8830>
     #[serde(skip_serializing_if = "Option::is_none")]
     pub msid: Option<String>,
 }
