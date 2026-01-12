@@ -1,5 +1,5 @@
-#ifndef MS_RTC_RTP_PACKET_HPP
-#define MS_RTC_RTP_PACKET_HPP
+#ifndef MS_RTC_RTP_PACKET_HPP_OLD
+#define MS_RTC_RTP_PACKET_HPP_OLD
 
 #include "common.hpp"
 #include "Utils.hpp"
@@ -48,7 +48,7 @@ namespace RTC
 		{
 			uint16_t id;
 			uint16_t length; // Size of value in multiples of 4 bytes.
-			uint8_t value[1];
+			uint8_t value[];
 		};
 
 	public:
@@ -69,7 +69,7 @@ namespace RTC
 			uint8_t id : 4;
 			uint8_t len : 4;
 #endif
-			uint8_t value[1];
+			uint8_t value[];
 		};
 
 	private:
@@ -78,7 +78,7 @@ namespace RTC
 		{
 			uint8_t id;
 			uint8_t len;
-			uint8_t value[1];
+			uint8_t value[];
 		};
 
 	public:
@@ -132,6 +132,7 @@ namespace RTC
 		~RtpPacket() override;
 
 		void Dump(int indentation = 0) const;
+
 		flatbuffers::Offset<FBS::RtpPacket::Dump> FillBuffer(flatbuffers::FlatBufferBuilder& builder) const;
 
 		const uint8_t* GetData() const
@@ -468,16 +469,27 @@ namespace RTC
 			switch (rotationValue)
 			{
 				case 3:
+				{
 					rotation = 270;
 					break;
+				}
+
 				case 2:
+				{
 					rotation = 180;
 					break;
+				}
+
 				case 1:
+				{
 					rotation = 90;
 					break;
+				}
+
 				default:
+				{
 					rotation = 0;
+				}
 			}
 
 			return true;
@@ -708,7 +720,7 @@ namespace RTC
 
 		bool ProcessPayload(RTC::Codecs::EncodingContext* context, bool& marker);
 
-		std::unique_ptr<Codecs::PayloadDescriptor::Encoder> GetPayloadEncoder();
+		std::unique_ptr<Codecs::PayloadDescriptor::Encoder> GetPayloadEncoder() const;
 
 		void EncodePayload(Codecs::PayloadDescriptor::Encoder* encoder);
 
@@ -716,17 +728,17 @@ namespace RTC
 
 		void ShiftPayload(size_t payloadOffset, size_t shift, bool expand = true);
 
-#ifdef MS_RTC_LOGGER_RTP
-	public:
-		RtcLogger::RtpPacket logger;
-#endif
-
 	private:
 		void ParseExtensions();
 
 		/* Pure virtual methods inherited from RTC::Codecs::DependencyDescriptor::Listener. */
 	public:
 		void OnDependencyDescriptorUpdated(const uint8_t* data, size_t len) override;
+
+#ifdef MS_RTC_LOGGER_RTP
+	public:
+		RtcLogger::RtpPacket logger;
+#endif
 
 	private:
 		Header* header{ nullptr };

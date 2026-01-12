@@ -1,9 +1,10 @@
-#include "RTC/SCTP/sctpCommon.hpp" // in worker/test/include/
-#include <cstring>                 // std::memset
+#include "RTC/RTP/rtpCommon.hpp" // in worker/test/include/
+#include <cstdint>
+#include <cstring> // std::memset
 
 namespace RTC
 {
-	namespace SCTP
+	namespace RTP
 	{
 		thread_local uint8_t FactoryBuffer[];
 		thread_local uint8_t SerializeBuffer[];
@@ -24,5 +25,5 @@ namespace RTC
 				DataBuffer[i] = static_cast<uint8_t>(i);
 			}
 		}
-	} // namespace SCTP
+	} // namespace RTP
 } // namespace RTC

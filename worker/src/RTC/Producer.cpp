@@ -597,9 +597,6 @@ namespace RTC
 			return ReceiveRtpPacketResult::DISCARDED;
 		}
 
-		// Pre-process the packet.
-		PreProcessRtpPacket(packet);
-
 		ReceiveRtpPacketResult result;
 		bool isRtx{ false };
 
@@ -1194,16 +1191,6 @@ namespace RTC
 		this->listener->OnProducerNewRtpStream(this, rtpStream, mappedSsrc);
 	}
 
-	inline void Producer::PreProcessRtpPacket(RTC::RtpPacket* packet)
-	{
-		MS_TRACE();
-
-		if (this->kind == RTC::Media::Kind::VIDEO)
-		{
-			packet->SetDependencyDescriptorExtensionId(this->rtpHeaderExtensionIds.dependencyDescriptor);
-		}
-	}
-
 	inline bool Producer::MangleRtpPacket(RTC::RtpPacket* packet, RTC::RtpStreamRecv* rtpStream) const
 	{
 		MS_TRACE();
@@ -1421,6 +1408,8 @@ namespace RTC
 				}
 			}
 
+			// TODO: Remove this when using the new RTC::RTP::Packet class and instead
+			// call SetExtensions() with ExtensionsType::Auto.
 			uint8_t highestExtenId{ 0u };
 			uint8_t highestExtenLen{ 0u };
 

@@ -169,8 +169,8 @@ namespace RTC
 #ifdef MS_RTC_LOGGER_RTP
 		// Initialize logger.
 		this->logger.timestamp        = DepLibUV::GetTimeMs();
-		this->logger.recvRtpTimestamp = this->GetTimestamp();
-		this->logger.recvSeqNumber    = this->GetSequenceNumber();
+		this->logger.recvRtpTimestamp = GetTimestamp();
+		this->logger.recvSeqNumber    = GetSequenceNumber();
 #endif
 	}
 
@@ -872,7 +872,7 @@ namespace RTC
 
 		if (this->payloadDescriptorHandler)
 		{
-			packet->payloadDescriptorHandler->RtpPacketCloned(packet);
+			packet->payloadDescriptorHandler->RtpPacketChanged(packet);
 		}
 
 		// Store allocated buffer.
@@ -976,7 +976,7 @@ namespace RTC
 		return this->payloadDescriptorHandler->Process(context, this, marker);
 	}
 
-	std::unique_ptr<Codecs::PayloadDescriptor::Encoder> RtpPacket::GetPayloadEncoder()
+	std::unique_ptr<Codecs::PayloadDescriptor::Encoder> RtpPacket::GetPayloadEncoder() const
 	{
 		MS_TRACE();
 
