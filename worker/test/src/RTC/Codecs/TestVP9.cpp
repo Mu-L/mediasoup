@@ -8,7 +8,7 @@ using namespace RTC;
 
 constexpr uint16_t MaxPictureId = (1 << 15) - 1;
 
-Codecs::VP9::PayloadDescriptor* CreateVP9Packet(
+Codecs::VP9::PayloadDescriptor* OLD_CreateVP8PayloadDescriptor(
   uint8_t* buffer, size_t bufferLen, uint16_t pictureId, uint8_t tlIndex)
 {
 	buffer[0]             = 0xAD; // I, L, B, E bits
@@ -24,7 +24,7 @@ Codecs::VP9::PayloadDescriptor* CreateVP9Packet(
 	return payloadDescriptor;
 }
 
-std::unique_ptr<Codecs::VP9::PayloadDescriptor> ProcessVP9Packet(
+std::unique_ptr<Codecs::VP9::PayloadDescriptor> OLD_ProcessVP9Packet(
   Codecs::VP9::EncodingContext& context, uint16_t pictureId, uint8_t tlIndex)
 {
 	// clang-format off
@@ -34,11 +34,12 @@ std::unique_ptr<Codecs::VP9::PayloadDescriptor> ProcessVP9Packet(
 	};
 	// clang-format on
 	bool marker;
-	auto* payloadDescriptor = CreateVP9Packet(buffer, sizeof(buffer), pictureId, tlIndex);
+	auto* payloadDescriptor =
+	  OLD_CreateVP8PayloadDescriptor(buffer, sizeof(buffer), pictureId, tlIndex);
 	std::unique_ptr<Codecs::VP9::PayloadDescriptorHandler> payloadDescriptorHandler(
 	  new Codecs::VP9::PayloadDescriptorHandler(payloadDescriptor));
 
-	auto packet = helpers::CreateRtpPacket(buffer, sizeof(buffer));
+	auto packet = helpers::CreateOldRtpPacket(buffer, sizeof(buffer));
 	if (payloadDescriptorHandler->Process(&context, packet.get(), marker))
 	{
 		return std::unique_ptr<Codecs::VP9::PayloadDescriptor>(Codecs::VP9::Parse(buffer, sizeof(buffer)));
@@ -47,7 +48,7 @@ std::unique_ptr<Codecs::VP9::PayloadDescriptor> ProcessVP9Packet(
 	return nullptr;
 }
 
-SCENARIO("process VP9 payload descriptor", "[codecs][vp9]")
+SCENARIO("OLD process VP9 payload descriptor", "[codecs][vp9]")
 {
 	SECTION("drop packets that belong to other temporal layers after rolling over pictureID")
 	{
@@ -64,17 +65,17 @@ SCENARIO("process VP9 payload descriptor", "[codecs][vp9]")
 		context.SetTargetSpatialLayer(0);
 
 		// Frame 1.
-		auto forwarded = ProcessVP9Packet(context, MaxPictureId, 0);
+		auto forwarded = OLD_ProcessVP9Packet(context, MaxPictureId, 0);
 		REQUIRE(forwarded);
 		REQUIRE(forwarded->pictureId == MaxPictureId);
 
 		// Frame 2.
-		forwarded = ProcessVP9Packet(context, 0, 0);
+		forwarded = OLD_ProcessVP9Packet(context, 0, 0);
 		REQUIRE(forwarded);
 		REQUIRE(forwarded->pictureId == 0);
 
 		// Frame 3.
-		forwarded = ProcessVP9Packet(context, 1, 1);
+		forwarded = OLD_ProcessVP9Packet(context, 1, 1);
 		REQUIRE_FALSE(forwarded);
 	}
 
@@ -170,7 +171,7 @@ SCENARIO("process VP9 payload descriptor", "[codecs][vp9]")
 				context.SetTargetTemporalLayer(targetTemporalLayer);
 			}
 
-			auto forwarded = ProcessVP9Packet(context, pictureId, tlIndex);
+			auto forwarded = OLD_ProcessVP9Packet(context, pictureId, tlIndex);
 
 			if (shouldForward)
 			{

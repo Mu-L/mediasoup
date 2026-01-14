@@ -8,7 +8,7 @@ using namespace RTC;
 
 constexpr uint16_t MaxPictureId = (1 << 15) - 1;
 
-SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
+SCENARIO("OLD parse VP8 payload descriptor", "[codecs][vp8]")
 {
 	SECTION("parse payload descriptor")
 	{
@@ -355,7 +355,7 @@ SCENARIO("parse VP8 payload descriptor", "[codecs][vp8]")
 	}
 }
 
-Codecs::VP8::PayloadDescriptor* CreatePayloadDescriptor(
+Codecs::VP8::PayloadDescriptor* OLD_CreateVP8PayloadDescriptor(
   uint8_t* buffer,
   size_t bufferLen,
   uint16_t pictureId,
@@ -395,12 +395,12 @@ std::unique_ptr<Codecs::VP8::PayloadDescriptor> ProcessPacket(
 	};
 	// clang-format on
 
-	auto packet = helpers::CreateRtpPacket(buffer, sizeof(buffer));
+	auto packet = helpers::CreateOldRtpPacket(buffer, sizeof(buffer));
 
 	REQUIRE(packet);
 
 	bool marker;
-	auto* payloadDescriptor = CreatePayloadDescriptor(
+	auto* payloadDescriptor = OLD_CreateVP8PayloadDescriptor(
 	  packet->GetPayload(), packet->GetPayloadLength(), pictureId, tl0PictureIndex, tlIndex, layerSync);
 	std::unique_ptr<Codecs::VP8::PayloadDescriptorHandler> payloadDescriptorHandler(
 	  new Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor));
@@ -414,7 +414,7 @@ std::unique_ptr<Codecs::VP8::PayloadDescriptor> ProcessPacket(
 	return nullptr;
 }
 
-SCENARIO("process VP8 payload descriptor", "[codecs][vp8]")
+SCENARIO("OLD process VP8 payload descriptor", "[codecs][vp8]")
 {
 	SECTION("do not drop TL0PICIDX from temporal layers higher than 0")
 	{
@@ -538,7 +538,7 @@ SCENARIO("process VP8 payload descriptor", "[codecs][vp8]")
 	}
 }
 
-SCENARIO("encode VP8 payload descriptor", "[codecs][vp8]")
+SCENARIO("OLD encode VP8 payload descriptor", "[codecs][vp8]")
 {
 	/**
 	 * VP8 Payload Descriptor
@@ -584,7 +584,7 @@ SCENARIO("encode VP8 payload descriptor", "[codecs][vp8]")
 
 		auto* payloadDescriptorHandler = new Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor);
 
-		auto packet    = helpers::CreateRtpPacket(buffer, sizeof(buffer));
+		auto packet    = helpers::CreateOldRtpPacket(buffer, sizeof(buffer));
 		auto forwarded = payloadDescriptorHandler->Process(&context, packet.get(), marker);
 		REQUIRE(forwarded);
 
@@ -594,7 +594,7 @@ SCENARIO("encode VP8 payload descriptor", "[codecs][vp8]")
 		// Update pictureId.
 		payloadDescriptor->pictureId = 2;
 
-		packet    = helpers::CreateRtpPacket(buffer, sizeof(buffer));
+		packet    = helpers::CreateOldRtpPacket(buffer, sizeof(buffer));
 		forwarded = payloadDescriptorHandler->Process(&context, packet.get(), marker);
 		REQUIRE(forwarded);
 		REQUIRE(payloadDescriptor->pictureId == 2);
@@ -604,7 +604,7 @@ SCENARIO("encode VP8 payload descriptor", "[codecs][vp8]")
 		REQUIRE(encoder2);
 
 		// Encode with encoder1.
-		packet = helpers::CreateRtpPacket(buffer, sizeof(buffer));
+		packet = helpers::CreateOldRtpPacket(buffer, sizeof(buffer));
 		payloadDescriptorHandler->Encode(packet.get(), encoder1.get());
 
 		// Parse the buffer.
@@ -613,7 +613,7 @@ SCENARIO("encode VP8 payload descriptor", "[codecs][vp8]")
 		REQUIRE(payloadDescriptor2->pictureId == 1);
 
 		// Encode with encoder2.
-		packet = helpers::CreateRtpPacket(buffer, sizeof(buffer));
+		packet = helpers::CreateOldRtpPacket(buffer, sizeof(buffer));
 		payloadDescriptorHandler->Encode(packet.get(), encoder2.get());
 
 		// Parse the buffer.
