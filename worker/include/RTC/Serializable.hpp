@@ -111,6 +111,12 @@ namespace RTC
 		/**
 		 * Set a listener that will be invoked when the current buffer is released,
 		 * meaning that this Serializable no longer uses it.
+		 *
+		 * @remarks
+		 * - The caller should call this method with `nullptr` as argument in case
+		 *   the lifetime of the previously passed `listener` ends before the
+		 *   Serializable is destroyed or serialized. Otherwise the Serializable
+		 *   will invoke a listener that was already destroyed.
 		 */
 		virtual void SetBufferReleasedListener(BufferReleasedListener* listener) final;
 

@@ -1425,7 +1425,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		REQUIRE(packet->IsPaddedTo4Bytes() == true);
 	}
 
-	SECTION("packet::SetExtensions() with ExtensionsType::Auto selects best type")
+	SECTION("Packet::SetExtensions() with ExtensionsType::Auto selects best type")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -1455,7 +1455,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		REQUIRE(packet->HasTwoBytesExtensions());
 	}
 
-	SECTION("packet::SetExtensions() with supported extensions succeeds")
+	SECTION("Packet::SetExtensions() with supported extensions succeeds")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -1564,7 +1564,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		REQUIRE(readWideSeqNumber == newWideSeqNumber);
 	}
 
-	SECTION("packet::SetExtensions() fails if wrong extensions are given")
+	SECTION("Packet::SetExtensions() fails if wrong extensions are given")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -1681,7 +1681,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		REQUIRE(packet->IsPaddedTo4Bytes() == true);
 	}
 
-	SECTION("packet::SetPayload(), SetPayloadLength() and packet::RemovePayload() succeed")
+	SECTION("Packet::SetPayload(), SetPayloadLength() and packet::RemovePayload() succeed")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -1772,7 +1772,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		REQUIRE_THROWS_AS(packet->SetPayload(nullptr, 2), MediaSoupTypeError);
 	}
 
-	SECTION("packet::ShiftPayload() succeeds")
+	SECTION("Packet::ShiftPayload() succeeds")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -1991,7 +1991,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		  helpers::AreBuffersEqual(packet->GetPayload(), packet->GetPayloadLength(), payload, 10) == true);
 	}
 
-	SECTION("packet::ShiftPayload() fails if wrong values are given")
+	SECTION("Packet::ShiftPayload() fails if wrong values are given")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -2018,7 +2018,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		  MediaSoupTypeError);
 	}
 
-	SECTION("packet::RtxEncode() and packet::RtxDecode() succeed")
+	SECTION("Packet::RtxEncode() and packet::RtxDecode() succeed")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -2118,5 +2118,81 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 		  /*paddingLength*/ 0);
 
 		REQUIRE(packet->IsPaddedTo4Bytes() == false);
+	}
+
+	SECTION("Packet::SetBufferReleasedListener() when Packet is destroyed succeeds")
+	{
+		const size_t bufferLength{ 1200 };
+		auto* buffer = new uint8_t[bufferLength];
+
+		std::unique_ptr<Packet> packet{ Packet::Factory(buffer, bufferLength) };
+
+		REQUIRE(packet);
+
+		bool packetBufferReleased{ false };
+		bool bufferDeallocated{ false };
+
+		::RTC::Serializable::BufferReleasedListener packetBufferReleasedListener =
+		  [&buffer, &packetBufferReleased, &bufferDeallocated](
+		    const ::RTC::Serializable* serializable, uint8_t* serializableBuffer)
+		{
+			packetBufferReleased = true;
+
+			if (serializable->GetBuffer() == buffer)
+			{
+				delete[] serializableBuffer;
+				bufferDeallocated = true;
+			}
+		};
+
+		packet->SetBufferReleasedListener(std::addressof(packetBufferReleasedListener));
+
+		// If we destroy the Packet it should invoke the listener.
+		packet.reset(nullptr);
+
+		REQUIRE(packetBufferReleased == true);
+		REQUIRE(bufferDeallocated == true);
+	}
+
+	SECTION("Packet::SetBufferReleasedListener() when Packet is serialized into another buffer succeeds")
+	{
+		const size_t bufferLength{ 1200 };
+		auto* buffer = new uint8_t[bufferLength];
+
+		std::unique_ptr<Packet> packet{ Packet::Factory(buffer, bufferLength) };
+
+		REQUIRE(packet);
+
+		bool packetBufferReleased{ false };
+		bool bufferDeallocated{ false };
+
+		::RTC::Serializable::BufferReleasedListener packetBufferReleasedListener =
+		  [&buffer, &packetBufferReleased, &bufferDeallocated](
+		    const ::RTC::Serializable* serializable, uint8_t* serializableBuffer)
+		{
+			packetBufferReleased = true;
+
+			if (serializable->GetBuffer() == buffer)
+			{
+				delete[] serializableBuffer;
+				bufferDeallocated = true;
+			}
+		};
+
+		packet->SetBufferReleasedListener(std::addressof(packetBufferReleasedListener));
+
+		// If we serialize the Packet into another buffer it should invoke the
+		// listener.
+		packet->Serialize(SerializeBuffer, sizeof(SerializeBuffer));
+
+		REQUIRE(packetBufferReleased == true);
+		REQUIRE(bufferDeallocated == true);
+
+		// NOTE: We need to unset the buffer released listener because once the
+		// unique_ptr of the Packet gets out of the scope, the Packet will be
+		// deallocated and will invoke the buffer released listener, which at
+		// that time is already out of the scope (it's lifetime ended) so it's
+		// been destroyed.
+		packet->SetBufferReleasedListener(nullptr);
 	}
 }
