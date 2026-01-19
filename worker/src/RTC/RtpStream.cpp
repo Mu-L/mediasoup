@@ -117,7 +117,7 @@ namespace RTC
 		this->rtxStream = new RTC::RtxStream(params);
 	}
 
-	bool RtpStream::ReceiveStreamPacket(RTC::RtpPacket* packet)
+	bool RtpStream::ReceiveStreamPacket(const RTC::RTP::Packet* packet)
 	{
 		MS_TRACE();
 
@@ -182,7 +182,7 @@ namespace RTC
 		}
 	}
 
-	bool RtpStream::UpdateSeq(RTC::RtpPacket* packet)
+	bool RtpStream::UpdateSeq(const RTC::RTP::Packet* packet)
 	{
 		MS_TRACE();
 
@@ -346,14 +346,14 @@ namespace RTC
 		}
 	}
 
-	void RtpStream::PacketRetransmitted(RTC::RtpPacket* /*packet*/)
+	void RtpStream::PacketRetransmitted(const RTC::RTP::Packet* /*packet*/)
 	{
 		MS_TRACE();
 
 		this->packetsRetransmitted++;
 	}
 
-	void RtpStream::PacketRepaired(RTC::RtpPacket* /*packet*/)
+	void RtpStream::PacketRepaired(const RTC::RTP::Packet* /*packet*/)
 	{
 		MS_TRACE();
 

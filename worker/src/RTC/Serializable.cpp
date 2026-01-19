@@ -14,6 +14,16 @@ namespace RTC
 		MS_TRACE();
 	}
 
+	Serializable::~Serializable()
+	{
+		MS_TRACE();
+
+		if (this->bufferReleasedListener)
+		{
+			(*this->bufferReleasedListener)(this, this->buffer);
+		}
+	}
+
 	void Serializable::Serialize(uint8_t* buffer, size_t bufferLength)
 	{
 		MS_TRACE();
@@ -28,16 +38,25 @@ namespace RTC
 
 		std::memmove(buffer, this->buffer, this->length);
 
+		if (buffer != this->buffer && this->bufferReleasedListener)
+		{
+			(*this->bufferReleasedListener)(this, this->buffer);
+		}
+
 		this->buffer       = buffer;
 		this->bufferLength = bufferLength;
-		this->frozen       = false;
+	}
+
+	void Serializable::SetBufferReleasedListener(Serializable::BufferReleasedListener* listener)
+	{
+		MS_TRACE();
+
+		this->bufferReleasedListener = listener;
 	}
 
 	void Serializable::Consolidate()
 	{
 		MS_TRACE();
-
-		AssertNotFrozen();
 
 		if (!this->consolidatedListener)
 		{
@@ -47,11 +66,26 @@ namespace RTC
 		this->consolidatedListener();
 	}
 
-	void Serializable::SetBufferLength(size_t bufferLength)
+	void Serializable::SetBuffer(uint8_t* buffer)
 	{
 		MS_TRACE();
 
-		AssertNotFrozen();
+		if (buffer == this->buffer)
+		{
+			return;
+		}
+
+		if (this->bufferReleasedListener)
+		{
+			(*this->bufferReleasedListener)(this, this->buffer);
+		}
+
+		this->buffer = buffer;
+	}
+
+	void Serializable::SetBufferLength(size_t bufferLength)
+	{
+		MS_TRACE();
 
 		if (bufferLength < this->length)
 		{
@@ -72,8 +106,6 @@ namespace RTC
 	void Serializable::SetLength(size_t length)
 	{
 		MS_TRACE();
-
-		AssertNotFrozen();
 
 		if (length > this->bufferLength)
 		{
@@ -115,8 +147,6 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		AssertNotFrozen();
-
 		if (padding > this->length)
 		{
 			MS_THROW_TYPE_ERROR(
@@ -130,18 +160,6 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		AssertNotFrozen();
-
 		this->consolidatedListener = std::move(listener);
-	}
-
-	void Serializable::AssertNotFrozen() const
-	{
-		MS_TRACE();
-
-		if (this->frozen)
-		{
-			MS_THROW_ERROR("Serializable is frozen");
-		}
 	}
 } // namespace RTC

@@ -12,7 +12,7 @@
 using namespace RTC::RTP;
 
 // NOLINTNEXTLINE (clang-tidy readability-function-size)
-SCENARIO("RTP Packet", "[rtp][serializable]")
+SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 {
 	ResetBuffers();
 
@@ -33,7 +33,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ bufferLength,
 		  /*length*/ bufferLength,
-		  /*frozen*/ true,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 23617,
@@ -60,7 +59,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ bufferLength,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 23617,
@@ -87,7 +85,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ bufferLength,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 23617,
@@ -112,7 +109,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ bufferLength - 33 + 16,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 23617,
@@ -150,7 +146,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ bufferLength,
 		  /*length*/ bufferLength,
-		  /*frozen*/ true,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 28478,
@@ -177,7 +172,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ bufferLength,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 28478,
@@ -204,7 +198,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ bufferLength,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 28478,
@@ -229,7 +222,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ bufferLength - 78 + 16 - 149,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 28478,
@@ -267,7 +259,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ bufferLength,
 		  /*length*/ bufferLength,
-		  /*frozen*/ true,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 19354,
@@ -294,7 +285,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ bufferLength,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 19354,
@@ -321,7 +311,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ bufferLength,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 19354,
@@ -346,7 +335,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ bufferLength - 77 + 16,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 19354,
@@ -385,7 +373,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ sizeof(buffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ true,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -414,7 +401,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -443,7 +429,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -470,7 +455,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer) + 16,
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -515,7 +499,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ sizeof(buffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ true,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -565,7 +548,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -612,7 +594,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -657,7 +638,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer) - 2 + 16,
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -702,7 +682,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ sizeof(buffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ true,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -755,7 +734,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -805,7 +783,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -853,7 +830,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer) + 15,
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 8,
@@ -895,7 +871,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ buffer,
 		  /*bufferLength*/ sizeof(buffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ true,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 9,
@@ -924,7 +899,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 9,
@@ -953,7 +927,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ sizeof(buffer),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 9,
@@ -980,7 +953,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ packet->GetLength(),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 9,
@@ -1010,7 +982,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ packet->GetLength(),
-		  /*frozen*/ false,
 		  /*payloadType*/ 1,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 9,
@@ -1032,6 +1003,30 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		REQUIRE(packet->IsPaddedTo4Bytes() == true);
 	}
 
+	SECTION("Packet::Parse() with wrong arguments fails")
+	{
+		// clang-format off
+		uint8_t buffer[] =
+		{
+			0x90, 0x01, 0x00, 0x08,
+			0x00, 0x00, 0x00, 0x04,
+			0x00, 0x00, 0x00, 0x05,
+			0xbe, 0xde, 0x00, 0x03, // Header Extension
+			0x10, 0xaa, 0x21, 0xbb, // - id: 1, len: 1
+			0xff, 0x00, 0x00, 0x33, // - id: 2, len: 2
+			0xff, 0xff, 0xff, 0xff, // - id: 3, len: 4
+			0x12, 0x23
+		};
+		// clang-format on
+
+		std::unique_ptr<Packet> packet{ nullptr };
+
+		// bufferLength is lower than packetLen.
+		REQUIRE_THROWS_AS(
+		  packet.reset(Packet::Parse(buffer, sizeof(buffer), sizeof(buffer) - 1)), MediaSoupTypeError);
+		REQUIRE(!packet);
+	}
+
 	SECTION("Packet::Factory() succeeds")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
@@ -1041,7 +1036,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -1116,7 +1110,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1166,7 +1159,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ SerializeBuffer,
 		  /*bufferLength*/ sizeof(SerializeBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1215,7 +1207,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1262,7 +1253,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 1,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1312,7 +1302,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 1 + 3,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1362,7 +1351,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 1 + 3,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1396,7 +1384,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ CloneBuffer,
 		  /*bufferLength*/ sizeof(CloneBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 1 + 3,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ true,
 		  /*seqNumber*/ 12345,
@@ -1636,7 +1623,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 4 + 72 + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -1695,7 +1681,7 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		REQUIRE(packet->IsPaddedTo4Bytes() == true);
 	}
 
-	SECTION("packet::SetPayload() and packet::RemovePayload() succeed")
+	SECTION("packet::SetPayload(), SetPayloadLength() and packet::RemovePayload() succeed")
 	{
 		std::unique_ptr<Packet> packet{ Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)) };
 
@@ -1718,7 +1704,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -1734,6 +1719,30 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*hasPadding*/ true,
 		  /*paddingLength*/ 2);
 
+		/* Set payload length. */
+
+		packet->SetPayloadLength(501);
+
+		CHECK_RTP_PACKET(
+		  /*packet*/ packet.get(),
+		  /*buffer*/ FactoryBuffer,
+		  /*bufferLength*/ sizeof(FactoryBuffer),
+		  /*length*/ Packet::FixedHeaderMinSize + 501,
+		  /*payloadType*/ 0,
+		  /*hasMarker*/ false,
+		  /*seqNumber*/ 0,
+		  /*timestamp*/ 0,
+		  /*ssrc*/ 0,
+		  /*hasCsrcs*/ false,
+		  /*hasHeaderExtension*/ false,
+		  /*headerExtensionValueLength*/ 0,
+		  /*hasOneByteExtensions*/ false,
+		  /*hasTwoBytesExtensions*/ false,
+		  /*hasPayload*/ true,
+		  /*payloadLength*/ 501,
+		  /*hasPadding*/ false,
+		  /*paddingLength*/ 0);
+
 		/* Remove payload. */
 
 		// This method removes padding.
@@ -1744,7 +1753,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -1815,7 +1823,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -1877,7 +1884,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 10 + 1,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -1937,7 +1943,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 16 + 10 - 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 0,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 0,
@@ -2039,7 +2044,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 12345,
@@ -2069,7 +2073,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 10 + 2,
-		  /*frozen*/ false,
 		  /*payloadType*/ 111,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 666,
@@ -2099,7 +2102,6 @@ SCENARIO("RTP Packet", "[rtp][serializable]")
 		  /*buffer*/ FactoryBuffer,
 		  /*bufferLength*/ sizeof(FactoryBuffer),
 		  /*length*/ Packet::FixedHeaderMinSize + 10,
-		  /*frozen*/ false,
 		  /*payloadType*/ 100,
 		  /*hasMarker*/ false,
 		  /*seqNumber*/ 12345,

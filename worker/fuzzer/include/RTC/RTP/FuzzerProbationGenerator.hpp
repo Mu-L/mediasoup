@@ -1,5 +1,5 @@
-#ifndef MS_FUZZER_RTC_CODECS_OPUS_HPP
-#define MS_FUZZER_RTC_CODECS_OPUS_HPP
+#ifndef MS_FUZZER_RTC_RTP_PROBATION_PACKET_HPP
+#define MS_FUZZER_RTC_RTP_PROBATION_PACKET_HPP
 
 #include "common.hpp"
 
@@ -7,13 +7,13 @@ namespace Fuzzer
 {
 	namespace RTC
 	{
-		namespace Codecs
+		namespace RTP
 		{
-			namespace Opus
+			namespace ProbationGenerator
 			{
 				void Fuzz(const uint8_t* data, size_t len);
 			}
-		} // namespace Codecs
+		} // namespace RTP
 	} // namespace RTC
 } // namespace Fuzzer
 

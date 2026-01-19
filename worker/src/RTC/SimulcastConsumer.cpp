@@ -6,7 +6,7 @@
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
 #include "Utils.hpp"
-#include "RTC/Codecs/Tools.hpp"
+#include "RTC/RTP/Codecs/Tools.hpp"
 #ifdef MS_RTC_LOGGER_RTP
 #include "RTC/RtcLogger.hpp"
 #endif
@@ -99,7 +99,7 @@ namespace RTC
 		// Create the encoding context.
 		const auto* mediaCodec = this->rtpParameters.GetCodecForEncoding(encoding);
 
-		if (!RTC::Codecs::Tools::IsValidTypeForCodec(this->type, mediaCodec->mimeType))
+		if (!RTC::RTP::Codecs::Tools::IsValidTypeForCodec(this->type, mediaCodec->mimeType))
 		{
 			MS_THROW_TYPE_ERROR(
 			  "%s codec not supported for simulcast", mediaCodec->mimeType.ToString().c_str());
@@ -113,12 +113,13 @@ namespace RTC
 
 		this->rtpSeqManager = RTC::SeqManager<uint16_t>(initialOutputSeq);
 
-		RTC::Codecs::EncodingContext::Params params;
+		RTC::RTP::Codecs::EncodingContext::Params params;
 
 		params.spatialLayers  = encoding.spatialLayers;
 		params.temporalLayers = encoding.temporalLayers;
 
-		this->encodingContext.reset(RTC::Codecs::Tools::GetEncodingContext(mediaCodec->mimeType, params));
+		this->encodingContext.reset(
+		  RTC::RTP::Codecs::Tools::GetEncodingContext(mediaCodec->mimeType, params));
 
 		MS_ASSERT(this->encodingContext, "no encoding context for this codec");
 
@@ -721,7 +722,7 @@ namespace RTC
 	}
 
 	// NOLINTNEXTLINE (misc-no-recursion)
-	void SimulcastConsumer::SendRtpPacket(RTC::RtpPacket* packet, RTC::SharedRtpPacket& sharedPacket)
+	void SimulcastConsumer::SendRtpPacket(RTC::RTP::Packet* packet, RTC::RTP::SharedPacket& sharedPacket)
 	{
 		MS_TRACE();
 
@@ -738,7 +739,7 @@ namespace RTC
 			if (spatialLayer == this->currentSpatialLayer)
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::CONSUMER_INACTIVE);
+				packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::CONSUMER_INACTIVE);
 #endif
 
 				this->rtpSeqManager.Drop(packet->GetSequenceNumber());
@@ -754,7 +755,7 @@ namespace RTC
 			if (spatialLayer == this->currentSpatialLayer)
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::INVALID_TARGET_LAYER);
+				packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::INVALID_TARGET_LAYER);
 #endif
 
 				this->rtpSeqManager.Drop(packet->GetSequenceNumber());
@@ -776,7 +777,7 @@ namespace RTC
 				MS_WARN_DEV("payload type not supported [payloadType:%" PRIu8 "]", payloadType);
 
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::UNSUPPORTED_PAYLOAD_TYPE);
+				packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::UNSUPPORTED_PAYLOAD_TYPE);
 #endif
 
 				this->rtpSeqManager.Drop(packet->GetSequenceNumber());
@@ -800,7 +801,7 @@ namespace RTC
 			if (!packet->IsKeyFrame())
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::NOT_A_KEYFRAME);
+				packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::NOT_A_KEYFRAME);
 #endif
 
 				// NOTE: Don't drop the packet in the RTP sequence manager since this
@@ -835,7 +836,7 @@ namespace RTC
 		if (this->syncRequired && !packet->IsKeyFrame())
 		{
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::NOT_A_KEYFRAME);
+			packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::NOT_A_KEYFRAME);
 #endif
 
 			// NOTE: No need to drop the packet in the RTP sequence manager since here
@@ -857,7 +858,7 @@ namespace RTC
 			if (spatialLayer == this->currentSpatialLayer)
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::EMPTY_PAYLOAD);
+				packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::EMPTY_PAYLOAD);
 #endif
 
 				this->rtpSeqManager.Drop(packet->GetSequenceNumber());
@@ -991,7 +992,7 @@ namespace RTC
 
 #ifdef MS_RTC_LOGGER_RTP
 					packet->logger.Discarded(
-					  RtcLogger::RtpPacket::DiscardReason::TOO_HIGH_TIMESTAMP_EXTRA_NEEDED);
+					  RTC::RtcLogger::RtpPacket::DiscardReason::TOO_HIGH_TIMESTAMP_EXTRA_NEEDED);
 #endif
 
 					// NOTE: Don't drop the packet in the RTP sequence manager since this
@@ -1042,7 +1043,7 @@ namespace RTC
 			{
 #ifdef MS_RTC_LOGGER_RTP
 				packet->logger.Discarded(
-				  RtcLogger::RtpPacket::DiscardReason::PACKET_PREVIOUS_TO_SPATIAL_LAYER_SWITCH);
+				  RTC::RtcLogger::RtpPacket::DiscardReason::PACKET_PREVIOUS_TO_SPATIAL_LAYER_SWITCH);
 #endif
 
 				this->rtpSeqManager.Drop(packet->GetSequenceNumber());
@@ -1092,7 +1093,7 @@ namespace RTC
 			if (!packet->ProcessPayload(this->encodingContext.get(), marker))
 			{
 #ifdef MS_RTC_LOGGER_RTP
-				packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::DROPPED_BY_CODEC);
+				packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::DROPPED_BY_CODEC);
 #endif
 
 				this->rtpSeqManager.Drop(packet->GetSequenceNumber());
@@ -1171,7 +1172,7 @@ namespace RTC
 			  origTimestamp);
 
 #ifdef MS_RTC_LOGGER_RTP
-			packet->logger.Discarded(RtcLogger::RtpPacket::DiscardReason::SEND_RTP_STREAM_DISCARDED);
+			packet->logger.Discarded(RTC::RtcLogger::RtpPacket::DiscardReason::SEND_RTP_STREAM_DISCARDED);
 #endif
 		}
 
@@ -1776,7 +1777,7 @@ namespace RTC
 	}
 
 	void SimulcastConsumer::StorePacketInTargetLayerRetransmissionBuffer(
-	  RTC::RtpPacket* packet, RTC::SharedRtpPacket& sharedPacket)
+	  RTC::RTP::Packet* packet, RTC::RTP::SharedPacket& sharedPacket)
 	{
 		MS_TRACE();
 
@@ -1914,7 +1915,7 @@ namespace RTC
 	}
 
 	void SimulcastConsumer::OnRtpStreamRetransmitRtpPacket(
-	  RTC::RtpStreamSend* /*rtpStream*/, RTC::RtpPacket* packet)
+	  RTC::RtpStreamSend* /*rtpStream*/, RTC::RTP::Packet* packet)
 	{
 		MS_TRACE();
 

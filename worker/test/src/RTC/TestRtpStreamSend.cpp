@@ -1,12 +1,13 @@
 #include "common.hpp"
-#include "RTC/Codecs/AV1.hpp"
-#include "RTC/Codecs/PayloadDescriptorHandler.hpp"
-#include "RTC/Codecs/VP8.hpp"
 #include "RTC/RTCP/FeedbackRtpNack.hpp"
-#include "RTC/RtpPacket.hpp"
+#include "RTC/RTP/Codecs/AV1.hpp"
+#include "RTC/RTP/Codecs/PayloadDescriptorHandler.hpp"
+#include "RTC/RTP/Codecs/VP8.hpp"
+#include "RTC/RTP/Packet.hpp"
+#include "RTC/RTP/SharedPacket.hpp"
+#include "RTC/RtpHeaderExtensionIds.hpp"
 #include "RTC/RtpStream.hpp"
 #include "RTC/RtpStreamSend.hpp"
-#include "RTC/SharedRtpPacket.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cstring> // std::memcpy()
 #include <vector>
@@ -15,26 +16,35 @@
 
 using namespace RTC;
 
-static std::unique_ptr<RtpPacket> CreateRtpPacket(
+static std::unique_ptr<RTP::Packet> CreateRtpPacket(
   uint8_t* buffer, size_t len, uint16_t seq, uint32_t timestamp)
 {
-	auto* packet = RtpPacket::Parse(buffer, len);
+	auto* packet = RTP::Packet::Parse(buffer, len);
 
+	REQUIRE(packet);
+
+	packet->SetPayloadType(123);
 	packet->SetSequenceNumber(seq);
 	packet->SetTimestamp(timestamp);
 
-	return std::unique_ptr<RtpPacket>(packet);
+	return std::unique_ptr<RTP::Packet>(packet);
 }
 
-static void SendRtpPacket(std::vector<std::pair<RtpStreamSend*, uint32_t>> streams, RtpPacket* packet)
+static void SendRtpPacket(std::vector<std::pair<RtpStreamSend*, uint32_t>> streams, RTP::Packet* packet)
 {
-	RTC::SharedRtpPacket sharedPacket;
+	RTP::SharedPacket sharedPacket;
 
-	for (auto& stream : streams)
+	for (auto& kv : streams)
 	{
-		packet->SetSsrc(stream.second);
+		auto stream   = kv.first;
+		auto ssrc     = kv.second;
+		auto origSsrc = packet->GetSsrc();
 
-		auto result = stream.first->ReceivePacket(packet, sharedPacket);
+		packet->SetSsrc(ssrc);
+
+		auto result = stream->ReceivePacket(packet, sharedPacket);
+
+		packet->SetSsrc(origSsrc);
 
 		// NOTE: Here we must replicate the behaviour of Consumer::SendRtpPacket()
 		// in which, if the shared packet has been stored and it didn't contain the
@@ -46,7 +56,7 @@ static void SendRtpPacket(std::vector<std::pair<RtpStreamSend*, uint32_t>> strea
 	}
 }
 
-static void CheckRtxPacket(RtpPacket* rtxPacket, RtpPacket* origPacket)
+static void CheckRtxPacket(RTP::Packet* rtxPacket, RTP::Packet* origPacket)
 {
 	REQUIRE(rtxPacket);
 	REQUIRE(rtxPacket->GetSequenceNumber() == origPacket->GetSequenceNumber());
@@ -55,19 +65,19 @@ static void CheckRtxPacket(RtpPacket* rtxPacket, RtpPacket* origPacket)
 }
 
 static void ParseAV1RtpPacket(
-  RtpPacket* packet,
-  std::unique_ptr<Codecs::DependencyDescriptor::TemplateDependencyStructure>& templateDependencyStructure)
+  RTP::Packet* packet,
+  std::unique_ptr<RTP::Codecs::DependencyDescriptor::TemplateDependencyStructure>& templateDependencyStructure)
 {
-	std::unique_ptr<Codecs::DependencyDescriptor> dependencyDescriptor;
+	std::unique_ptr<RTP::Codecs::DependencyDescriptor> dependencyDescriptor;
 	packet->ReadDependencyDescriptor(dependencyDescriptor, templateDependencyStructure);
 	REQUIRE(dependencyDescriptor);
 
-	auto* payloadDescriptor        = Codecs::AV1::Parse(dependencyDescriptor);
-	auto* payloadDescriptorHandler = new Codecs::AV1::PayloadDescriptorHandler(payloadDescriptor);
+	auto* payloadDescriptor = RTP::Codecs::AV1::Parse(dependencyDescriptor);
+	auto* payloadDescriptorHandler = new RTP::Codecs::AV1::PayloadDescriptorHandler(payloadDescriptor);
 	packet->SetPayloadDescriptorHandler(payloadDescriptorHandler);
 }
 
-SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend]")
+SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstream][rtpstreamsend]")
 {
 	class TestRtpStreamListener : public RtpStreamSend::Listener
 	{
@@ -76,13 +86,13 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		{
 		}
 
-		void OnRtpStreamRetransmitRtpPacket(RtpStreamSend* /*rtpStream*/, RtpPacket* packet) override
+		void OnRtpStreamRetransmitRtpPacket(RtpStreamSend* /*rtpStream*/, RTP::Packet* packet) override
 		{
 			this->retransmittedPackets.push_back(packet);
 		}
 
 	public:
-		std::vector<RtpPacket*> retransmittedPackets;
+		std::vector<RTP::Packet*> retransmittedPackets;
 	};
 
 	// clang-format off
@@ -106,16 +116,16 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 
 	SECTION("receive NACK and get retransmitted packets")
 	{
-		// packet1 [pt:123, seq:21006, timestamp:1533790901]
+		// packet1 [seq:21006, timestamp:1533790901]
 		auto packet1(CreateRtpPacket(rtpBuffer1, sizeof(rtpBuffer1), 21006, 1533790901));
-		// packet2 [pt:123, seq:21007, timestamp:1533790901]
+		// packet2 [seq:21007, timestamp:1533790901]
 		auto packet2(CreateRtpPacket(rtpBuffer2, sizeof(rtpBuffer2), 21007, 1533790901));
 		packet2->SetMarker(true);
-		// packet3 [pt:123, seq:21008, timestamp:1533793871]
+		// packet3 [seq:21008, timestamp:1533793871]
 		auto packet3(CreateRtpPacket(rtpBuffer3, sizeof(rtpBuffer3), 21008, 1533793871));
-		// packet4 [pt:123, seq:21009, timestamp:1533793871]
+		// packet4 [seq:21009, timestamp:1533793871]
 		auto packet4(CreateRtpPacket(rtpBuffer4, sizeof(rtpBuffer4), 21009, 1533793871));
-		// packet5 [pt:123, seq:21010, timestamp:1533796931]
+		// packet5 [seq:21010, timestamp:1533796931]
 		auto packet5(CreateRtpPacket(rtpBuffer5, sizeof(rtpBuffer5), 21010, 1533796931));
 		packet5->SetMarker(true);
 
@@ -171,15 +181,15 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 
 	SECTION("receive NACK and get zero retransmitted packets if useNack is not set")
 	{
-		// packet1 [pt:123, seq:21006, timestamp:1533790901]
+		// packet1 [seq:21006, timestamp:1533790901]
 		auto packet1(CreateRtpPacket(rtpBuffer1, sizeof(rtpBuffer1), 21006, 1533790901));
-		// packet2 [pt:123, seq:21007, timestamp:1533790901]
+		// packet2 [seq:21007, timestamp:1533790901]
 		auto packet2(CreateRtpPacket(rtpBuffer2, sizeof(rtpBuffer2), 21007, 1533790901));
-		// packet3 [pt:123, seq:21008, timestamp:1533793871]
+		// packet3 [seq:21008, timestamp:1533793871]
 		auto packet3(CreateRtpPacket(rtpBuffer3, sizeof(rtpBuffer3), 21008, 1533793871));
-		// packet4 [pt:123, seq:21009, timestamp:1533793871]
+		// packet4 [seq:21009, timestamp:1533793871]
 		auto packet4(CreateRtpPacket(rtpBuffer4, sizeof(rtpBuffer4), 21009, 1533793871));
-		// packet5 [pt:123, seq:21010, timestamp:1533796931]
+		// packet5 [seq:21010, timestamp:1533796931]
 		auto packet5(CreateRtpPacket(rtpBuffer5, sizeof(rtpBuffer5), 21010, 1533796931));
 
 		// Create a RtpStreamSend instance.
@@ -222,15 +232,15 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 
 	SECTION("receive NACK and get zero retransmitted packets for audio")
 	{
-		// packet1 [pt:123, seq:21006, timestamp:1533790901]
+		// packet1 [seq:21006, timestamp:1533790901]
 		auto packet1(CreateRtpPacket(rtpBuffer1, sizeof(rtpBuffer1), 21006, 1533790901));
-		// packet2 [pt:123, seq:21007, timestamp:1533790901]
+		// packet2 [seq:21007, timestamp:1533790901]
 		auto packet2(CreateRtpPacket(rtpBuffer2, sizeof(rtpBuffer2), 21007, 1533790901));
-		// packet3 [pt:123, seq:21008, timestamp:1533793871]
+		// packet3 [seq:21008, timestamp:1533793871]
 		auto packet3(CreateRtpPacket(rtpBuffer3, sizeof(rtpBuffer3), 21008, 1533793871));
-		// packet4 [pt:123, seq:21009, timestamp:1533793871]
+		// packet4 [seq:21009, timestamp:1533793871]
 		auto packet4(CreateRtpPacket(rtpBuffer4, sizeof(rtpBuffer4), 21009, 1533793871));
-		// packet5 [pt:123, seq:21010, timestamp:1533796931]
+		// packet5 [seq:21010, timestamp:1533796931]
 		auto packet5(CreateRtpPacket(rtpBuffer5, sizeof(rtpBuffer5), 21010, 1533796931));
 
 		// Create a RtpStreamSend instance.
@@ -273,9 +283,9 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 
 	SECTION("receive NACK in different RtpStreamSend instances and get retransmitted packets")
 	{
-		// packet1 [pt:123, seq:21006, timestamp:1533790901]
+		// packet1 [seq:21006, timestamp:1533790901]
 		auto packet1(CreateRtpPacket(rtpBuffer1, sizeof(rtpBuffer1), 21006, 1533790901));
-		// packet2 [pt:123, seq:21007, timestamp:1533790901]
+		// packet2 [seq:21007, timestamp:1533790901]
 		auto packet2(CreateRtpPacket(rtpBuffer2, sizeof(rtpBuffer2), 21007, 1533790901));
 
 		// Create two RtpStreamSend instances.
@@ -370,11 +380,11 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		};
 		// clang-format on
 
-		// packet1 [pt:123, seq:1, timestamp:1]
+		// packet1 [seq:1, timestamp:1]
 		auto packet1(CreateRtpPacket(rtpBuffer1, sizeof(rtpBuffer1), 1, 1));
-		// packet2 [pt:123, seq:2, timestamp:1]
+		// packet2 [seq:2, timestamp:1]
 		auto packet2(CreateRtpPacket(rtpBuffer2, sizeof(rtpBuffer2), 2, 1));
-		// packet3 [pt:123, seq:3, timestamp:1]
+		// packet3 [seq:3, timestamp:1]
 		auto packet3(CreateRtpPacket(rtpBuffer3, sizeof(rtpBuffer3), 3, 1));
 
 		// Create two RtpStreamSend instances.
@@ -401,24 +411,26 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		std::unique_ptr<RtpStreamSend> stream2(new RtpStreamSend(&testRtpStreamListener2, params2, mid));
 
 		// Create two VP8 encoding contexts.
-		RTC::Codecs::EncodingContext::Params params;
+		RTP::Codecs::EncodingContext::Params params;
 		params.spatialLayers  = 0;
 		params.temporalLayers = 3;
-		Codecs::VP8::EncodingContext context1(params);
+		RTP::Codecs::VP8::EncodingContext context1(params);
 
 		context1.SetCurrentTemporalLayer(3);
 		context1.SetTargetTemporalLayer(3);
 
-		Codecs::VP8::EncodingContext context2(params);
+		RTP::Codecs::VP8::EncodingContext context2(params);
 
 		context2.SetCurrentTemporalLayer(0);
 		context2.SetTargetTemporalLayer(0);
 
 		// Parse the first packet.
-		auto* payloadDescriptor1 = Codecs::VP8::Parse(packet1->GetPayload(), packet1->GetPayloadLength());
+		auto* payloadDescriptor1 =
+		  RTP::Codecs::VP8::Parse(packet1->GetPayload(), packet1->GetPayloadLength());
 		REQUIRE(payloadDescriptor1->pictureId == 1);
 
-		auto* payloadDescriptorHandler1 = new Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor1);
+		auto* payloadDescriptorHandler1 =
+		  new RTP::Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor1);
 		packet1->SetPayloadDescriptorHandler(payloadDescriptorHandler1);
 
 		bool marker = false;
@@ -428,10 +440,12 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		REQUIRE(forwarded);
 
 		// Parse the second packet.
-		auto* payloadDescriptor2 = Codecs::VP8::Parse(packet2->GetPayload(), packet2->GetPayloadLength());
+		auto* payloadDescriptor2 =
+		  RTP::Codecs::VP8::Parse(packet2->GetPayload(), packet2->GetPayloadLength());
 		REQUIRE(payloadDescriptor2->pictureId == 2);
 
-		auto* payloadDescriptorHandler2 = new Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor2);
+		auto* payloadDescriptorHandler2 =
+		  new RTP::Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor2);
 		packet2->SetPayloadDescriptorHandler(payloadDescriptorHandler2);
 
 		// Process the second packet with context1.
@@ -444,10 +458,12 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		REQUIRE(!forwarded);
 
 		// Parse the third packet
-		auto* payloadDescriptor3 = Codecs::VP8::Parse(packet3->GetPayload(), packet3->GetPayloadLength());
+		auto* payloadDescriptor3 =
+		  RTP::Codecs::VP8::Parse(packet3->GetPayload(), packet3->GetPayloadLength());
 		REQUIRE(payloadDescriptor3->pictureId == 3);
 
-		auto* payloadDescriptorHandler3 = new Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor3);
+		auto* payloadDescriptorHandler3 =
+		  new RTP::Codecs::VP8::PayloadDescriptorHandler(payloadDescriptor3);
 		packet2->SetPayloadDescriptorHandler(payloadDescriptorHandler3);
 
 		// Process the third packet for context1.
@@ -484,7 +500,8 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		auto* packet = testRtpStreamListener1.retransmittedPackets[0];
 
 		// Parse payload and check pictureId.
-		auto* payloadDescriptor4 = Codecs::VP8::Parse(packet->GetPayload(), packet->GetPayloadLength());
+		auto* payloadDescriptor4 =
+		  RTP::Codecs::VP8::Parse(packet->GetPayload(), packet->GetPayloadLength());
 		REQUIRE(payloadDescriptor4->pictureId == 3);
 
 		// Process the NACK packet on stream2.
@@ -495,7 +512,8 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		packet = testRtpStreamListener2.retransmittedPackets[0];
 
 		// Parse payload and check pictureId.
-		auto* payloadDescriptor5 = Codecs::VP8::Parse(packet->GetPayload(), packet->GetPayloadLength());
+		auto* payloadDescriptor5 =
+		  RTP::Codecs::VP8::Parse(packet->GetPayload(), packet->GetPayloadLength());
 		REQUIRE(payloadDescriptor5);
 		REQUIRE(payloadDescriptor5->pictureId == 2);
 
@@ -615,15 +633,21 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		};
 		// clang-format on
 
-		// packet1 [pt:123, seq:1, timestamp:1]
+		RtpHeaderExtensionIds headerExtensionIds{};
+
+		headerExtensionIds.dependencyDescriptor = 12;
+
+		// packet1 [seq:1, timestamp:1]
 		auto packet1(CreateRtpPacket(rtpBuffer1, sizeof(rtpBuffer1), 1, 1));
-		packet1->SetDependencyDescriptorExtensionId(12);
-		// packet2 [pt:123, seq:2, timestamp:1]
+		packet1->AssignExtensionIds(headerExtensionIds);
+
+		// packet2 [seq:2, timestamp:1]
 		auto packet2(CreateRtpPacket(rtpBuffer2, sizeof(rtpBuffer2), 2, 1));
-		packet2->SetDependencyDescriptorExtensionId(12);
-		// packet3 [pt:123, seq:3, timestamp:1]
+		packet2->AssignExtensionIds(headerExtensionIds);
+
+		// packet3 [seq:3, timestamp:1]
 		auto packet3(CreateRtpPacket(rtpBuffer3, sizeof(rtpBuffer3), 3, 1));
-		packet3->SetDependencyDescriptorExtensionId(12);
+		packet3->AssignExtensionIds(headerExtensionIds);
 
 		// Create two RtpStreamSend instances.
 		TestRtpStreamListener testRtpStreamListener1;
@@ -649,23 +673,23 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		std::unique_ptr<RtpStreamSend> stream2(new RtpStreamSend(&testRtpStreamListener2, params2, mid));
 
 		// Create two AV1 encoding contexts.
-		RTC::Codecs::EncodingContext::Params params;
+		RTP::Codecs::EncodingContext::Params params;
 		params.spatialLayers  = 1;
 		params.temporalLayers = 2;
 
-		Codecs::AV1::EncodingContext context1(params);
+		RTP::Codecs::AV1::EncodingContext context1(params);
 		context1.SetCurrentSpatialLayer(0);
 		context1.SetCurrentTemporalLayer(0);
 		context1.SetTargetSpatialLayer(0);
 		context1.SetTargetTemporalLayer(0);
 
-		Codecs::AV1::EncodingContext context2(params);
+		RTP::Codecs::AV1::EncodingContext context2(params);
 		context2.SetCurrentSpatialLayer(0);
 		context2.SetCurrentTemporalLayer(0);
 		context2.SetTargetSpatialLayer(0);
 		context2.SetTargetTemporalLayer(1);
 
-		std::unique_ptr<Codecs::DependencyDescriptor::TemplateDependencyStructure> templateDependencyStructure;
+		std::unique_ptr<RTP::Codecs::DependencyDescriptor::TemplateDependencyStructure> templateDependencyStructure;
 
 		// Parse the first packet for the shake of having the template dependency structure.
 		ParseAV1RtpPacket(packet1.get(), templateDependencyStructure);
@@ -694,7 +718,7 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		REQUIRE(context1.GetCurrentSpatialLayer() == 0);
 		REQUIRE(context1.GetCurrentTemporalLayer() == 0);
 
-		RTC::SharedRtpPacket sharedPacket;
+		RTP::SharedPacket sharedPacket;
 
 		packet3->SetSsrc(params1.ssrc);
 		// Whenever packet3 is Nacked on stream1, it must always be set a
@@ -733,7 +757,7 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		auto* packet = testRtpStreamListener1.retransmittedPackets[0];
 
 		// Parse DD and check bitmask.
-		std::unique_ptr<Codecs::DependencyDescriptor> dependencyDescriptor4;
+		std::unique_ptr<RTP::Codecs::DependencyDescriptor> dependencyDescriptor4;
 
 		packet->ReadDependencyDescriptor(dependencyDescriptor4, templateDependencyStructure);
 		REQUIRE(dependencyDescriptor4);
@@ -748,7 +772,7 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		packet = testRtpStreamListener2.retransmittedPackets[0];
 
 		// Parse DD and check bitmask.
-		std::unique_ptr<Codecs::DependencyDescriptor> dependencyDescriptor5;
+		std::unique_ptr<RTP::Codecs::DependencyDescriptor> dependencyDescriptor5;
 
 		packet->ReadDependencyDescriptor(dependencyDescriptor5, templateDependencyStructure);
 		REQUIRE(dependencyDescriptor5);
@@ -919,7 +943,7 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		std::string mid;
 		auto stream = std::make_unique<RtpStreamSend>(&testRtpStreamListener, params, mid);
 
-		RTC::SharedRtpPacket sharedPacket;
+		RTP::SharedPacket sharedPacket;
 
 		auto result = stream->ReceivePacket(packet.get(), sharedPacket);
 
@@ -953,10 +977,10 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 		for (size_t i = 0; i < iterations; i++)
 		{
 			// Create packet.
-			auto* packet = RtpPacket::Parse(rtpBuffer1, 1500);
+			auto* packet = RTP::Packet::Parse(rtpBuffer1, 1500);
 			packet->SetSsrc(1111);
 
-			std::shared_ptr<RtpPacket> sharedPacket(packet);
+			std::shared_ptr<RTP::Packet> sharedPacket(packet);
 
 			stream1->ReceivePacket(packet, sharedPacket);
 		}
@@ -971,10 +995,10 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstreamsend
 
 		for (size_t i = 0; i < iterations; i++)
 		{
-			std::shared_ptr<RtpPacket> sharedPacket;
+			std::shared_ptr<RTP::Packet> sharedPacket;
 
 			// Create packet.
-			auto* packet = RtpPacket::Parse(rtpBuffer1, 1500);
+			auto* packet = RTP::Packet::Parse(rtpBuffer1, 1500);
 			packet->SetSsrc(1111);
 
 			stream2->ReceivePacket(packet, sharedPacket);

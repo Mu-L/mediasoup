@@ -618,7 +618,7 @@ namespace RTC
 	}
 
 	void WebRtcTransport::ProcessNonStunPacketFromWebRtcServer(
-	  RTC::TransportTuple* tuple, const uint8_t* data, size_t len)
+	  RTC::TransportTuple* tuple, const uint8_t* data, size_t len, size_t bufferLen)
 	{
 		MS_TRACE();
 
@@ -631,9 +631,9 @@ namespace RTC
 			OnRtcpDataReceived(tuple, data, len);
 		}
 		// Check if it's RTP.
-		else if (RTC::RtpPacket::IsRtp(data, len))
+		else if (RTC::RTP::Packet::IsRtp(data, len))
 		{
-			OnRtpDataReceived(tuple, data, len);
+			OnRtpDataReceived(tuple, data, len, bufferLen);
 		}
 		// Check if it's DTLS.
 		else if (RTC::DtlsTransport::IsDtls(data, len))
@@ -749,7 +749,7 @@ namespace RTC
 	}
 
 	void WebRtcTransport::SendRtpPacket(
-	  RTC::Consumer* /*consumer*/, RTC::RtpPacket* packet, const RTC::Transport::onSendCallback* cb)
+	  RTC::Consumer* /*consumer*/, RTC::RTP::Packet* packet, const RTC::Transport::onSendCallback* cb)
 	{
 		MS_TRACE();
 
@@ -778,8 +778,8 @@ namespace RTC
 			return;
 		}
 
-		const uint8_t* data = packet->GetData();
-		auto len            = packet->GetSize();
+		const uint8_t* data = packet->GetBuffer();
+		auto len            = packet->GetLength();
 
 		if (!this->srtpSendSession->EncryptRtp(&data, &len))
 		{
@@ -886,7 +886,7 @@ namespace RTC
 #ifdef MS_SCTP_STACK
 		MS_DUMP(">>> sending SCTP packet...");
 
-		auto* packet = RTC::SCTP::Packet::Parse(data, len);
+		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
 
 		if (!packet)
 		{
@@ -924,7 +924,7 @@ namespace RTC
 	}
 
 	inline void WebRtcTransport::OnPacketReceived(
-	  RTC::TransportTuple* tuple, const uint8_t* data, size_t len)
+	  RTC::TransportTuple* tuple, const uint8_t* data, size_t len, size_t bufferLen)
 	{
 		MS_TRACE();
 
@@ -942,9 +942,9 @@ namespace RTC
 			OnRtcpDataReceived(tuple, data, len);
 		}
 		// Check if it's RTP.
-		else if (RTC::RtpPacket::IsRtp(data, len))
+		else if (RTC::RTP::Packet::IsRtp(data, len))
 		{
-			OnRtpDataReceived(tuple, data, len);
+			OnRtpDataReceived(tuple, data, len, bufferLen);
 		}
 		// Check if it's DTLS.
 		else if (RTC::DtlsTransport::IsDtls(data, len))
@@ -962,7 +962,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		RTC::StunPacket* packet = RTC::StunPacket::Parse(data, len);
+		auto* packet = RTC::StunPacket::Parse(data, len);
 
 		if (!packet)
 		{
@@ -1011,7 +1011,7 @@ namespace RTC
 	}
 
 	inline void WebRtcTransport::OnRtpDataReceived(
-	  RTC::TransportTuple* tuple, const uint8_t* data, size_t len)
+	  RTC::TransportTuple* tuple, const uint8_t* data, size_t len, size_t bufferLen)
 	{
 		MS_TRACE();
 
@@ -1042,7 +1042,7 @@ namespace RTC
 		// Decrypt the SRTP packet.
 		if (!this->srtpRecvSession->DecryptSrtp(const_cast<uint8_t*>(data), &len))
 		{
-			RTC::RtpPacket* packet = RTC::RtpPacket::Parse(data, len);
+			const auto* packet = RTC::RTP::Packet::Parse(data, len, bufferLen);
 
 			if (!packet)
 			{
@@ -1063,7 +1063,7 @@ namespace RTC
 			return;
 		}
 
-		RTC::RtpPacket* packet = RTC::RtpPacket::Parse(data, len);
+		auto* packet = RTC::RTP::Packet::Parse(data, len, bufferLen);
 
 		if (!packet)
 		{
@@ -1114,7 +1114,7 @@ namespace RTC
 			return;
 		}
 
-		RTC::RTCP::Packet* packet = RTC::RTCP::Packet::Parse(data, len);
+		auto* packet = RTC::RTCP::Packet::Parse(data, len);
 
 		if (!packet)
 		{
@@ -1128,13 +1128,17 @@ namespace RTC
 	}
 
 	inline void WebRtcTransport::OnUdpSocketPacketReceived(
-	  RTC::UdpSocket* socket, const uint8_t* data, size_t len, const struct sockaddr* remoteAddr)
+	  RTC::UdpSocket* socket,
+	  const uint8_t* data,
+	  size_t len,
+	  size_t bufferLen,
+	  const struct sockaddr* remoteAddr)
 	{
 		MS_TRACE();
 
 		RTC::TransportTuple tuple(socket, remoteAddr);
 
-		OnPacketReceived(&tuple, data, len);
+		OnPacketReceived(&tuple, data, len, bufferLen);
 	}
 
 	inline void WebRtcTransport::OnRtcTcpConnectionClosed(
@@ -1148,13 +1152,13 @@ namespace RTC
 	}
 
 	inline void WebRtcTransport::OnTcpConnectionPacketReceived(
-	  RTC::TcpConnection* connection, const uint8_t* data, size_t len)
+	  RTC::TcpConnection* connection, const uint8_t* data, size_t len, size_t bufferLen)
 	{
 		MS_TRACE();
 
 		RTC::TransportTuple tuple(connection);
 
-		OnPacketReceived(&tuple, data, len);
+		OnPacketReceived(&tuple, data, len, bufferLen);
 	}
 
 	inline void WebRtcTransport::OnIceServerSendStunPacket(
@@ -1465,7 +1469,7 @@ namespace RTC
 #ifdef MS_SCTP_STACK
 		MS_DUMP("<<< receiving SCTP packet...");
 
-		auto* packet = RTC::SCTP::Packet::Parse(data, len);
+		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
 
 		if (!packet)
 		{

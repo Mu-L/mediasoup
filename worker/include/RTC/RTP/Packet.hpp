@@ -171,6 +171,18 @@ namespace RTC
 			 * Parse a RTP Packet.
 			 *
 			 * @remarks
+			 * - `packetLength` must be the exact length of the Packet.
+			 * - `bufferLength` must be >= `packetLength`.
+			 *
+			 * @throw MediaSoupTypeError - If `bufferLength` is lower than
+			 *   `packetLength`.
+			 */
+			static Packet* Parse(const uint8_t* buffer, size_t packetLength, size_t bufferLength);
+
+			/**
+			 * Parse a RTP Packet.
+			 *
+			 * @remarks
 			 * - `bufferLength` must be the exact length of the Packet.
 			 */
 			static Packet* Parse(const uint8_t* buffer, size_t bufferLength);
@@ -468,7 +480,7 @@ namespace RTC
 			 *
 			 * @see RFC 8285.
 			 */
-			void AssignExtensionIds(RTC::RtpHeaderExtensionIds headerExtensionIds);
+			void AssignExtensionIds(RTC::RtpHeaderExtensionIds& headerExtensionIds);
 
 			bool ReadMid(std::string& mid) const;
 
@@ -619,6 +631,17 @@ namespace RTC
 			 *   `payload` with `payloadLength` higher than 0.
 			 */
 			void SetPayload(const uint8_t* payload, size_t payloadLength);
+
+			/**
+			 * Set the payload length.
+			 *
+			 * @remarks
+			 * - This method removes existing padding (if any).
+			 *
+			 * @throw MediaSoupTypeError - If given `payloadLength` is higher than
+			 *   available length for the payload.
+			 */
+			void SetPayloadLength(size_t payloadLength);
 
 			/**
 			 * Remove the payload.

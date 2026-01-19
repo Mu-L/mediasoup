@@ -3,7 +3,6 @@
 
 #include "common.hpp"
 #include "RTC/RTP/Packet.hpp"
-#include "RTC/RtpPacket.hpp"
 #include "RTC/SeqManager.hpp"
 #include "handles/TimerHandle.hpp"
 #include <map>
@@ -51,8 +50,7 @@ namespace RTC
 		explicit NackGenerator(Listener* listener, unsigned int sendNackDelayMs);
 		~NackGenerator() override;
 
-		bool ReceivePacket(RTC::RtpPacket* packet, bool isRecovered);
-		bool ReceivePacket(RTC::RTP::Packet* packet, bool isRecovered);
+		bool ReceivePacket(const RTC::RTP::Packet* packet, bool isRecovered);
 		size_t GetNackListLength() const
 		{
 			return this->nackList.size();
