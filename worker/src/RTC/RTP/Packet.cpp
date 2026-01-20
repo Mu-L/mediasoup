@@ -25,6 +25,8 @@ namespace RTC
 
 		bool Packet::IsRtp(const uint8_t* buffer, size_t bufferLength)
 		{
+			MS_TRACE();
+
 			const auto* header = const_cast<FixedHeader*>(reinterpret_cast<const FixedHeader*>(buffer));
 
 			// clang-format off
