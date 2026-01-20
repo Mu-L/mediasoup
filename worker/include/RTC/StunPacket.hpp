@@ -19,7 +19,7 @@ namespace RTC
 		};
 
 		// STUN message method.
-		enum class Method : uint8_t
+		enum class Method : uint16_t
 		{
 			BINDING = 1
 		};
