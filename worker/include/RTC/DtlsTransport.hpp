@@ -107,7 +107,7 @@ namespace RTC
 			return (
 				// Minimum DTLS record length is 13 bytes.
 				(len >= 13) &&
-				// DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+				// @see RFC 7983.
 				(data[0] > 19 && data[0] < 64)
 			);
 			// clang-format on

@@ -57,7 +57,7 @@ namespace RTC
 				// clang-format off
 				return (
 					(len >= CommonHeaderSize) &&
-					// DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+					// @see RFC 7983.
 					(data[0] > 127 && data[0] < 192) &&
 					// RTP Version must be 2.
 					(header->version == 2) &&

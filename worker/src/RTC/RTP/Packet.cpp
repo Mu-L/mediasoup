@@ -32,7 +32,7 @@ namespace RTC
 			// clang-format off
 			return (
 				(bufferLength >= FixedHeaderMinSize) &&
-				// @see https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+				// @see RFC 7983.
 				(buffer[0] > 127 && buffer[0] < 192) &&
 				// RTP Version must be 2.
 				(header->version == 2)

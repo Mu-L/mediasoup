@@ -60,7 +60,7 @@ namespace RTC
 			return (
 				// STUN headers are 20 bytes.
 				(len >= 20) &&
-				// DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+				// @see RFC 7983.
 				(data[0] < 3) &&
 				// Magic cookie must match.
 				(data[4] == StunPacket::MagicCookie[0]) && (data[5] == StunPacket::MagicCookie[1]) &&
