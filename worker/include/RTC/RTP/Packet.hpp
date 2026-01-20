@@ -27,7 +27,6 @@ namespace RTC
 		 *
 		 * @see RFC 3550.
 		 */
-
 		class Packet : public Serializable, public Codecs::DependencyDescriptor::Listener
 		{
 		public:
