@@ -1,11 +1,12 @@
-#include "RTC/RTP/rtpCommon.hpp" // in worker/test/include/
+#include "RTC/ICE/iceCommon.hpp" // in worker/test/include/
 #include <cstring>               // std::memset
 
 namespace RTC
 {
-	namespace RTP
+	namespace ICE
 	{
 		thread_local uint8_t FactoryBuffer[];
+		thread_local uint8_t ResponseFactoryBuffer[];
 		thread_local uint8_t SerializeBuffer[];
 		thread_local uint8_t CloneBuffer[];
 		thread_local uint8_t DataBuffer[];
@@ -14,6 +15,7 @@ namespace RTC
 		void ResetBuffers()
 		{
 			std::memset(FactoryBuffer, 0xAA, sizeof(FactoryBuffer));
+			std::memset(ResponseFactoryBuffer, 0xAA, sizeof(ResponseFactoryBuffer));
 			std::memset(SerializeBuffer, 0xBB, sizeof(SerializeBuffer));
 			std::memset(CloneBuffer, 0xCC, sizeof(CloneBuffer));
 			std::memset(DataBuffer, 0xDD, sizeof(DataBuffer));
@@ -24,5 +26,5 @@ namespace RTC
 				DataBuffer[i] = static_cast<uint8_t>(i);
 			}
 		}
-	} // namespace RTP
+	} // namespace ICE
 } // namespace RTC

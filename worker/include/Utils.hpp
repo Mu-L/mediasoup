@@ -5,6 +5,7 @@
 #include "RTC/Consts.hpp"
 #include <openssl/evp.h>
 #include <cmath>
+#include <cstdint>
 #include <cstring> // std::memcmp(), std::memcpy()
 #include <limits>  // std::numeric_limits
 #include <string>
@@ -92,7 +93,7 @@ namespace Utils
 			return copiedAddr;
 		}
 
-		static void NormalizeIp(std::string& ip);
+		static std::string NormalizeIp(std::string& ip);
 	};
 
 	class File
@@ -241,6 +242,8 @@ namespace Utils
 		static uint32_t GetCRC32c(const uint8_t* data, size_t size);
 
 		static const uint8_t* GetHmacSha1(const std::string& key, const uint8_t* data, size_t len);
+
+		static void WriteRandomBytes(uint8_t* buffer, size_t len);
 
 	private:
 		thread_local static uint32_t seed;

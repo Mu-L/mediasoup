@@ -2,9 +2,9 @@
 #define MS_RTC_WEBRTC_SERVER_HPP
 
 #include "Channel/ChannelRequest.hpp"
-#include "RTC/IceCandidate.hpp"
+#include "RTC/ICE/IceCandidate.hpp"
+#include "RTC/ICE/StunPacket.hpp"
 #include "RTC/Shared.hpp"
-#include "RTC/StunPacket.hpp"
 #include "RTC/TcpConnection.hpp"
 #include "RTC/TcpServer.hpp"
 #include "RTC/TransportTuple.hpp"
@@ -45,7 +45,8 @@ namespace RTC
 		};
 
 	private:
-		static std::string GetLocalIceUsernameFragmentFromReceivedStunPacket(RTC::StunPacket* packet);
+		static std::string GetLocalIceUsernameFragmentFromReceivedStunPacket(
+		  const RTC::ICE::StunPacket* packet);
 
 	public:
 		WebRtcServer(
@@ -57,7 +58,7 @@ namespace RTC
 	public:
 		flatbuffers::Offset<FBS::WebRtcServer::DumpResponse> FillBuffer(
 		  flatbuffers::FlatBufferBuilder& builder) const;
-		std::vector<RTC::IceCandidate> GetIceCandidates(
+		std::vector<RTC::ICE::IceCandidate> GetIceCandidates(
 		  bool enableUdp, bool enableTcp, bool preferUdp, bool preferTcp) const;
 
 		/* Methods inherited from Channel::ChannelSocket::RequestHandler. */

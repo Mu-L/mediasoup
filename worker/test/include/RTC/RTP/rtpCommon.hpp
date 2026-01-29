@@ -16,7 +16,8 @@ namespace RTC
 	namespace RTP
 	{
 		// NOTE: We need to declare them here with `extern` and then define them in
-		// common.cpp.
+		// rtpCommon.cpp.
+		// NOTE: Random size buffers because anyway we use sizeof(XxxxBuffer).
 		extern thread_local uint8_t FactoryBuffer[66661];
 		extern thread_local uint8_t SerializeBuffer[66662];
 		extern thread_local uint8_t CloneBuffer[66663];
@@ -52,7 +53,6 @@ namespace RTC
 		std::memcpy(originalBuffer, buffer, bufferLength);                                               \
 		REQUIRE(Packet::IsRtp(buffer, bufferLength) == true);                                            \
 		REQUIRE(packet);                                                                                 \
-		REQUIRE(packet->Validate());                                                                     \
 		REQUIRE(packet->GetBuffer() != nullptr);                                                         \
 		REQUIRE(packet->GetBuffer() == buffer);                                                          \
 		REQUIRE(packet->GetBufferLength() != 0);                                                         \
@@ -97,6 +97,7 @@ namespace RTC
 		{                                                                                                \
 			REQUIRE(static_cast<unsigned>(packet->GetPaddingLength()) == 0);                               \
 		}                                                                                                \
+		REQUIRE(packet->Validate(/*storeExtensions*/ false));                                            \
 		REQUIRE_NOTHROW(packet->SetPayloadType(packet->GetPayloadType()));                               \
 		REQUIRE_NOTHROW(packet->SetMarker(packet->HasMarker()));                                         \
 		REQUIRE_NOTHROW(packet->SetSequenceNumber(packet->GetSequenceNumber()));                         \
@@ -125,7 +126,7 @@ namespace RTC
 		REQUIRE_THROWS_AS(                                                                               \
 		  const_cast<Packet*>(packet)->Serialize(ThrowBuffer, length - 1), MediaSoupError);              \
 		REQUIRE_THROWS_AS(packet->Clone(ThrowBuffer, length - 1), MediaSoupError);                       \
-		REQUIRE(packet->Validate());                                                                     \
+		REQUIRE(packet->Validate(/*storeExtensions*/ false));                                            \
 		std::free(originalBuffer);                                                                       \
 	} while (false)
 

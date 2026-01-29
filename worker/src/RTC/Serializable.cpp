@@ -129,6 +129,8 @@ namespace RTC
 
 		if (serializable->GetBufferLength() < this->length)
 		{
+			const auto bufferLength = serializable->GetBufferLength();
+
 			delete serializable;
 
 			MS_THROW_TYPE_ERROR(
