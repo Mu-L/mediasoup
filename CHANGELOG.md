@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.15
+
 - `RtpStreamSend`: duplicated packets are discarded ([PR #1683](https://github.com/versatica/mediasoup/pull/1683).
 - Worker: Update liburing from 2.5-2 to 2.12-1 ([PR #1686](https://github.com/versatica/mediasoup/pull/1686).
 - Worker: Use the new `RTP::Packet` class ([PR #1689](https://github.com/versatica/mediasoup/pull/1689).
