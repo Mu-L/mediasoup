@@ -472,7 +472,7 @@ export abstract class TransportImpl<
 		const clonedRtpParameters = utils.clone<RtpParameters>(rtpParameters);
 
 		// This may throw.
-		ortc.validateRtpParameters(clonedRtpParameters);
+		ortc.validateAndNormalizeRtpParameters(clonedRtpParameters);
 
 		// If missing or empty encodings, add one.
 		if (
@@ -601,7 +601,7 @@ export abstract class TransportImpl<
 		const clonedRtpCapabilities = utils.clone<RtpCapabilities>(rtpCapabilities);
 
 		// This may throw.
-		ortc.validateRtpCapabilities(clonedRtpCapabilities);
+		ortc.validateAndNormalizeRtpCapabilities(clonedRtpCapabilities);
 
 		const producer = this.getProducerById(producerId);
 
@@ -732,7 +732,9 @@ export abstract class TransportImpl<
 			type = 'sctp';
 
 			// This may throw.
-			ortc.validateSctpStreamParameters(clonedSctpStreamParameters!);
+			ortc.validateAndNormalizeSctpStreamParameters(
+				clonedSctpStreamParameters!
+			);
 		}
 		// If this is a DirectTransport, sctpStreamParameters must not be given.
 		else {
