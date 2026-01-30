@@ -26,8 +26,10 @@ namespace RTC
 
 			MS_DUMP_CLEAN(
 			  0,
-			  "[RTC::RTP::SharedPacket] memory deallocated [packet buffer:%zu, total allocated memory:%" PRIu64
+			  "[worker.pid:%" PRIu64
+			  "] [RTC::RTP::SharedPacket] memory deallocated [packet buffer:%zu, total allocated memory:%" PRIu64
 			  "]",
+			  Logger::pid,
 			  packet->GetBufferLength(),
 			  SharedPacket::allocatedMemory);
 #endif
@@ -159,8 +161,10 @@ namespace RTC
 
 			MS_DUMP_CLEAN(
 			  0,
-			  "[RTC::RTP::SharedPacket] memory allocated [packet buffer:%zu, total allocated memory:%" PRIu64
+			  "[worker.pid:%" PRIu64
+			  "] [RTC::RTP::SharedPacket] memory allocated [packet buffer:%zu, total allocated memory:%" PRIu64
 			  "]",
+			  Logger::pid,
 			  clonedPacket->GetBufferLength(),
 			  SharedPacket::allocatedMemory);
 #endif
