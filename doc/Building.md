@@ -252,12 +252,13 @@ Runs [clang-tidy](http://clang.llvm.org/extra/clang-tidy) and performs C++ code 
 - `clang-tidy` version 21 is required.
   - In macOS install it with `brew install llvm@21`.
   - In linux the package name is `clang-tidy-21`.
+- "MEDIASOUP_CLANG_TIDY_DIR" environment variable is required.
 
 **Environment variables:**
 
 - "MEDIASOUP_TIDY_CHECKS": Comma separated list of checks. Overrides the checks defined in `worker/.clang-tidy` file.
 - "MEDIASOUP_TIDY_FILES": Space separated source files to process, including their path. All `.cpp` files will be processes by default.
-- "MEDIASOUP_CLANG_TIDY_DIR": Path to directory containing clang tools (`run-clang-tidy`, `clang-tidy`, `clang-apply-replacements`).
+- "MEDIASOUP_CLANG_TIDY_DIR": Path to directory containing clang tools (`run-clang-tidy`, `clang-tidy`, `clang-apply-replacements`). Usually it must include `bin/` path at the end.
 
 **Usage example in macOS:**
 
