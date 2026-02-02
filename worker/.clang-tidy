@@ -68,6 +68,7 @@ Checks: "*,\
   -modernize-make-unique,\
   -modernize-pass-by-value,\
   -modernize-use-nodiscard, \
+  -modernize-use-static, \
   -modernize-use-trailing-return-type,\
   -performance-no-int-to-ptr,\
   -portability-template-virtual-member-function,\
