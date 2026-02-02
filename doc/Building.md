@@ -266,6 +266,12 @@ Runs [clang-tidy](http://clang.llvm.org/extra/clang-tidy) and performs C++ code 
 MEDIASOUP_CLANG_TIDY_DIR=/opt/homebrew/opt/llvm/bin/ invoke tidy
 ```
 
+It may happens that `clang-tidy` doesn't know where C++ standard libraries are so it shows lot of warnings about them. Depending on your local setup this may work:
+
+```bash
+MEDIASOUP_CLANG_TIDY_DIR=/opt/homebrew/opt/llvm/bin CPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 invoke tidy
+```
+
 ### `invoke fuzzer`
 
 Builds the `mediasoup-worker-fuzzer` binary (which uses [libFuzzer](http://llvm.org/docs/LibFuzzer.html)) at `worker/out/Release` (or at `worker/out/Debug/` if the "MEDIASOUP_BUILDTYPE" environment variable is set to "Debug").
