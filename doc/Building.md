@@ -249,9 +249,9 @@ Runs [clang-tidy](http://clang.llvm.org/extra/clang-tidy) and performs C++ code 
 **Requirements:**
 
 - `invoke clean` and `invoke mediasoup-worker` must have been called first.
-- [clang-tools-extra](https://clang.llvm.org/extra) is required.
-  - In OSX install it with `brew install llvm`.
-  - In linux the package name is `clang-tools-extra`.
+- `clang-tidy` version 21 is required.
+  - In macOS install it with `brew install llvm@21`.
+  - In linux the package name is `clang-tidy-21`.
 
 **Environment variables:**
 
