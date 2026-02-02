@@ -504,8 +504,9 @@ def tidy(ctx):
     mediasoup_tidy_files = os.getenv('MEDIASOUP_TIDY_FILES') or '';
     mediasoup_clang_tidy_dir = os.getenv('MEDIASOUP_CLANG_TIDY_DIR');
 
-    # MEDIASOUP_CLANG_TIDY_DIR env variable is mandatory.
-    # NOTE: sys.exit(text) exists the program with status code 1.
+    # MEDIASOUP_CLANG_TIDY_DIR env variable is mandatory. It must point to the
+    # bin/ folder containinig `run-clang-tidy` executable.
+    # NOTE: sys.exit(text) exits the program with status code 1.
     if not mediasoup_clang_tidy_dir:
         sys.exit('missing MEDIASOUP_CLANG_TIDY_DIR env variable');
 
