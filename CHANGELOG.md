@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.16
+
 - `RTP::ProbationGenerator`: Remove wrong warning log ([PR #1703](https://github.com/versatica/mediasoup/pull/1703).
 
 ### 3.19.15
