@@ -61,10 +61,10 @@ namespace RTC
 		};
 
 	public:
-		static absl::flat_hash_map<std::string, Type> string2Type;
-		static absl::flat_hash_map<Type, std::string> type2String;
-		static absl::flat_hash_map<std::string, Subtype> string2Subtype;
-		static absl::flat_hash_map<Subtype, std::string> subtype2String;
+		static const absl::flat_hash_map<std::string, Type> String2Type;
+		static const absl::flat_hash_map<Type, std::string> Type2String;
+		static const absl::flat_hash_map<std::string, Subtype> String2Subtype;
+		static const absl::flat_hash_map<Subtype, std::string> Subtype2String;
 
 	public:
 		RtpCodecMimeType() = default;
