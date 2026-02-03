@@ -251,11 +251,11 @@ namespace RTC
 
 	public:
 		static std::optional<Type> GetType(const RtpParameters& rtpParameters);
-		static std::string& GetTypeString(Type type);
+		static const std::string& GetTypeString(Type type);
 		static FBS::RtpParameters::Type TypeToFbs(Type type);
 
 	private:
-		static absl::flat_hash_map<Type, std::string> type2String;
+		static const absl::flat_hash_map<Type, std::string> Type2String;
 
 	public:
 		RtpParameters() = default;

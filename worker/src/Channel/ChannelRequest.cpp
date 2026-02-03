@@ -14,7 +14,7 @@ namespace Channel
 	/* Class variables. */
 
 	// clang-format off
-	absl::flat_hash_map<FBS::Request::Method, const char*> ChannelRequest::method2String =
+	const absl::flat_hash_map<FBS::Request::Method, const char*> ChannelRequest::Method2String =
 	{
 		{ FBS::Request::Method::WORKER_CLOSE,                                   "worker.close"                               },
 		{ FBS::Request::Method::WORKER_DUMP,                                    "worker.dump"                                },
@@ -102,9 +102,9 @@ namespace Channel
 		this->id     = request->id();
 		this->method = request->method();
 
-		auto methodCStrIt = ChannelRequest::method2String.find(this->method);
+		auto methodCStrIt = ChannelRequest::Method2String.find(this->method);
 
-		if (methodCStrIt == ChannelRequest::method2String.end())
+		if (methodCStrIt == ChannelRequest::Method2String.end())
 		{
 			Error("unknown method");
 
