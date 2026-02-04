@@ -79,7 +79,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		const static std::string AptString{ "apt" };
+		static const std::string AptString{ "apt" };
 
 		// Check per MIME parameters and set default values.
 		switch (this->mimeType.subtype)

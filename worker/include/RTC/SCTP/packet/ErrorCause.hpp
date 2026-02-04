@@ -105,10 +105,10 @@ namespace RTC
 			  uint16_t& causeLength,
 			  uint8_t& padding);
 
-			static const std::string& ErrorCauseCode2String(ErrorCauseCode causeCode);
+			static const std::string& ErrorCauseCodeToString(ErrorCauseCode causeCode);
 
 		private:
-			static std::unordered_map<ErrorCauseCode, std::string> errorCauseCode2String;
+			static const std::unordered_map<ErrorCauseCode, std::string> ErrorCauseCode2String;
 
 		protected:
 			/**

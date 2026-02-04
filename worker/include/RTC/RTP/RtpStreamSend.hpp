@@ -14,9 +14,9 @@ namespace RTC
 		{
 		public:
 			// Maximum retransmission buffer size for video (ms).
-			const static uint32_t MaxRetransmissionDelayForVideoMs;
+			static const uint32_t MaxRetransmissionDelayForVideoMs;
 			// Maximum retransmission buffer size for audio (ms).
-			const static uint32_t MaxRetransmissionDelayForAudioMs;
+			static const uint32_t MaxRetransmissionDelayForAudioMs;
 
 		public:
 			enum class ReceivePacketResult : uint8_t

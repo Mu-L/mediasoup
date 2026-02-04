@@ -69,10 +69,10 @@ namespace RTC
 				// clang-format on
 			}
 			static Packet* Parse(const uint8_t* data, size_t len);
-			static const std::string& Type2String(Type type);
+			static const std::string& TypeToString(Type type);
 
 		private:
-			static absl::flat_hash_map<Type, std::string> type2String;
+			static const absl::flat_hash_map<Type, std::string> Type2String;
 
 		public:
 			explicit Packet(Type type) : type(type)

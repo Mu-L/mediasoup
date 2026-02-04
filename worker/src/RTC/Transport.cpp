@@ -1943,7 +1943,7 @@ namespace RTC
 							  rtcp,
 							  "ignoring unsupported %s Feedback PS AFB packet "
 							  "[sender ssrc:%" PRIu32 ", media ssrc:%" PRIu32 "]",
-							  RTC::RTCP::FeedbackPsPacket::MessageType2String(feedback->GetMessageType()).c_str(),
+							  RTC::RTCP::FeedbackPsPacket::MessageTypeToString(feedback->GetMessageType()).c_str(),
 							  feedback->GetSenderSsrc(),
 							  feedback->GetMediaSsrc());
 
@@ -1957,7 +1957,7 @@ namespace RTC
 						  rtcp,
 						  "ignoring unsupported %s Feedback packet "
 						  "[sender ssrc:%" PRIu32 ", media ssrc:%" PRIu32 "]",
-						  RTC::RTCP::FeedbackPsPacket::MessageType2String(feedback->GetMessageType()).c_str(),
+						  RTC::RTCP::FeedbackPsPacket::MessageTypeToString(feedback->GetMessageType()).c_str(),
 						  feedback->GetSenderSsrc(),
 						  feedback->GetMediaSsrc());
 					}
@@ -2044,7 +2044,7 @@ namespace RTC
 						  rtcp,
 						  "ignoring unsupported %s Feedback packet "
 						  "[sender ssrc:%" PRIu32 ", media ssrc:%" PRIu32 "]",
-						  RTC::RTCP::FeedbackRtpPacket::MessageType2String(feedback->GetMessageType()).c_str(),
+						  RTC::RTCP::FeedbackRtpPacket::MessageTypeToString(feedback->GetMessageType()).c_str(),
 						  feedback->GetSenderSsrc(),
 						  feedback->GetMediaSsrc());
 					}

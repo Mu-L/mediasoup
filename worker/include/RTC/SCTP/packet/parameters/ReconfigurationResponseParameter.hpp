@@ -74,7 +74,7 @@ namespace RTC
 			 */
 			static ReconfigurationResponseParameter* Factory(uint8_t* buffer, size_t bufferLength);
 
-			static const std::string& Result2String(Result result);
+			static const std::string& ResultToString(Result result);
 
 		private:
 			/**
@@ -87,7 +87,7 @@ namespace RTC
 			  const uint8_t* buffer, size_t bufferLength, uint16_t parameterLength, uint8_t padding);
 
 		private:
-			static std::unordered_map<Result, std::string> result2String;
+			static const std::unordered_map<Result, std::string> Result2String;
 
 		private:
 			/**

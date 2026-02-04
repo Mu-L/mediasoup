@@ -44,7 +44,7 @@ namespace RTC
 		/* Class variables. */
 
 		// clang-format off
-		std::unordered_map<Chunk::ChunkType, std::string> Chunk::chunkType2String =
+		const std::unordered_map<Chunk::ChunkType, std::string> Chunk::ChunkType2String =
 		{
 			{ Chunk::ChunkType::DATA,              "DATA"              },
 			{ Chunk::ChunkType::INIT,              "INIT"              },
@@ -89,15 +89,15 @@ namespace RTC
 			return true;
 		}
 
-		const std::string& Chunk::ChunkType2String(ChunkType chunkType)
+		const std::string& Chunk::ChunkTypeToString(ChunkType chunkType)
 		{
 			MS_TRACE();
 
 			static const std::string Unknown("UNKNOWN");
 
-			auto it = Chunk::chunkType2String.find(chunkType);
+			auto it = Chunk::ChunkType2String.find(chunkType);
 
-			if (it == Chunk::chunkType2String.end())
+			if (it == Chunk::ChunkType2String.end())
 			{
 				return Unknown;
 			}
@@ -208,7 +208,7 @@ namespace RTC
 			  indentation,
 			  "  type: %" PRIu8 " (%s) (unknown: %s)",
 			  static_cast<uint8_t>(GetType()),
-			  Chunk::ChunkType2String(GetType()).c_str(),
+			  Chunk::ChunkTypeToString(GetType()).c_str(),
 			  HasUnknownType() ? "yes" : "no");
 			MS_DUMP_CLEAN(
 			  indentation, "  flags: " MS_UINT8_TO_BINARY_PATTERN, MS_UINT8_TO_BINARY(GetFlags()));

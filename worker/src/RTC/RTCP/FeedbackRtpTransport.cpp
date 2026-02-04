@@ -19,7 +19,7 @@ namespace RTC
 		int16_t FeedbackRtpTransportPacket::maxPacketDelta{ 0x7FFF };
 
 		// clang-format off
-		absl::flat_hash_map<FeedbackRtpTransportPacket::Status, std::string> FeedbackRtpTransportPacket::status2String =
+		const absl::flat_hash_map<FeedbackRtpTransportPacket::Status, std::string> FeedbackRtpTransportPacket::Status2String =
 		{
 			{ FeedbackRtpTransportPacket::Status::NotReceived, "NR" },
 			{ FeedbackRtpTransportPacket::Status::SmallDelta,  "SD" },
@@ -733,7 +733,9 @@ namespace RTC
 
 			MS_DUMP_CLEAN(indentation, "<RunLengthChunk>");
 			MS_DUMP_CLEAN(
-			  indentation, "  status: %s", FeedbackRtpTransportPacket::status2String[this->status].c_str());
+			  indentation,
+			  "  status: %s",
+			  FeedbackRtpTransportPacket::Status2String.at(this->status).c_str());
 			MS_DUMP_CLEAN(indentation, "  count: %" PRIu16, this->count);
 			MS_DUMP_CLEAN(indentation, "</RunLengthChunk>");
 		}
@@ -843,7 +845,7 @@ namespace RTC
 			// Dump status slots.
 			for (auto status : this->statuses)
 			{
-				out << "|" << FeedbackRtpTransportPacket::status2String[status];
+				out << "|" << FeedbackRtpTransportPacket::Status2String.at(status);
 			}
 
 			// Dump empty slots.
@@ -983,7 +985,7 @@ namespace RTC
 			// Dump status slots.
 			for (auto status : this->statuses)
 			{
-				out << "|" << FeedbackRtpTransportPacket::status2String[status];
+				out << "|" << FeedbackRtpTransportPacket::Status2String.at(status);
 			}
 
 			// Dump empty slots.

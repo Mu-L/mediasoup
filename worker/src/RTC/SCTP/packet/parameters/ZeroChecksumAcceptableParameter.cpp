@@ -12,7 +12,7 @@ namespace RTC
 		/* Class variables. */
 
 		// clang-format off
-		std::unordered_map<ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod, std::string> ZeroChecksumAcceptableParameter::alternateErrorDetectionMethod2String =
+		const std::unordered_map<ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod, std::string> ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod2String =
 		{
 			{ ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod::NONE,           "NONE"           },
 			{ ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod::SCTP_OVER_DTLS, "SCTP_OVER_DTLS" },
@@ -91,17 +91,17 @@ namespace RTC
 			return parameter;
 		}
 
-		const std::string& ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod2String(
+		const std::string& ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethodToString(
 		  AlternateErrorDetectionMethod alternateErrorDetectionMethod)
 		{
 			MS_TRACE();
 
 			static const std::string Unknown("UNKNOWN");
 
-			auto it = ZeroChecksumAcceptableParameter::alternateErrorDetectionMethod2String.find(
+			auto it = ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod2String.find(
 			  alternateErrorDetectionMethod);
 
-			if (it == ZeroChecksumAcceptableParameter::alternateErrorDetectionMethod2String.end())
+			if (it == ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod2String.end())
 			{
 				return Unknown;
 			}
@@ -134,7 +134,7 @@ namespace RTC
 			  indentation,
 			  "  alternate error detection method: %" PRIu32 " (%s)",
 			  static_cast<uint32_t>(GetAlternateErrorDetectionMethod()),
-			  ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod2String(
+			  ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethodToString(
 			    GetAlternateErrorDetectionMethod())
 			    .c_str());
 			MS_DUMP_CLEAN(indentation, "</SCTP::ZeroChecksumAcceptableParameter>");

@@ -158,10 +158,10 @@ namespace RTC
 			  uint16_t& chunkLength,
 			  uint8_t& padding);
 
-			static const std::string& ChunkType2String(ChunkType chunkType);
+			static const std::string& ChunkTypeToString(ChunkType chunkType);
 
 		private:
-			static std::unordered_map<ChunkType, std::string> chunkType2String;
+			static const std::unordered_map<ChunkType, std::string> ChunkType2String;
 
 		protected:
 			/**

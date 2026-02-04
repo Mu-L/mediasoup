@@ -21,7 +21,7 @@ namespace RTC
 		/* Class variables. */
 
 		// clang-format off
-		absl::flat_hash_map<Type, std::string> Packet::type2String =
+		const absl::flat_hash_map<Type, std::string> Packet::Type2String =
 		{
 			{ Type::SR,    "SR"    },
 			{ Type::RR,    "RR"    },
@@ -154,17 +154,17 @@ namespace RTC
 
 				if (!current)
 				{
-					std::string packetType = Type2String(Type(header->packetType));
+					std::string packetType = TypeToString(Type(header->packetType));
 
 					if (Type(header->packetType) == Type::PSFB)
 					{
 						packetType +=
-						  " " + FeedbackPsPacket::MessageType2String(FeedbackPs::MessageType(header->count));
+						  " " + FeedbackPsPacket::MessageTypeToString(FeedbackPs::MessageType(header->count));
 					}
 					else if (Type(header->packetType) == Type::RTPFB)
 					{
 						packetType +=
-						  " " + FeedbackRtpPacket::MessageType2String(FeedbackRtp::MessageType(header->count));
+						  " " + FeedbackRtpPacket::MessageTypeToString(FeedbackRtp::MessageType(header->count));
 					}
 
 					MS_WARN_TAG(rtcp, "error parsing %s Packet", packetType.c_str());
@@ -190,15 +190,15 @@ namespace RTC
 			return first;
 		}
 
-		const std::string& Packet::Type2String(Type type)
+		const std::string& Packet::TypeToString(Type type)
 		{
 			MS_TRACE();
 
 			static const std::string Unknown("UNKNOWN");
 
-			auto it = Packet::type2String.find(type);
+			auto it = Packet::Type2String.find(type);
 
-			if (it == Packet::type2String.end())
+			if (it == Packet::Type2String.end())
 			{
 				return Unknown;
 			}
