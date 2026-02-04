@@ -10,7 +10,6 @@
 #include "RTC/RTCP/Feedback.hpp"
 #include "RTC/RTCP/XrReceiverReferenceTime.hpp"
 #include "RTC/RTP/Codecs/Tools.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #ifdef MS_RTC_LOGGER_RTP
 #include "RTC/RtcLogger.hpp"
 #endif

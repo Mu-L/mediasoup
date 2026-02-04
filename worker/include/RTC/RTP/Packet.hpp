@@ -6,8 +6,8 @@
 #include "FBS/rtpPacket.h"
 #include "RTC/RTP/Codecs/DependencyDescriptor.hpp"
 #include "RTC/RTP/Codecs/PayloadDescriptorHandler.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RtpDictionaries.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include "RTC/Serializable.hpp"
 #ifdef MS_RTC_LOGGER_RTP
 #include "RTC/RtcLogger.hpp"
@@ -380,7 +380,7 @@ namespace RTC
 
 					// `-1` because we have 14 elements total 0..13 and `id` is in the
 					// range 1..14.
-					auto offset = this->oneByteExtensions[id - 1];
+					const auto offset = this->oneByteExtensions[id - 1];
 
 					return offset != -1;
 				}
@@ -479,7 +479,7 @@ namespace RTC
 			 *
 			 * @see RFC 8285.
 			 */
-			void AssignExtensionIds(RTC::RtpHeaderExtensionIds& headerExtensionIds);
+			void AssignExtensionIds(RTP::HeaderExtensionIds& headerExtensionIds);
 
 			bool ReadMid(std::string& mid) const;
 
@@ -926,7 +926,7 @@ namespace RTC
 			// Extension value to the beginning of the Extension.
 			std::map<uint8_t, ssize_t> twoBytesExtensions;
 			// Extension ids.
-			RTC::RtpHeaderExtensionIds headerExtensionIds{};
+			RTP::HeaderExtensionIds headerExtensionIds{};
 			// Codec related.
 			std::shared_ptr<Codecs::PayloadDescriptorHandler> payloadDescriptorHandler;
 		};

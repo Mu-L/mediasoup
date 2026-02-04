@@ -1,7 +1,7 @@
 #include "RTC/RTP/FuzzerPacket.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
 #include "RTC/RtpDictionaries.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include <string>
 #include <vector>
 
@@ -67,7 +67,7 @@ void Fuzzer::RTC::RTP::Packet::Fuzz(const uint8_t* data, size_t len)
 	packet->HasOneByteExtensions();
 	packet->HasTwoBytesExtensions();
 
-	::RTC::RtpHeaderExtensionIds headerExtensionIds{};
+	::RTC::RTP::HeaderExtensionIds headerExtensionIds{};
 
 	headerExtensionIds.mid               = 5;
 	headerExtensionIds.rid               = 6;

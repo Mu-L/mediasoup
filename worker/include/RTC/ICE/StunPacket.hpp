@@ -328,7 +328,7 @@ namespace RTC
 
 				const uint8_t errorClass  = Utils::Byte::Get1Byte(attributeValue, 2) & 0b00000111;
 				const uint8_t errorNumber = Utils::Byte::Get1Byte(attributeValue, 3);
-				auto errorCode            = static_cast<uint16_t>((errorClass * 100) + errorNumber);
+				const auto errorCode      = static_cast<uint16_t>((errorClass * 100) + errorNumber);
 
 				// Reason Phrase comes after the first 4 bytes (it could be zero
 				// length).
@@ -475,7 +475,7 @@ namespace RTC
 
 			const StunPacket::Attribute* GetAttribute(StunPacket::AttributeType type) const
 			{
-				auto it = this->attributes.find(type);
+				const auto it = this->attributes.find(type);
 
 				if (it != this->attributes.end())
 				{

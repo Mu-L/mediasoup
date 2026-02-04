@@ -9,10 +9,10 @@
 #include "RTC/RTCP/Packet.hpp"
 #include "RTC/RTCP/SenderReport.hpp"
 #include "RTC/RTCP/XrDelaySinceLastRr.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
 #include "RTC/RTP/RtpStreamRecv.hpp"
 #include "RTC/RtpDictionaries.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include "RTC/Shared.hpp"
 #include <string>
 #include <vector>
@@ -113,7 +113,7 @@ namespace RTC
 		{
 			return this->rtpParameters;
 		}
-		const struct RTC::RtpHeaderExtensionIds& GetRtpHeaderExtensionIds() const
+		const struct RTC::RTP::HeaderExtensionIds& GetRtpHeaderExtensionIds() const
 		{
 			return this->rtpHeaderExtensionIds;
 		}
@@ -194,7 +194,7 @@ namespace RTC
 		absl::flat_hash_map<uint32_t, RTC::RTP::RtpStreamRecv*> mapRtxSsrcRtpStream;
 		absl::flat_hash_map<RTC::RTP::RtpStreamRecv*, uint32_t> mapRtpStreamMappedSsrc;
 		absl::flat_hash_map<uint32_t, uint32_t> mapMappedSsrcSsrc;
-		struct RTC::RtpHeaderExtensionIds rtpHeaderExtensionIds;
+		struct RTC::RTP::HeaderExtensionIds rtpHeaderExtensionIds;
 		bool paused{ false };
 		bool enableMediasoupPacketIdHeaderExtension{ false };
 		RTC::RTP::Packet* currentRtpPacket{ nullptr };

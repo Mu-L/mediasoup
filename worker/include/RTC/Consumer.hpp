@@ -9,12 +9,12 @@
 #include "RTC/RTCP/CompoundPacket.hpp"
 #include "RTC/RTCP/FeedbackRtpNack.hpp"
 #include "RTC/RTCP/ReceiverReport.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
 #include "RTC/RTP/RtpStreamRecv.hpp"
 #include "RTC/RTP/RtpStreamSend.hpp"
 #include "RTC/RTP/SharedPacket.hpp"
 #include "RTC/RtpDictionaries.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include "RTC/Shared.hpp"
 #include <absl/container/flat_hash_set.h>
 #include <string>
@@ -79,7 +79,7 @@ namespace RTC
 		{
 			return this->rtpParameters;
 		}
-		const struct RTC::RtpHeaderExtensionIds& GetRtpHeaderExtensionIds() const
+		const struct RTC::RTP::HeaderExtensionIds& GetRtpHeaderExtensionIds() const
 		{
 			return this->rtpHeaderExtensionIds;
 		}
@@ -184,7 +184,7 @@ namespace RTC
 		RTC::RtpParameters rtpParameters;
 		RTC::RtpParameters::Type type;
 		std::vector<RTC::RtpEncodingParameters> consumableRtpEncodings;
-		struct RTC::RtpHeaderExtensionIds rtpHeaderExtensionIds;
+		struct RTC::RTP::HeaderExtensionIds rtpHeaderExtensionIds;
 		const std::vector<uint8_t>* producerRtpStreamScores{ nullptr };
 		// Others.
 		// Whether a payload type is supported or not is represented in the

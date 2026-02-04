@@ -433,7 +433,7 @@ namespace RTC
 			}
 
 			const auto* attributeValue = GetAttributeValue(attribute);
-			uint8_t family             = attributeValue[1];
+			const uint8_t family       = attributeValue[1];
 			uint16_t port;
 
 			std::memcpy(std::addressof(port), attributeValue + 2, 2);

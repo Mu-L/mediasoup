@@ -3,11 +3,11 @@
 #include "RTC/RTP/Codecs/AV1.hpp"
 #include "RTC/RTP/Codecs/PayloadDescriptorHandler.hpp"
 #include "RTC/RTP/Codecs/VP8.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
 #include "RTC/RTP/RtpStream.hpp"
 #include "RTC/RTP/RtpStreamSend.hpp"
 #include "RTC/RTP/SharedPacket.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cstring> // std::memcpy()
 #include <vector>
@@ -638,7 +638,7 @@ SCENARIO("NACK and RTP packets retransmission", "[rtp][rtcp][nack][rtpstream][rt
 		};
 		// clang-format on
 
-		RtpHeaderExtensionIds headerExtensionIds{};
+		RTP::HeaderExtensionIds headerExtensionIds{};
 
 		headerExtensionIds.dependencyDescriptor = 12;
 

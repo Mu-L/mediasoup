@@ -1,8 +1,8 @@
 #include "common.hpp"
 #include "DepLibUV.hpp"
 #include "RTC/Consts.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include "RTC/TransportCongestionControlServer.hpp"
 #include <catch2/catch_test_macros.hpp>
 
@@ -98,7 +98,7 @@ void validate(std::vector<TestTransportCongestionControlServerInput>& inputs, Te
 
 	std::unique_ptr<RTP::Packet> packet{ RTP::Packet::Parse(buffer, sizeof(buffer)) };
 
-	RtpHeaderExtensionIds headerExtensionIds{};
+	RTP::HeaderExtensionIds headerExtensionIds{};
 
 	headerExtensionIds.transportWideCc01 = 5;
 

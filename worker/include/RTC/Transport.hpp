@@ -14,9 +14,9 @@
 #include "RTC/Producer.hpp"
 #include "RTC/RTCP/CompoundPacket.hpp"
 #include "RTC/RTCP/Packet.hpp"
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
 #include "RTC/RateCalculator.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include "RTC/RtpListener.hpp"
 #include "RTC/SctpAssociation.hpp"
 #include "RTC/SctpListener.hpp"
@@ -354,7 +354,7 @@ namespace RTC
 		// Others.
 		bool direct{ false }; // Whether this Transport allows direct communication.
 		bool destroying{ false };
-		struct RTC::RtpHeaderExtensionIds recvRtpHeaderExtensionIds;
+		struct RTC::RTP::HeaderExtensionIds recvRtpHeaderExtensionIds;
 		RTC::RtpListener rtpListener;
 		RTC::SctpListener sctpListener;
 		RTC::RateCalculator recvTransmission;

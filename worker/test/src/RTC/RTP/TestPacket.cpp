@@ -1,10 +1,10 @@
 #include "common.hpp"
 #include "Utils.hpp"
 #include "testHelpers.hpp" // IWYU pragma: export in worker/test/include/
+#include "RTC/RTP/HeaderExtensionIds.hpp"
 #include "RTC/RTP/Packet.hpp"
 #include "RTC/RTP/rtpCommon.hpp"
 #include "RTC/RtpDictionaries.hpp"
-#include "RTC/RtpHeaderExtensionIds.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <cstring> // std::memset()
 #include <string>
@@ -1546,7 +1546,7 @@ SCENARIO("RTP Packet", "[serializable][rtp][packet]")
 
 		packet2->Serialize(SerializeBuffer, sizeof(SerializeBuffer));
 
-		RTC::RtpHeaderExtensionIds headerExtensionIds{};
+		RTP::HeaderExtensionIds headerExtensionIds{};
 
 		headerExtensionIds.mid               = 1;
 		headerExtensionIds.rid               = 2;
