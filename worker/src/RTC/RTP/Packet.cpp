@@ -1532,7 +1532,7 @@ namespace RTC
 			{
 				auto csrcsLength = GetCsrcCount();
 
-				if (GetLength() < (ptr - GetBuffer()) + csrcsLength)
+				if (GetLength() < static_cast<size_t>(ptr - GetBuffer()) + csrcsLength)
 				{
 					MS_WARN_TAG(rtp, "invalid Packet, not enough space for the announced CSRC list");
 
@@ -1546,7 +1546,7 @@ namespace RTC
 			if (HasHeaderExtension())
 			{
 				// The Header Extension is at least 4 bytes.
-				if (GetLength() < (ptr - GetBuffer()) + 4)
+				if (GetLength() < static_cast<size_t>(ptr - GetBuffer()) + 4)
 				{
 					MS_WARN_TAG(rtp, "invalid Packet, not enough space for the announced Header Extension");
 
@@ -1555,7 +1555,7 @@ namespace RTC
 
 				const auto headerExtensionLength = GetHeaderExtensionLength();
 
-				if (GetLength() < (ptr - GetBuffer()) + headerExtensionLength)
+				if (GetLength() < static_cast<size_t>(ptr - GetBuffer()) + headerExtensionLength)
 				{
 					MS_WARN_TAG(
 					  rtp, "invalid Packet, not enough space for the announced Header Extension value");
@@ -1596,7 +1596,7 @@ namespace RTC
 
 			// Here we are at the end of the Packet.
 			MS_ASSERT(
-			  ptr - GetBuffer() == GetLength(),
+			  static_cast<size_t>(ptr - GetBuffer()) == GetLength(),
 			  "Packet computed length does not match its assigned length");
 
 			return true;

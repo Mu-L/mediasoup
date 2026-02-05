@@ -1180,12 +1180,12 @@ namespace RTC
 			}
 
 			// Ensure we read the Attributes length entirely.
-			if (ptr - attributesStart != GetAttributesLength())
+			if (ptr != attributesStart + GetAttributesLength())
 			{
 				MS_WARN_TAG(
 				  ice,
-				  "invalid STUN Packet, computed Attributes length (%zu) does not match announced length (%zu)",
-				  ptr - attributesStart,
+				  "invalid STUN Packet, computed length of Attributes (%zu) does not match announced length (%zu)",
+				  static_cast<size_t>(ptr - attributesStart),
 				  GetAttributesLength());
 
 				return false;
