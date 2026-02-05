@@ -644,7 +644,7 @@ namespace RTC
 				// some implementations like gstreamer will fail to process it otherwise.
 				RTC::RTCP::FeedbackPsPliPacket packet(GetSsrc(), GetSsrc());
 
-				packet.Serialize(RTC::RTCP::Buffer);
+				packet.Serialize(RTC::RTCP::SerializationBuffer);
 
 				this->pliCount++;
 
@@ -662,7 +662,7 @@ namespace RTC
 				auto* item = new RTC::RTCP::FeedbackPsFirItem(GetSsrc(), ++this->firSeqNumber);
 
 				packet.AddItem(item);
-				packet.Serialize(RTC::RTCP::Buffer);
+				packet.Serialize(RTC::RTCP::SerializationBuffer);
 
 				this->firCount++;
 
@@ -923,7 +923,7 @@ namespace RTC
 			}
 
 			// Ensure that the RTCP packet fits into the RTCP buffer.
-			if (packet.GetSize() > RTC::RTCP::BufferSize)
+			if (packet.GetSize() > RTC::RTCP::SerializationBufferSize)
 			{
 				MS_WARN_TAG(rtx, "cannot send RTCP NACK packet, size too big (%zu bytes)", packet.GetSize());
 
@@ -933,7 +933,7 @@ namespace RTC
 			this->nackCount++;
 			this->nackPacketCount += numPacketsRequested;
 
-			packet.Serialize(RTC::RTCP::Buffer);
+			packet.Serialize(RTC::RTCP::SerializationBuffer);
 
 			// Notify the listener.
 			static_cast<RTP::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);

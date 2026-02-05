@@ -203,7 +203,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		packet->Serialize(RTC::RTCP::Buffer);
+		packet->Serialize(RTC::RTCP::SerializationBuffer);
 
 		const auto data = this->shared->channelNotifier->GetBufferBuilder().CreateVector(
 		  packet->GetData(), packet->GetSize());

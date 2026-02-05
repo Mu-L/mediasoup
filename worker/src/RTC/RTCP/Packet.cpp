@@ -16,7 +16,7 @@ namespace RTC
 	{
 		/* Namespace variables. */
 
-		uint8_t Buffer[BufferSize];
+		uint8_t SerializationBuffer[SerializationBufferSize];
 
 		/* Class variables. */
 

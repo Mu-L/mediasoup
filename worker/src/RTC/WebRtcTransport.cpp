@@ -824,7 +824,7 @@ namespace RTC
 			return;
 		}
 
-		packet->Serialize(RTC::RTCP::Buffer);
+		packet->Serialize(RTC::RTCP::SerializationBuffer);
 
 		const uint8_t* data = packet->GetData();
 		auto len            = packet->GetSize();

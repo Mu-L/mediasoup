@@ -247,7 +247,7 @@ SCENARIO("parse Dependency Descriptor", "[rtp][codecs][DD]")
 
 		uint8_t len;
 
-		auto data = dependencyDescriptor->Serialize(len);
+		const auto* data = dependencyDescriptor->Serialize(len);
 
 		// clang-format on
 		dependencyDescriptor = std::unique_ptr<::RTC::RTP::Codecs::DependencyDescriptor>(

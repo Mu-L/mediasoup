@@ -3041,7 +3041,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		packet->Serialize(RTC::RTCP::Buffer);
+		packet->Serialize(RTC::RTCP::SerializationBuffer);
 
 		SendRtcpPacket(packet);
 	}

@@ -378,7 +378,7 @@ namespace RTC
 			RTC::RTCP::FeedbackPsRembPacket packet(0u, 0u);
 
 			packet.SetBitrate(this->maxIncomingBitrate);
-			packet.Serialize(RTC::RTCP::Buffer);
+			packet.Serialize(RTC::RTCP::SerializationBuffer);
 
 			// Notify the listener.
 			this->listener->OnTransportCongestionControlServerSendRtcpPacket(this, &packet);
@@ -462,7 +462,7 @@ namespace RTC
 
 		packet.SetBitrate(availableBitrate);
 		packet.SetSsrcs(ssrcs);
-		packet.Serialize(RTC::RTCP::Buffer);
+		packet.Serialize(RTC::RTCP::SerializationBuffer);
 
 		// Notify the listener.
 		this->listener->OnTransportCongestionControlServerSendRtcpPacket(this, &packet);
