@@ -83,8 +83,7 @@ Checks: "*,\
   -readability-simplify-boolean-expr,\
   -readability-uppercase-literal-suffix,\
   "
-HeaderFilterRegex: '.*/worker/(include|test/include|fuzzer/include)/.*
-
+HeaderFilterRegex: '.*/worker/(include|test/include|fuzzer/include)/.*'
 FormatStyle: 'file'
 User: mediasoup
 CheckOptions:
