@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { execSync } from 'node:child_process';
-import { glob } from 'glob';
+import { globSync } from 'glob';
 
 const PYTHON = getPython();
 const BUILD_DIR = getBuildDir();
@@ -9,21 +9,21 @@ const NUM_CORES = getNumCores();
 const CLANG_FORMAT_VERSION = 21;
 const CLANG_TIDY_VERSION = 21;
 
-const CLANG_FORMAT_PATHS = await glob([
+const CLANG_FORMAT_PATHS = [
 	'../src/**/*.cpp',
 	'../include/**/*.hpp',
 	'../test/src/**/*.cpp',
 	'../test/include/**/**.hpp',
 	'../fuzzer/src/**/*.cpp',
 	'../fuzzer/include/**/*.hpp',
-]);
+];
 
 // TODO: Enable test/ and fuzzer/ source files.
-const CLANG_TIDY_PATHS = await glob([
+const CLANG_TIDY_PATHS = [
 	'../src/**/*.cpp',
 	// '../test/src/**/*.cpp',
 	// '../fuzzer/src/**/*.cpp',
-]);
+];
 
 const task = process.argv.slice(2).join(' ');
 
@@ -72,9 +72,9 @@ function lint() {
 		checkRequireVersion: true,
 	});
 
-	executeCmd(
-		`"${clangFormat}" --Werror --dry-run ${CLANG_FORMAT_PATHS.join(' ')}`
-	);
+	const clangFormatFiles = globSync(CLANG_FORMAT_PATHS).join(' ');
+
+	executeCmd(`"${clangFormat}" --Werror --dry-run ${clangFormatFiles}`);
 }
 
 function format() {
@@ -86,9 +86,9 @@ function format() {
 		checkRequireVersion: true,
 	});
 
-	const files = CLANG_FORMAT_PATHS.join(' ');
+	const clangFormatFiles = globSync(CLANG_FORMAT_PATHS).join(' ');
 
-	executeCmd(`"${clangFormat}" --Werror -i ${files}`);
+	executeCmd(`"${clangFormat}" --Werror -i ${clangFormatFiles}`);
 }
 
 function tidy({ fix }) {
@@ -114,11 +114,23 @@ function tidy({ fix }) {
 		checkRequireVersion: true,
 	});
 
-	const tidyChecks = process.env.MEDIASOUP_TIDY_CHECKS
-		? `-*,${process.env.MEDIASOUP_TIDY_CHECKS}`
+	const tidyChecksArg = process.env.MEDIASOUP_TIDY_CHECKS
+		? `-checks=-*,${process.env.MEDIASOUP_TIDY_CHECKS}`
 		: '';
 
-	const files = process.env.MEDIASOUP_TIDY_FILES ?? CLANG_TIDY_PATHS.join(' ');
+	const runClangTidyFilesArgs = process.env.MEDIASOUP_TIDY_FILES
+		? globSync(
+				process.env.MEDIASOUP_TIDY_FILES.split(/\s/)
+					.filter(Boolean)
+					.map(filePath => `../${filePath}`)
+			).join(' ')
+		: globSync(CLANG_TIDY_PATHS).join(' ');
+
+	if (!runClangTidyFilesArgs) {
+		logError('tidy() | no files found');
+
+		exitWithError();
+	}
 
 	const fixArg = fix ? '-fix' : '';
 
@@ -126,7 +138,7 @@ function tidy({ fix }) {
 	executeCmd(`"${clangTidy}" --verify-config`);
 
 	executeCmd(
-		`"${PYTHON}" "${runClangTidy}" -clang-tidy-binary="${clangTidy}" -clang-apply-replacements-binary="${clangApplyReplacements}" -p="${BUILD_DIR}" -j=${NUM_CORES} -quiet ${fixArg} -format -checks=${tidyChecks} ${files}`
+		`"${PYTHON}" "${runClangTidy}" -clang-tidy-binary="${clangTidy}" -clang-apply-replacements-binary="${clangApplyReplacements}" -p="${BUILD_DIR}" -j=${NUM_CORES} -quiet ${fixArg} -format ${tidyChecksArg} ${runClangTidyFilesArgs}`
 	);
 }
 

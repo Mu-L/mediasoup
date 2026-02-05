@@ -237,7 +237,9 @@ Runs [clang-tidy](http://clang.llvm.org/extra/clang-tidy) and performs C++ code 
 **Environment variables:**
 
 - "MEDIASOUP_TIDY_CHECKS": Optional. Comma separated list of checks. Overrides the checks defined in `worker/.clang-tidy` file.
-- "MEDIASOUP_TIDY_FILES": Optional. Space separated source files to process, including their path. All `.cpp` files will be processes by default.
+- "MEDIASOUP_TIDY_FILES": Optional. Space separated source file paths to process. All `.cpp` files will be processes by default.
+  - File paths must be relative to `worker/` folder.
+  - File paths can use [glob](https://github.com/isaacs/node-glob) syntax. Example: `"test/src/**/*.cpp"`.
 
 **Usage example in macOS:**
 
