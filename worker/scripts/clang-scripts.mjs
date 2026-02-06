@@ -1,9 +1,12 @@
-import * as path from 'node:path';
+import * as process from 'node:process';
 import * as os from 'node:os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 import { globSync } from 'glob';
 
 const PYTHON = getPython();
+const ROOT_DIR = getRootDir();
 const BUILD_DIR = getBuildDir();
 const NUM_CORES = getNumCores();
 const CLANG_FORMAT_VERSION = 21;
@@ -50,6 +53,12 @@ async function run() {
 
 		case 'tidy:fix': {
 			tidy({ fix: true });
+
+			break;
+		}
+
+		case 'normalize-compile-commands': {
+			normalizeCompileCommands();
 
 			break;
 		}
@@ -139,6 +148,34 @@ function tidy({ fix }) {
 	executeCmd(
 		`"${PYTHON}" "${runClangTidy}" -clang-tidy-binary="${clangTidy}" -clang-apply-replacements-binary="${clangApplyReplacements}" -p="${BUILD_DIR}" -j=${NUM_CORES} -quiet ${fixArg} -format ${tidyChecksArg} ${runClangTidyFilesArgs}`
 	);
+}
+
+function normalizeCompileCommands() {
+	logInfo('normalizeCompileCommands()');
+
+	const compileCommandsFile = `${BUILD_DIR}/compile_commands.json`;
+
+	try {
+		const commands = JSON.parse(fs.readFileSync(compileCommandsFile, 'utf8'));
+
+		for (const entry of commands) {
+			if (entry.file && entry.directory) {
+				// Resolve to absolute path first.
+				const absolutePath = path.resolve(entry.directory, entry.file);
+
+				// Convert to relative path from repo root.
+				entry.file = path.relative(ROOT_DIR, absolutePath);
+			}
+		}
+
+		fs.writeFileSync(compileCommandsFile, JSON.stringify(commands, null, 2));
+	} catch (error) {
+		logError(
+			`normalizeCompileCommands() | failed to clean up compile_commands.json: ${error}`
+		);
+
+		exitWithError();
+	}
 }
 
 function getClangToolBinary({ clangToolName, version, checkRequireVersion }) {
@@ -244,10 +281,14 @@ function getPython() {
 	return python;
 }
 
+function getRootDir() {
+	return path.resolve(path.join('../../'));
+}
+
 function getBuildDir() {
-	const mediasoupBuildtype = process.env.MEDIASOUP_BUILDTYPE ?? 'Release';
-	const workerDir = path.resolve(path.join('../'));
+	const workerDir = path.join(ROOT_DIR, 'worker/');
 	const workerOutDir = process.env.MEDIASOUP_OUT_DIR ?? `${workerDir}/out`;
+	const mediasoupBuildtype = process.env.MEDIASOUP_BUILDTYPE ?? 'Release';
 	const workerInstallDir =
 		process.env.MEDIASOUP_INSTALL_DIR ??
 		`${workerOutDir}/${mediasoupBuildtype}`;
