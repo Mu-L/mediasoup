@@ -873,16 +873,16 @@ namespace RTC
 
 		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
 
-		if (!packet)
+		if (packet)
+		{
+			packet->Dump();
+
+			delete packet;
+		}
+		else
 		{
 			MS_WARN_TAG(sctp, "data to be sent is not a valid SCTP packet");
-
-			return;
 		}
-
-		packet->Dump();
-
-		delete packet;
 #endif
 
 		this->dtlsTransport->SendApplicationData(data, len);
@@ -1454,20 +1454,20 @@ namespace RTC
 
 // TODO: For testing purposes. Must be removed.
 #ifdef MS_SCTP_STACK
-		MS_DUMP("<<< receiving SCTP packet...");
+		MS_DUMP("<<< received SCTP packet...");
 
 		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
 
 		if (!packet)
 		{
-			MS_WARN_TAG(sctp, "received data is not a valid SCTP packet");
+			packet->Dump();
 
-			return;
+			delete packet;
 		}
-
-		packet->Dump();
-
-		delete packet;
+		else
+		{
+			MS_WARN_TAG(sctp, "received data is not a valid SCTP packet");
+		}
 #endif
 
 		// Pass it to the parent transport.
