@@ -8,8 +8,9 @@
 #include <cstdint>
 #include <cstring> // std::memcmp(), std::memcpy()
 #include <limits>  // std::numeric_limits
+#include <random>  // std::mt19937_64, std::uniform_int_distribution, std::random_device
 #include <string>
-#include <type_traits> // std::enable_if, std::is_same_v
+#include <type_traits> // std::enable_if, std::is_same_v, std::is_unsigned
 #ifdef _WIN32
 #include <ws2ipdef.h>
 // https://stackoverflow.com/a/24550632/2085408
@@ -233,7 +234,18 @@ namespace Utils
 		static void ClassInit();
 		static void ClassDestroy();
 
-		static uint32_t GetRandomUInt(uint32_t min, uint32_t max);
+		template<typename T>
+		static T GetRandomUInt(T min, T max)
+		{
+			static_assert(
+			  std::is_same_v<T, uint16_t> || std::is_same_v<T, uint32_t> || std::is_same_v<T, uint64_t> ||
+			    std::is_same_v<T, size_t>,
+			  "T must be uint16_t, uint32_t, uint64_t, size_t");
+
+			std::uniform_int_distribution<T> dist(min, max);
+
+			return dist(Crypto::rng);
+		}
 
 		static std::string GetRandomString(size_t len);
 
@@ -246,7 +258,7 @@ namespace Utils
 		static void WriteRandomBytes(uint8_t* buffer, size_t len);
 
 	private:
-		thread_local static uint32_t seed;
+		thread_local static std::mt19937_64 rng;
 		thread_local static EVP_MAC* mac;
 		thread_local static EVP_MAC_CTX* hmacSha1Ctx;
 		thread_local static uint8_t hmacSha1Buffer[];
