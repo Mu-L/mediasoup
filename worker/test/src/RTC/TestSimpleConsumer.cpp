@@ -167,11 +167,16 @@ namespace
 		  : listener(std::make_unique<ConsumerListener>()), consumer(createConsumer(listener.get())),
 		    rtpStream(createRtpStreamRecv())
 		{
-			// Set producer scores and producer stream.
+			// NOTE: This must be static because the Consumer stores the given vector
+			// pointer which is supposed to exist in the associated Producer (but here
+			// there is no associated Producer).
 			const std::vector<uint8_t> scores{ 10 };
 
 			consumer->ProducerRtpStreamScores(&scores);
-			consumer->ProducerNewRtpStream(rtpStream.get(), 1234);
+
+			// NOTE: mappedSsrc here MUST be 1234567890 (otherwise Consumer will crash).
+			// This is guaranteed by Producer class, however here we must do it manually.
+			consumer->ProducerNewRtpStream(rtpStream.get(), 1234567890);
 		}
 
 		std::unique_ptr<ConsumerListener> listener;
@@ -182,12 +187,14 @@ namespace
 
 SCENARIO("SimpleConsumer", "[rtp][consumer]")
 {
+	// TODO: We should NOT parse RTP packets for tests anymore. We should use
+	// RTC::RTP::Packet::Factory() instead.
 	// clang-format off
 	uint8_t buffer[] =
 	{
 		0x80, 0x01, 0x00, 0x08,
 		0x00, 0x00, 0x00, 0x04,
-		0x00, 0x00, 0x00, 0x05,
+		0x49, 0x96, 0x02, 0xD2, // SSRC: 1234567890 (must be this exact value).
 		// Payload (4 bytes).
 		0xFF, 0xFF, 0xFF, 0xFF,
 		// From here this is just buffer enough for the variable length payload so
