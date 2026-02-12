@@ -80,4 +80,3 @@ table Notification {
     event: Event;
     body: Body;
 }
-
