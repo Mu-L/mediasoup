@@ -106,7 +106,7 @@ namespace RTC
 
 			if (this->state != State::CLOSED)
 			{
-				auto stateStringView = Socket::State2String(this->state);
+				const auto stateStringView = Socket::State2String(this->state);
 
 				MS_DEBUG_TAG(
 				  sctp,
@@ -169,7 +169,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			auto stateStringView = Socket::State2String(state);
+			const auto stateStringView = Socket::State2String(state);
 
 			if (state == this->state)
 			{
@@ -183,7 +183,7 @@ namespace RTC
 				return;
 			}
 
-			auto previousStateStringView = Socket::State2String(this->state);
+			const auto previousStateStringView = Socket::State2String(this->state);
 
 			MS_WARN_TAG(
 			  sctp,
