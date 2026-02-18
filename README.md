@@ -12,7 +12,6 @@
 [![][github-actions-shield-mediasoup-worker]][github-actions-mediasoup-worker]
 [![][github-actions-shield-mediasoup-rust]][github-actions-mediasoup-rust]
 [![][github-actions-shield-mediasoup-worker-fuzzer]][github-actions-mediasoup-worker-fuzzer]
-[![][github-actions-shield-mediasoup-worker-clang-tidy]][github-actions-mediasoup-worker-clang-tidy]
 [![][github-actions-shield-mediasoup-worker-prebuild]][github-actions-mediasoup-worker-prebuild]
 [![][codeql-shield-mediasoup]][codeql-mediasoup]
 
@@ -103,8 +102,6 @@ You can support mediasoup by [sponsoring][sponsor] it. Thanks!
 [github-actions-mediasoup-rust]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-rust.yaml?query=branch%3Av3
 [github-actions-shield-mediasoup-worker-fuzzer]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-worker-fuzzer.yaml/badge.svg?branch=v3
 [github-actions-mediasoup-worker-fuzzer]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-worker-fuzzer.yaml?query=branch%3Av3
-[github-actions-shield-mediasoup-worker-clang-tidy]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-worker-clang-tidy.yaml/badge.svg?branch=v3
-[github-actions-mediasoup-worker-clang-tidy]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-worker-clang-tidy.yaml?query=branch%3Av3
 [github-actions-shield-mediasoup-worker-prebuild]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-worker-prebuild.yaml/badge.svg?event=release
 [github-actions-mediasoup-worker-prebuild]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-worker-prebuild.yaml?query=event%3Arelease
 [codeql-shield-mediasoup]: https://github.com/versatica/mediasoup/actions/workflows/codeql.yaml/badge.svg?branch=v3
