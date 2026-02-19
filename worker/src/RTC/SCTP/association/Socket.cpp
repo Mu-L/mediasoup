@@ -265,7 +265,7 @@ namespace RTC
 			this->metrics.zeroChecksum        = negotiatedCapabilities.zeroChecksum;
 		}
 
-		Packet* Socket::CreatePacket() const
+		std::unique_ptr<Packet> Socket::CreatePacket() const
 		{
 			MS_TRACE();
 
@@ -274,11 +274,11 @@ namespace RTC
 			return CreatePacketWithVerificationTag(verificationTag);
 		}
 
-		Packet* Socket::CreatePacketWithVerificationTag(uint32_t verificationTag) const
+		std::unique_ptr<Packet> Socket::CreatePacketWithVerificationTag(uint32_t verificationTag) const
 		{
 			MS_TRACE();
 
-			auto* packet = Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer));
+			auto packet = std::unique_ptr<Packet>(Packet::Factory(FactoryBuffer, sizeof(FactoryBuffer)));
 
 			packet->SetSourcePort(this->options.sourcePort);
 			packet->SetDestinationPort(this->options.destinationPort);
@@ -321,7 +321,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			auto* packet = CreatePacket();
+			auto packet = CreatePacket();
 
 			// Insert an INIT Chunk in the Packet.
 			auto* initChunk = packet->BuildChunkInPlace<InitChunk>();
@@ -340,23 +340,19 @@ namespace RTC
 			// https://datatracker.ietf.org/doc/html/rfc9653#section-5.2
 			// When a sender sends a packet containing an INIT chunk, it MUST include
 			// a correct CRC32c checksum in the packet containing the INIT chunk.
-			SendPacket(packet, /*writeChecksum*/ true);
-
-			delete packet;
+			SendPacket(packet.get(), /*writeChecksum*/ true);
 		}
 
 		void Socket::SendShutdownAckChunk()
 		{
 			MS_TRACE();
 
-			auto* packet           = CreatePacket();
+			auto packet            = CreatePacket();
 			auto* shutdownAckChunk = packet->BuildChunkInPlace<ShutdownAckChunk>();
 
 			shutdownAckChunk->Consolidate();
 
-			SendPacket(packet);
-
-			delete packet;
+			SendPacket(packet.get());
 
 			// TODO
 			// this->t2ShutdownTimer->SetBaseTimeout(this->tcb->GetCurrentRto());
@@ -589,7 +585,7 @@ namespace RTC
 				  sctp,
 				  "invalid value 0 in Initiate Tag or Number of Outbound Streams or Number of Inbound Streams in received INIT Chunk, aborting association");
 
-				auto* packet     = CreatePacketWithVerificationTag(0);
+				auto packet      = CreatePacketWithVerificationTag(0);
 				auto* abortChunk = packet->BuildChunkInPlace<AbortAssociationChunk>();
 
 				// NOTE: We are not setting the Verification Tag expected by the peer
@@ -605,9 +601,7 @@ namespace RTC
 				protocolViolationErrorCause->Consolidate();
 				abortChunk->Consolidate();
 
-				SendPacket(packet);
-
-				delete packet;
+				SendPacket(packet.get());
 
 				// TODO
 				// InternalClose(ErrorKind::kProtocolViolation, "Received invalid INIT Chunk");
@@ -715,7 +709,7 @@ namespace RTC
 
 			/* Send a Packet with an INIT_ACK Chunk. */
 
-			auto* packet = CreatePacketWithVerificationTag(receivedInitChunk->GetInitiateTag());
+			auto packet = CreatePacketWithVerificationTag(receivedInitChunk->GetInitiateTag());
 
 			// Insert an INIT_ACK Chunk in the Packet.
 			auto* initAckChunk = packet->BuildChunkInPlace<InitAckChunk>();
@@ -750,9 +744,7 @@ namespace RTC
 
 			initAckChunk->Consolidate();
 
-			SendPacket(packet, /*writeChecksum*/ !negotiatedCapabilities.zeroChecksum);
-
-			delete packet;
+			SendPacket(packet.get(), /*writeChecksum*/ !negotiatedCapabilities.zeroChecksum);
 		}
 
 		void Socket::ProcessReceivedInitAckChunk(
@@ -780,7 +772,7 @@ namespace RTC
 				MS_WARN_TAG(
 				  sctp, "ignoring received INIT_ACK Chunk without StateCookieParameter or without Cookie");
 
-				auto* packet     = CreatePacketWithVerificationTag(this->preTcb.localVerificationTag);
+				auto packet      = CreatePacketWithVerificationTag(this->preTcb.localVerificationTag);
 				auto* abortChunk = packet->BuildChunkInPlace<AbortAssociationChunk>();
 
 				// NOTE: We are not setting the Verification Tag expected by the peer
@@ -796,9 +788,7 @@ namespace RTC
 				protocolViolationErrorCause->Consolidate();
 				abortChunk->Consolidate();
 
-				SendPacket(packet);
-
-				delete packet;
+				SendPacket(packet.get());
 
 				// TODO
 				// InternalClose(ErrorKind::kProtocolViolation, "received INIT_ACK Chunk doesn't contain a Cookie");
@@ -893,7 +883,7 @@ namespace RTC
 				// OPERATION_ERROR Chunk with a Unrecognized Chunk Type Error Cause.
 				if (this->tcb)
 				{
-					auto* packet              = CreatePacket();
+					auto packet               = CreatePacket();
 					auto* operationErrorChunk = packet->BuildChunkInPlace<OperationErrorChunk>();
 					auto* unrecognizedChunkTypeErrorCause =
 					  operationErrorChunk->BuildErrorCauseInPlace<UnrecognizedChunkTypeErrorCause>();
@@ -904,9 +894,7 @@ namespace RTC
 					unrecognizedChunkTypeErrorCause->Consolidate();
 					operationErrorChunk->Consolidate();
 
-					SendPacket(packet);
-
-					delete packet;
+					SendPacket(packet.get());
 				}
 			}
 

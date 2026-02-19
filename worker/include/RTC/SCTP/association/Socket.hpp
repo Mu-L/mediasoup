@@ -114,9 +114,9 @@ namespace RTC
 			  uint64_t tieTag,
 			  const NegotiatedCapabilities& negotiatedCapabilities);
 
-			Packet* CreatePacket() const;
+			std::unique_ptr<Packet> CreatePacket() const;
 
-			Packet* CreatePacketWithVerificationTag(uint32_t verificationTag) const;
+			std::unique_ptr<Packet> CreatePacketWithVerificationTag(uint32_t verificationTag) const;
 
 			/**
 			 * Notify the parent about a Packet to be sent to the peer.
