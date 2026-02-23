@@ -2,7 +2,7 @@ project(
   'mediasoup-worker',
   ['c', 'cpp'],
   default_options : [
-    'cpp_std=c++20',
+    'cpp_std=c++17',
     'warning_level=1',
     'default_library=static',
   ],
