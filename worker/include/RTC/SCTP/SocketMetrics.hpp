@@ -2,7 +2,8 @@
 #define MS_RTC_SCTP_SOCKET_METRICS_HPP
 
 #include "common.hpp"
-#include "RTC/SCTP/association/StateCookie.hpp"
+#include "RTC/SCTP/StateCookie.hpp"
+#include "RTC/SCTP/Types.hpp"
 
 namespace RTC
 {
@@ -46,7 +47,7 @@ namespace RTC
 			 * SCTP implementation of the peer. Only detected when the peer sends an
 			 * INIT_ACK Chunk to us with a State Cookie.
 			 */
-			StateCookie::SctpImplementation peerImplementation{ StateCookie::SctpImplementation::UNKNOWN };
+			Types::SctpImplementation peerImplementation{ Types::SctpImplementation::UNKNOWN };
 
 			// TODO: More.
 

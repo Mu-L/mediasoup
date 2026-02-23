@@ -1,7 +1,7 @@
 #define MS_CLASS "RTC::SCTP::NegotiatedCapabilities"
 // #define MS_LOG_DEV_LEVEL 3
 
-#include "RTC/SCTP/association/NegotiatedCapabilities.hpp"
+#include "RTC/SCTP/NegotiatedCapabilities.hpp"
 #include "Logger.hpp"
 #include "RTC/SCTP/packet/parameters/ForwardTsnSupportedParameter.hpp"
 #include "RTC/SCTP/packet/parameters/SupportedExtensionsParameter.hpp"
@@ -43,7 +43,7 @@ namespace RTC
 				  // peer announces support via Forward-TSN-Supported Parameter or via
 				  // Supported Extensions Parameter.
 				  negotiatedCapabilities.partialReliability =
-				    socketOptions.partialReliability &&
+				    socketOptions.enablePartialReliability &&
 				    (remoteForwardTsnSupportedParameter ||
 				     (remoteSupportedExtensionsParameter &&
 				      remoteSupportedExtensionsParameter->IncludesChunkType(Chunk::ChunkType::FORWARD_TSN)));
@@ -51,7 +51,7 @@ namespace RTC
 				  // Message Interleaving is negotiated if we desire it and peer
 				  // announces support via Supported Extensions Parameter.
 				  negotiatedCapabilities.messageInterleaving =
-				    socketOptions.messageInterleaving && remoteSupportedExtensionsParameter &&
+				    socketOptions.enableMessageInterleaving && remoteSupportedExtensionsParameter &&
 				    remoteSupportedExtensionsParameter->IncludesChunkType(Chunk::ChunkType::I_DATA) &&
 				    remoteSupportedExtensionsParameter->IncludesChunkType(Chunk::ChunkType::I_FORWARD_TSN);
 

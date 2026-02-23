@@ -1,11 +1,11 @@
 #define MS_CLASS "RTC::SCTP::Socket"
 // #define MS_LOG_DEV_LEVEL 3
 
-#include "RTC/SCTP/association/Socket.hpp"
+#include "RTC/SCTP/Socket.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
 #include "RTC/Consts.hpp"
-#include "RTC/SCTP/association/StateCookie.hpp"
+#include "RTC/SCTP/StateCookie.hpp"
 #include "RTC/SCTP/packet/errorCauses/ProtocolViolationErrorCause.hpp"
 #include "RTC/SCTP/packet/errorCauses/UnrecognizedChunkTypeErrorCause.hpp"
 #include "RTC/SCTP/packet/parameters/ForwardTsnSupportedParameter.hpp"
@@ -26,7 +26,7 @@ namespace RTC
 
 		/* Class methods. */
 
-		constexpr std::string_view Socket::State2String(Socket::State state)
+		constexpr std::string_view Socket::StateToString(Socket::State state)
 		{
 			// NOTE: We cannot use MS_TRACE() here because clang in Linux will
 			// comlain about "read of non-constexpr variable 'configuration' is not
@@ -55,28 +55,28 @@ namespace RTC
 
 		/* Instance methods. */
 
-		Socket::Socket(SocketOptions options, Listener* listener)
+		Socket::Socket(SocketOptions options, SocketListener* listener)
 		  : options(options), listener(listener),
 		    t1InitTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,
-		        /*baseTimeout*/ options.t1InitTimeout,
+		        /*baseTimeoutMs*/ options.t1InitTimeoutMs,
 		        /*backoffAlgorithm*/ BackoffTimerHandle::BackoffAlgorithm::EXPONENTIAL,
-		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeout,
+		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeoutMs,
 		        /*maxRestarts*/ options.maxInitRetransmits)),
 		    t1CookieTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,
-		        /*baseTimeout*/ options.t1CookieTimeout,
+		        /*baseTimeoutMs*/ options.t1CookieTimeoutMs,
 		        /*backoffAlgorithm*/ BackoffTimerHandle::BackoffAlgorithm::EXPONENTIAL,
-		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeout,
+		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeoutMs,
 		        /*maxRestarts*/ options.maxInitRetransmits)),
 		    t2ShutdownTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,
-		        /*baseTimeout*/ options.t2ShutdownTimeout,
+		        /*baseTimeoutMs*/ options.t2ShutdownTimeoutMs,
 		        /*backoffAlgorithm*/ BackoffTimerHandle::BackoffAlgorithm::EXPONENTIAL,
-		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeout,
+		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeoutMs,
 		        /*maxRestarts*/ options.maxRetransmits))
 		{
 			MS_TRACE();
@@ -91,7 +91,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			auto stateStringView = Socket::State2String(this->state);
+			auto stateStringView = Socket::StateToString(this->state);
 
 			MS_DUMP_CLEAN(indentation, "<SCTP::Socket>");
 			MS_DUMP_CLEAN(
@@ -100,13 +100,13 @@ namespace RTC
 			MS_DUMP_CLEAN(indentation, "</SCTP::Socket>");
 		}
 
-		void Socket::Associate()
+		void Socket::Connect()
 		{
 			MS_TRACE();
 
 			if (this->state != State::CLOSED)
 			{
-				const auto stateStringView = Socket::State2String(this->state);
+				const auto stateStringView = Socket::StateToString(this->state);
 
 				MS_DEBUG_TAG(
 				  sctp,
@@ -126,7 +126,7 @@ namespace RTC
 
 			this->t1InitTimer->Start();
 
-			SetState(State::COOKIE_WAIT, "Associate() called");
+			SetState(State::COOKIE_WAIT, "Connect() called");
 		}
 
 		// TODO: Should the caller call free packet after calling this method? or us?
@@ -169,7 +169,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			const auto stateStringView = Socket::State2String(state);
+			const auto stateStringView = Socket::StateToString(state);
 
 			if (state == this->state)
 			{
@@ -183,7 +183,7 @@ namespace RTC
 				return;
 			}
 
-			const auto previousStateStringView = Socket::State2String(this->state);
+			const auto previousStateStringView = Socket::StateToString(this->state);
 
 			MS_WARN_TAG(
 			  sctp,
@@ -210,7 +210,7 @@ namespace RTC
 
 			supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::RE_CONFIG);
 
-			if (this->options.partialReliability)
+			if (this->options.enablePartialReliability)
 			{
 				supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::FORWARD_TSN);
 
@@ -220,7 +220,7 @@ namespace RTC
 				forwardTsnSupportedParameter->Consolidate();
 			}
 
-			if (this->options.messageInterleaving)
+			if (this->options.enableMessageInterleaving)
 			{
 				supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::I_DATA);
 				supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::I_FORWARD_TSN);
@@ -314,7 +314,7 @@ namespace RTC
 			}
 
 			// Send the Packet.
-			this->listener->OnSocketSendSctpPacket(this, packet);
+			this->listener.OnSocketSendSctpPacket(this, packet);
 		}
 
 		void Socket::SendInitChunk()
@@ -327,7 +327,7 @@ namespace RTC
 			auto* initChunk = packet->BuildChunkInPlace<InitChunk>();
 
 			initChunk->SetInitiateTag(this->preTcb.localVerificationTag);
-			initChunk->SetAdvertisedReceiverWindowCredit(this->options.localAdvertisedReceiverWindowCredit);
+			initChunk->SetAdvertisedReceiverWindowCredit(this->options.maxReceiverWindowBufferSize);
 			initChunk->SetNumberOfOutboundStreams(this->options.maxOutboundStreams);
 			initChunk->SetNumberOfInboundStreams(this->options.maxInboundStreams);
 			initChunk->SetInitialTsn(this->preTcb.localInitialTsn);
@@ -715,8 +715,7 @@ namespace RTC
 			auto* initAckChunk = packet->BuildChunkInPlace<InitAckChunk>();
 
 			initAckChunk->SetInitiateTag(localVerificationTag);
-			initAckChunk->SetAdvertisedReceiverWindowCredit(
-			  this->options.localAdvertisedReceiverWindowCredit);
+			initAckChunk->SetAdvertisedReceiverWindowCredit(this->options.maxReceiverWindowBufferSize);
 			initAckChunk->SetNumberOfOutboundStreams(this->options.maxOutboundStreams);
 			initAckChunk->SetNumberOfInboundStreams(this->options.maxInboundStreams);
 			initAckChunk->SetInitialTsn(localInitialTsn);
@@ -901,7 +900,7 @@ namespace RTC
 			return !skipProcessing;
 		}
 
-		void Socket::OnT1InitTimer(uint64_t& baseTimeout, bool& stop)
+		void Socket::OnT1InitTimer(uint64_t& baseTimeoutMs, bool& stop)
 		{
 			MS_TRACE();
 
@@ -921,7 +920,7 @@ namespace RTC
 			}
 		}
 
-		void Socket::OnT1CookieTimer(uint64_t& baseTimeout, bool& stop)
+		void Socket::OnT1CookieTimer(uint64_t& baseTimeoutMs, bool& stop)
 		{
 			MS_TRACE();
 
@@ -942,7 +941,7 @@ namespace RTC
 			}
 		}
 
-		void Socket::OnT2ShutdownTimer(uint64_t& baseTimeout, bool& stop)
+		void Socket::OnT2ShutdownTimer(uint64_t& baseTimeoutMs, bool& stop)
 		{
 			MS_TRACE();
 
@@ -967,12 +966,12 @@ namespace RTC
 				return;
 			}
 
-			auto currentStateStringView = Socket::State2String(this->state);
+			auto currentStateStringView = Socket::StateToString(this->state);
 			std::ostringstream expectedStatesOss;
 			bool firstExpectedState = true;
 
 			// NOTE: Using fold expression operator.
-			((expectedStatesOss << (firstExpectedState ? "" : ", ") << Socket::State2String(expectedStates),
+			((expectedStatesOss << (firstExpectedState ? "" : ", ") << Socket::StateToString(expectedStates),
 			  firstExpectedState = false),
 			 ...);
 
@@ -995,13 +994,13 @@ namespace RTC
 			// NOTE: Using fold expression operator.
 			if ((... || (this->state == unexpectedStates)))
 			{
-				auto currentStateStringView = Socket::State2String(this->state);
+				auto currentStateStringView = Socket::StateToString(this->state);
 				std::ostringstream unexpectedStatesOss;
 				bool firstUnexpectedState = true;
 
 				// NOTE: Using fold expression operator.
 				((unexpectedStatesOss << (firstUnexpectedState ? "" : ", ")
-				                      << Socket::State2String(unexpectedStates),
+				                      << Socket::StateToString(unexpectedStates),
 				  firstUnexpectedState = false),
 				 ...);
 
@@ -1025,21 +1024,21 @@ namespace RTC
 			}
 		}
 
-		void Socket::OnTimer(BackoffTimerHandle* backoffTimer, uint64_t& baseTimeout, bool& stop)
+		void Socket::OnTimer(BackoffTimerHandle* backoffTimer, uint64_t& baseTimeoutMs, bool& stop)
 		{
 			MS_TRACE();
 
 			if (backoffTimer == this->t1InitTimer.get())
 			{
-				OnT1InitTimer(baseTimeout, stop);
+				OnT1InitTimer(baseTimeoutMs, stop);
 			}
 			else if (backoffTimer == this->t1CookieTimer.get())
 			{
-				OnT1CookieTimer(baseTimeout, stop);
+				OnT1CookieTimer(baseTimeoutMs, stop);
 			}
 			else if (backoffTimer == this->t2ShutdownTimer.get())
 			{
-				OnT2ShutdownTimer(baseTimeout, stop);
+				OnT2ShutdownTimer(baseTimeoutMs, stop);
 			}
 		}
 	} // namespace SCTP

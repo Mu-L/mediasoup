@@ -1,7 +1,7 @@
 #define MS_CLASS "RTC::SCTP::SocketMetrics"
 // #define MS_LOG_DEV_LEVEL 3
 
-#include "RTC/SCTP/association/SocketMetrics.hpp"
+#include "RTC/SCTP/SocketMetrics.hpp"
 #include "Logger.hpp"
 
 namespace RTC
@@ -14,8 +14,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			auto peerImplementationStringView =
-			  StateCookie::SctpImplementation2String(this->peerImplementation);
+			auto peerImplementationStringView = Types::SctpImplementationToString(this->peerImplementation);
 
 			MS_DUMP_CLEAN(indentation, "<SCTP::SocketMetrics>");
 			MS_DUMP_CLEAN(indentation, "  tx packets count: %" PRIu64, this->txPacketsCount);
