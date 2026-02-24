@@ -22,7 +22,7 @@ void FuzzerRtcSctpStateCookie::Fuzz(const uint8_t* data, size_t len)
 
 		if (len < RTC::SCTP::StateCookie::StateCookieLength + 5)
 		{
-			Utils::Byte::Set4Bytes(clonedData, 0, RTC::SCTP::StateCookie::Magic1);
+			Utils::Byte::Set8Bytes(clonedData, 0, RTC::SCTP::StateCookie::Magic1);
 			Utils::Byte::Set2Bytes(
 			  clonedData,
 			  RTC::SCTP::StateCookie::NegotiatedCapabilitiesOffset,

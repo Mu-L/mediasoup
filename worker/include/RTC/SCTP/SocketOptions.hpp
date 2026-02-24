@@ -217,14 +217,14 @@ namespace RTC
 			 * Maximum data retransmit attempts (for DATA, I_DATA and other Chunks).
 			 * Set to std::nullopt for no limit.
 			 */
-			std::optional<size_t> maxRetransmits{ 10 };
+			std::optional<size_t> maxRetransmissions{ 10 };
 
 			/**
 			 * Max.Init.Retransmits. Set to std::nullopt for no limit.
 			 *
 			 * @see https://datatracker.ietf.org/doc/html/rfc9260#section-16
 			 */
-			std::optional<size_t> maxInitRetransmits{ 8 };
+			std::optional<size_t> maxInitRetransmissions{ 8 };
 
 			/**
 			 * Enable Partial Reliability Extension.
@@ -256,6 +256,38 @@ namespace RTC
 			ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod zeroChecksumAlternateErrorDetectionMethod{
 				ZeroChecksumAcceptableParameter::AlternateErrorDetectionMethod::NONE
 			};
+		};
+
+		/**
+		 * Send options given when sending SCTP messages.
+		 */
+		struct MessageSendOptions
+		{
+			/**
+			 * Whether the message should be sent with unordered message delivery.
+			 */
+			bool unordered{ false };
+
+			/**
+			 * If set, will discard messages that haven't been correctly sent and
+			 * received before the lifetime has expired. This is only available if
+			 * the peer supports Partial Reliability Extension (RFC 3758).
+			 */
+			std::optional<uint64_t> lifetime{ std::nullopt };
+
+			/**
+			 * If set, limits the number of retransmissions. This is only available
+			 * if the peer supports Partial Reliability Extension (RFC 3758).
+			 */
+			std::optional<size_t> maxRetransmissions{ std::nullopt };
+
+			/**
+			 * If set, will generate lifecycle events for this message. See e.g.
+			 * SocketListener::OnSocketMessageLifecycleFullySent(). This value is
+			 * decided by the application and the library will provide it to all
+			 * lifecycle callbacks.
+			 */
+			std::optional<uint64_t> lifecycleId{ std::nullopt };
 		};
 	} // namespace SCTP
 } // namespace RTC

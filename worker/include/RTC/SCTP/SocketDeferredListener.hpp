@@ -59,36 +59,35 @@ namespace RTC
 
 		public:
 			/* Pure virtual methods inherited from Socket::Listener. */
-			bool OnSocketSendSctpPacket(const Socket* socket, Packet* packet) override;
+			bool OnSocketSendSctpPacket(Socket* socket, Packet* packet) override;
 
-			void OnSocketConnected(const Socket* socket) override;
+			void OnSocketConnected(Socket* socket) override;
 
-			void OnSocketClosed(const Socket* socket) override;
+			void OnSocketClosed(Socket* socket) override;
 
-			void OnSocketConnectionRestarted(const Socket* socket) override;
+			void OnSocketConnectionRestarted(Socket* socket) override;
 
 			void OnSocketError(
-			  const Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage) override;
+			  Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage) override;
 
 			void OnSocketAborted(
-			  const Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage) override;
+			  Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage) override;
 
-			void OnSocketMessageReceived(const Socket* socket, Message message) override;
+			void OnSocketMessageReceived(Socket* socket, Message message) override;
 
 			void OnSocketStreamsResetPerformed(
-			  const Socket* socket, std::span<const uint16_t> outboundStreamIds) override;
+			  Socket* socket, std::span<const uint16_t> outboundStreamIds) override;
 
 			void OnSocketStreamsResetFailed(
-			  const Socket* socket,
+			  Socket* socket,
 			  std::span<const uint16_t> outboundStreamIds,
 			  std::string_view errorMessage) override;
 
-			void OnSocketInboundStreamsReset(
-			  const Socket* socket, std::span<const uint16_t> inboundStreamIds) override;
+			void OnSocketInboundStreamsReset(Socket* socket, std::span<const uint16_t> inboundStreamIds) override;
 
-			void OnSocketBufferedAmountLow(const Socket* socket, uint16_t streamId) override;
+			void OnSocketBufferedAmountLow(Socket* socket, uint16_t streamId) override;
 
-			void OnSocketTotalBufferedAmountLow(const Socket* socket) override;
+			void OnSocketTotalBufferedAmountLow(Socket* socket) override;
 
 		private:
 			SocketListener* innerListener{ nullptr };

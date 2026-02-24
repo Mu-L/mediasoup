@@ -63,21 +63,21 @@ namespace RTC
 		        /*baseTimeoutMs*/ options.t1InitTimeoutMs,
 		        /*backoffAlgorithm*/ BackoffTimerHandle::BackoffAlgorithm::EXPONENTIAL,
 		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeoutMs,
-		        /*maxRestarts*/ options.maxInitRetransmits)),
+		        /*maxRestarts*/ options.maxInitRetransmissions)),
 		    t1CookieTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,
 		        /*baseTimeoutMs*/ options.t1CookieTimeoutMs,
 		        /*backoffAlgorithm*/ BackoffTimerHandle::BackoffAlgorithm::EXPONENTIAL,
 		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeoutMs,
-		        /*maxRestarts*/ options.maxInitRetransmits)),
+		        /*maxRestarts*/ options.maxInitRetransmissions)),
 		    t2ShutdownTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,
 		        /*baseTimeoutMs*/ options.t2ShutdownTimeoutMs,
 		        /*backoffAlgorithm*/ BackoffTimerHandle::BackoffAlgorithm::EXPONENTIAL,
 		        /*maxBackoffTimeout*/ options.timerMaxBackoffTimeoutMs,
-		        /*maxRestarts*/ options.maxRetransmits))
+		        /*maxRestarts*/ options.maxRetransmissions))
 		{
 			MS_TRACE();
 		}

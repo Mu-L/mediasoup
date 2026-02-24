@@ -68,7 +68,7 @@ namespace RTC
 			}
 		}
 
-		bool SocketDeferredListener::OnSocketSendSctpPacket(const Socket* socket, Packet* packet)
+		bool SocketDeferredListener::OnSocketSendSctpPacket(Socket* socket, Packet* packet)
 		{
 			MS_TRACE();
 
@@ -78,7 +78,7 @@ namespace RTC
 			return this->innerListener->OnSocketSendSctpPacket(socket, packet);
 		}
 
-		void SocketDeferredListener::OnSocketConnected(const Socket* socket)
+		void SocketDeferredListener::OnSocketConnected(Socket* socket)
 		{
 			MS_TRACE();
 
@@ -92,7 +92,7 @@ namespace RTC
 			  std::monostate{});
 		}
 
-		void SocketDeferredListener::OnSocketClosed(const Socket* socket)
+		void SocketDeferredListener::OnSocketClosed(Socket* socket)
 		{
 			MS_TRACE();
 
@@ -106,7 +106,7 @@ namespace RTC
 			  std::monostate{});
 		}
 
-		void SocketDeferredListener::OnSocketConnectionRestarted(const Socket* socket)
+		void SocketDeferredListener::OnSocketConnectionRestarted(Socket* socket)
 		{
 			MS_TRACE();
 
@@ -121,7 +121,7 @@ namespace RTC
 		}
 
 		void SocketDeferredListener::OnSocketError(
-		  const Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage)
+		  Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage)
 		{
 			MS_TRACE();
 
@@ -137,7 +137,7 @@ namespace RTC
 		}
 
 		void SocketDeferredListener::OnSocketAborted(
-		  const Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage)
+		  Socket* socket, Types::ErrorKind errorKind, std::string_view errorMessage)
 		{
 			MS_TRACE();
 
@@ -152,7 +152,7 @@ namespace RTC
 			  Error{ .errorKind = errorKind, .message = std::string(errorMessage) });
 		}
 
-		void SocketDeferredListener::OnSocketMessageReceived(const Socket* socket, Message message)
+		void SocketDeferredListener::OnSocketMessageReceived(Socket* socket, Message message)
 		{
 			MS_TRACE();
 
@@ -167,7 +167,7 @@ namespace RTC
 		}
 
 		void SocketDeferredListener::OnSocketStreamsResetPerformed(
-		  const Socket* socket, std::span<const uint16_t> outboundStreamIds)
+		  Socket* socket, std::span<const uint16_t> outboundStreamIds)
 		{
 			MS_TRACE();
 
@@ -183,7 +183,7 @@ namespace RTC
 		}
 
 		void SocketDeferredListener::OnSocketStreamsResetFailed(
-		  const Socket* socket, std::span<const uint16_t> outboundStreamIds, std::string_view errorMessage)
+		  Socket* socket, std::span<const uint16_t> outboundStreamIds, std::string_view errorMessage)
 		{
 			MS_TRACE();
 
@@ -201,7 +201,7 @@ namespace RTC
 		}
 
 		void SocketDeferredListener::OnSocketInboundStreamsReset(
-		  const Socket* socket, std::span<const uint16_t> inboundStreamIds)
+		  Socket* socket, std::span<const uint16_t> inboundStreamIds)
 		{
 			MS_TRACE();
 
@@ -216,7 +216,7 @@ namespace RTC
 			  StreamReset{ .streamIds = { inboundStreamIds.begin(), inboundStreamIds.end() } });
 		}
 
-		void SocketDeferredListener::OnSocketBufferedAmountLow(const Socket* socket, uint16_t streamId)
+		void SocketDeferredListener::OnSocketBufferedAmountLow(Socket* socket, uint16_t streamId)
 		{
 			MS_TRACE();
 
@@ -230,7 +230,7 @@ namespace RTC
 			  streamId);
 		}
 
-		void SocketDeferredListener::OnSocketTotalBufferedAmountLow(const Socket* socket)
+		void SocketDeferredListener::OnSocketTotalBufferedAmountLow(Socket* socket)
 		{
 			MS_TRACE();
 
