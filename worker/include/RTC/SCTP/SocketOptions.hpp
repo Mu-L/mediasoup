@@ -137,7 +137,7 @@ namespace RTC
 			/**
 			 * Hearbeat interval (on idle connections only). Set to zero to disable.
 			 */
-			uint64_t heartbeatIntervalMs{ 1000 };
+			uint64_t heartbeatIntervalMs{ 30000 };
 
 			/**
 			 * The maximum time when a SACK will be sent from the arrival of an
@@ -230,14 +230,14 @@ namespace RTC
 			 * Enable Partial Reliability Extension.
 			 * @see RFC 3758.
 			 */
-			bool enablePartialReliability{ false };
+			bool enablePartialReliability{ true };
 
 			/**
 			 * Enable Stream Schedulers and User Message Interleaving (I-DATA Chunks).
 			 *
 			 * @see RFC 8260.
 			 */
-			bool enableMessageInterleaving{ false };
+			bool enableMessageInterleaving{ true };
 
 			/**
 			 * Whether RTO should be added to heartbeat interval.
