@@ -56,7 +56,8 @@ namespace RTC
 		/* Instance methods. */
 
 		Socket::Socket(SocketOptions options, SocketListener* listener)
-		  : options(options), listener(listener),
+		  : options(options),
+		    listener(listener),
 		    t1InitTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,

@@ -18,9 +18,12 @@ namespace RTC
 		  uint32_t remoteAdvertisedReceiverWindowCredit,
 		  uint64_t tieTag,
 		  const NegotiatedCapabilities& negotiatedCapabilities)
-		  : localVerificationTag(localVerificationTag), remoteVerificationTag(remoteVerificationTag),
-		    localInitialTsn(localInitialTsn), remoteInitialTsn(remoteInitialTsn),
-		    remoteAdvertisedReceiverWindowCredit(remoteAdvertisedReceiverWindowCredit), tieTag(tieTag),
+		  : localVerificationTag(localVerificationTag),
+		    remoteVerificationTag(remoteVerificationTag),
+		    localInitialTsn(localInitialTsn),
+		    remoteInitialTsn(remoteInitialTsn),
+		    remoteAdvertisedReceiverWindowCredit(remoteAdvertisedReceiverWindowCredit),
+		    tieTag(tieTag),
 		    negotiatedCapabilities(negotiatedCapabilities)
 		{
 			MS_TRACE();
