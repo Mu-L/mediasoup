@@ -42,8 +42,8 @@ void BackoffTimerHandle::Start()
 
 	this->timer->Start(this->baseTimeoutMs);
 
-	this->active       = true;
-	this->timeoutCount = 0;
+	this->running         = true;
+	this->expirationCount = 0;
 }
 
 void BackoffTimerHandle::Stop()
@@ -52,18 +52,8 @@ void BackoffTimerHandle::Stop()
 
 	this->timer->Stop();
 
-	this->active       = false;
-	this->timeoutCount = 0;
-}
-
-void BackoffTimerHandle::Restart()
-{
-	MS_TRACE();
-
-	this->timer->Restart();
-
-	this->active       = true;
-	this->timeoutCount = 0;
+	this->running         = false;
+	this->expirationCount = 0;
 }
 
 void BackoffTimerHandle::SetBaseTimeoutMs(uint64_t baseTimeoutMs)
@@ -85,7 +75,7 @@ uint64_t BackoffTimerHandle::ComputeNextTimeoutMs() const
 {
 	MS_TRACE();
 
-	auto timeoutCount = this->timeoutCount;
+	auto expirationCount = this->expirationCount;
 
 	switch (this->backoffAlgorithm)
 	{
@@ -98,14 +88,14 @@ uint64_t BackoffTimerHandle::ComputeNextTimeoutMs() const
 		{
 			auto timeoutMs = this->baseTimeoutMs;
 
-			while (timeoutCount > 0 && timeoutMs < BackoffTimerHandle::MaxTimeoutMs)
+			while (expirationCount > 0 && timeoutMs < BackoffTimerHandle::MaxTimeoutMs)
 			{
 				timeoutMs *= 2;
-				--timeoutCount;
+				--expirationCount;
 
-				if (this->maxBackoffTimeoutMs.has_value() && timeoutMs > *this->maxBackoffTimeoutMs)
+				if (this->maxBackoffTimeoutMs.has_value() && timeoutMs > this->maxBackoffTimeoutMs.value())
 				{
-					return *this->maxBackoffTimeoutMs;
+					return this->maxBackoffTimeoutMs.value();
 				}
 			}
 
@@ -120,12 +110,13 @@ void BackoffTimerHandle::OnTimer(TimerHandle* timer)
 {
 	MS_TRACE();
 
-	this->timeoutCount++;
+	this->expirationCount++;
 
-	// Compute whether the smart timer should still be running after this timeout
-	// expiration so the parent can check IsActive() within the OnTimer()
+	// Compute whether the BackoffTimer should still be running after this timeout
+	// expiration so the parent can check IsRunning() within the OnTimer()
 	// callback.
-	this->active = !this->maxRestarts.has_value() || this->timeoutCount <= *this->maxRestarts;
+	this->running =
+	  !this->maxRestarts.has_value() || this->expirationCount <= this->maxRestarts.value();
 
 	uint64_t baseTimeoutMs{ this->baseTimeoutMs };
 	bool stop{ false };
@@ -145,8 +136,8 @@ void BackoffTimerHandle::OnTimer(TimerHandle* timer)
 	SetBaseTimeoutMs(baseTimeoutMs);
 
 	// The caller may have called Stop() within the callback so we must check
-	// the `active` flag.
-	if (this->active)
+	// the `running` flag.
+	if (this->running)
 	{
 		auto nextTimeoutMs = ComputeNextTimeoutMs();
 

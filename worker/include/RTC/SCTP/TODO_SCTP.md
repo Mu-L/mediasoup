@@ -1,6 +1,10 @@
 # TODO STCP
 
-Here some notes about our future SCTP implementation.
+## Related to mediasoup SCTP implementation
+
+## Related to dcsctp
+
+- Investigate `DcSctpSocket::HandleTimeout()` which is only called from `media/sctp/dcsctp_transport.cc`.
 
 ## Flow
 
