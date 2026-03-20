@@ -1,5 +1,6 @@
 #define MS_CLASS "RTC::SCTP::Association"
-// #define MS_LOG_DEV_LEVEL 3
+// TODO: SCTP: COMMENT
+#define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SCTP/association/Association.hpp"
 #include "DepLibUV.hpp"
@@ -38,7 +39,7 @@ namespace RTC
 
 		/* Instance methods. */
 
-		Association::Association(const SctpOptions& sctpOptions, AssociationListener& listener)
+		Association::Association(const SctpOptions& sctpOptions, AssociationListener* listener)
 		  : sctpOptions(sctpOptions),
 		    // Our `listener` member is a `AssociationDeferredListener` which takes
 		    // `AssociationListener` as constructor argument.
@@ -87,7 +88,7 @@ namespace RTC
 
 			MS_DUMP_CLEAN(
 			  indentation,
-			  "  SCTP association state: %.*s (internal state: %.*s)",
+			  "  association state: %.*s (internal state: %.*s)",
 			  static_cast<int>(associationStateStringView.size()),
 			  associationStateStringView.data(),
 			  static_cast<int>(stateStringView.size()),
@@ -108,12 +109,45 @@ namespace RTC
 			MS_DUMP_CLEAN(indentation, "</SCTP::Association>");
 		}
 
+		flatbuffers::Offset<FBS::SctpParameters::SctpParameters> Association::FillBuffer(
+		  flatbuffers::FlatBufferBuilder& builder) const
+		{
+			MS_TRACE();
+
+			return FBS::SctpParameters::CreateSctpParameters(
+			  builder,
+			  // Add port.
+			  this->sctpOptions.sourcePort,
+			  // Add OS.
+			  // TODO: SCTP: We should put here current value which may be different after
+			  // negotiation with peer and reconfig.
+			  this->sctpOptions.maxOutboundStreams,
+			  // Add MIS.
+			  // TODO: SCTP: We should put here current value which may be different after
+			  // negotiation with peer and reconfig.
+			  this->sctpOptions.maxInboundStreams,
+			  // Add maxMessageSize.
+			  this->sctpOptions.maxSendMessageSize,
+			  // Add sendBufferSize.
+			  this->sctpOptions.maxSendBufferSize,
+			  // Add sctpBufferedAmountLowThreshold.
+			  this->sctpOptions.totalBufferedAmountLowThreshold,
+			  // Add isDataChannel.
+			  // TODO: SCTP: Have a member for this.
+			  /*isDataChannel*/ true);
+		}
+
 		Types::AssociationState Association::GetAssociationState() const
 		{
 			MS_TRACE();
 
 			switch (this->state)
 			{
+				case State::NEW:
+				{
+					return Types::AssociationState::NEW;
+				}
+
 				case State::CLOSED:
 				{
 					return Types::AssociationState::CLOSED;
@@ -146,38 +180,49 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			const AssociationDeferredListener::ScopedDeferred deferrer(this->listener);
-
-			if (this->state == State::CLOSED)
-			{
-				this->preTcb.localVerificationTag =
-				  Utils::Crypto::GetRandomUInt<uint32_t>(MinVerificationTag, MaxVerificationTag);
-				this->preTcb.localInitialTsn =
-				  Utils::Crypto::GetRandomUInt<uint32_t>(MinInitialTsn, MaxInitialTsn);
-
-				SendInitChunk();
-
-				this->t1InitTimer->Start();
-
-				SetState(State::COOKIE_WAIT, "Connect() called");
-			}
-			if (this->state != State::CLOSED)
+			// NOTE: We could only accept NEW state here so once closed the Association
+			// cannot be reused. However there is no real technical reason for it.
+			if (this->state != State::NEW && this->state != State::CLOSED)
 			{
 				const auto stateStringView = Association::StateToString(this->state);
 
-				MS_DEBUG_TAG(
+				MS_WARN_TAG(
 				  sctp,
-				  "cannot initiate the Association since internal state is not CLOSED but %.*s",
+				  "cannot initiate the Association since internal state is not NEW or CLOSED but %.*s",
 				  static_cast<int>(stateStringView.size()),
 				  stateStringView.data());
+
+				return;
 			}
 
+			const AssociationDeferredListener::ScopedDeferred deferrer(this->listener);
+
+			this->preTcb.localVerificationTag =
+			  Utils::Crypto::GetRandomUInt<uint32_t>(MinVerificationTag, MaxVerificationTag);
+			this->preTcb.localInitialTsn =
+			  Utils::Crypto::GetRandomUInt<uint32_t>(MinInitialTsn, MaxInitialTsn);
+
+			SendInitChunk();
+
+			this->t1InitTimer->Start();
+
+			SetState(State::COOKIE_WAIT, "Connect() called");
+
 			AssertStateIsConsistent();
+
+			this->listener.OnAssociationConnecting();
 		}
 
 		void Association::Shutdown()
 		{
 			MS_TRACE();
+
+			if (this->state == State::NEW || this->state == State::CLOSED)
+			{
+				AssertStateIsConsistent();
+
+				return;
+			}
 
 			const AssociationDeferredListener::ScopedDeferred deferrer(this->listener);
 
@@ -195,18 +240,18 @@ namespace RTC
 				// @see https://issues.webrtc.org/issues/42222897
 				if (this->state != State::SHUTDOWN_SENT && this->state != State::SHUTDOWN_ACK_SENT)
 				{
-					SetState(State::SHUTDOWN_PENDING, "Shutdown() called");
-
 					this->t1InitTimer->Stop();
 					this->t1CookieTimer->Stop();
 
+					// NOTE: We need to set state before calling method below.
+					SetState(State::SHUTDOWN_PENDING, "Shutdown() called");
 					MaySendShutdownOrShutdownAckChunk();
 				}
 			}
-			// Connection closed before even starting to connect, or during the
+			// Association closed before even starting to connect, or during the
 			// initial connection phase. There is no outstanding data, so the
-			// Association can just be closed (stopping any connection timers, if
-			// any), as this is the application's intention when calling Shutdown().
+			// Association can just be closed (stopping any timers, if any), as this
+			// is the application's intention when calling Shutdown().
 			else
 			{
 				InternalClose(Types::ErrorKind::SUCCESS, "");
@@ -219,36 +264,35 @@ namespace RTC
 		{
 			MS_TRACE();
 
+			if (this->state == State::NEW || this->state == State::CLOSED)
+			{
+				AssertStateIsConsistent();
+
+				return;
+			}
+
 			const AssociationDeferredListener::ScopedDeferred deferrer(this->listener);
 
-			if (this->state != State::CLOSED)
+			if (this->tcb)
 			{
-				if (this->tcb)
-				{
-					auto packet                 = this->tcb->CreatePacket();
-					auto* abortAssociationChunk = packet->BuildChunkInPlace<AbortAssociationChunk>();
+				auto packet                 = this->tcb->CreatePacket();
+				auto* abortAssociationChunk = packet->BuildChunkInPlace<AbortAssociationChunk>();
 
-					// NOTE: Don't set bit T in the ABORT chunk since TCB knows the
-					// Verification Tag expected by the remote.
+				// NOTE: Don't set bit T in the ABORT chunk since TCB knows the
+				// Verification Tag expected by the remote.
 
-					auto* userInitiatedAbortErrorCause =
-					  abortAssociationChunk->BuildErrorCauseInPlace<UserInitiatedAbortErrorCause>();
+				auto* userInitiatedAbortErrorCause =
+				  abortAssociationChunk->BuildErrorCauseInPlace<UserInitiatedAbortErrorCause>();
 
-					userInitiatedAbortErrorCause->SetUpperLayerAbortReason("Close() called");
+				userInitiatedAbortErrorCause->SetUpperLayerAbortReason("Close() called");
 
-					userInitiatedAbortErrorCause->Consolidate();
-					abortAssociationChunk->Consolidate();
+				userInitiatedAbortErrorCause->Consolidate();
+				abortAssociationChunk->Consolidate();
 
-					this->packetSender.SendPacket(packet.get());
-				}
-
-				InternalClose(Types::ErrorKind::SUCCESS, "");
-			}
-			else
-			{
-				MS_DEBUG_TAG(sctp, "Close() called on a closed Association");
+				this->packetSender.SendPacket(packet.get());
 			}
 
+			InternalClose(Types::ErrorKind::SUCCESS, "");
 			AssertStateIsConsistent();
 		}
 
@@ -373,7 +417,6 @@ namespace RTC
 			// this->tcb->GetStreamResetHandler().ResetStreams(outboundStreamIds);
 
 			MaySendResetStreamsRequest();
-
 			AssertStateIsConsistent();
 
 			return Types::ResetStreamsStatus::PERFORMED;
@@ -453,28 +496,60 @@ namespace RTC
 			return statuses;
 		}
 
-		void Association::ReceivePacket(const Packet* receivedPacket)
+		void Association::ReceiveSctpData(const uint8_t* data, size_t len)
 		{
 			MS_TRACE();
+
+			// TODO: SCTP: For testing purposes. Must be removed.
+			{
+				MS_DUMP("<<< received SCTP packet:");
+
+				const auto* packet = RTC::SCTP::Packet::Parse(data, len);
+
+				if (packet)
+				{
+					packet->Dump();
+
+					delete packet;
+				}
+				else
+				{
+					MS_ABORT("RTC::SCTP::Packet::Parse() failed to parse received SCTP data");
+				}
+			}
 
 			const AssociationDeferredListener::ScopedDeferred deferrer(this->listener);
 
 			this->privateMetrics.rxPacketsCount++;
 
-			if (!ValidateReceivedPacket(receivedPacket))
+			std::unique_ptr<Packet> receivedPacket{ Packet::Parse(data, len) };
+
+			if (!receivedPacket)
+			{
+				MS_WARN_TAG(sctp, "failed to parse received SCTP packet");
+
+				this->listener.OnAssociationError(
+				  Types::ErrorKind::PARSE_FAILED, "failed to parse received SCTP packet");
+
+				AssertStateIsConsistent();
+
+				return;
+			}
+
+			if (!ValidateReceivedPacket(receivedPacket.get()))
 			{
 				MS_WARN_TAG(sctp, "Packet verification failed, discarded");
 
 				return;
 			}
 
-			MaySendShutdownOnPacketReceived(receivedPacket);
+			MaySendShutdownOnPacketReceived(receivedPacket.get());
 
 			for (auto it = receivedPacket->ChunksBegin(); it != receivedPacket->ChunksEnd(); ++it)
 			{
 				const auto* receivedChunk = *it;
 
-				if (!ProcessReceivedChunk(receivedPacket, receivedChunk))
+				if (!ProcessReceivedChunk(receivedPacket.get(), receivedChunk))
 				{
 					break;
 				}
@@ -494,7 +569,7 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			if (this->state != State::CLOSED)
+			if (this->state != State::NEW && this->state != State::CLOSED)
 			{
 				this->t1InitTimer->Stop();
 				this->t1CookieTimer->Stop();
@@ -503,16 +578,25 @@ namespace RTC
 				this->tcb = nullptr;
 			}
 
-			if (errorKind == Types::ErrorKind::SUCCESS)
+			const auto prevState = this->state;
+
+			SetState(State::CLOSED, message);
+
+			if (prevState == State::COOKIE_WAIT || prevState == State::COOKIE_ECHOED)
 			{
-				this->listener.OnAssociationClosed();
+				if (errorKind == Types::ErrorKind::SUCCESS)
+				{
+					this->listener.OnAssociationClosed(errorKind, message);
+				}
+				else
+				{
+					this->listener.OnAssociationFailed(errorKind, message);
+				}
 			}
 			else
 			{
-				this->listener.OnAssociationAborted(errorKind, message);
+				this->listener.OnAssociationClosed(errorKind, message);
 			}
-
-			SetState(State::CLOSED, message);
 		}
 
 		void Association::SetState(State state, const std::string_view& message)
@@ -523,8 +607,7 @@ namespace RTC
 
 			if (state == this->state)
 			{
-				MS_WARN_TAG(
-				  sctp,
+				MS_WARN_DEV(
 				  "SCTP Association internal state is already %.*s (message: %.*s)",
 				  static_cast<int>(stateStringView.size()),
 				  stateStringView.data(),
@@ -536,7 +619,7 @@ namespace RTC
 
 			const auto previousStateStringView = Association::StateToString(this->state);
 
-			MS_WARN_TAG(
+			MS_DEBUG_TAG(
 			  sctp,
 			  "SCTP Association internal state changed from %.*s to %.*s (message: %.*s)",
 			  static_cast<int>(previousStateStringView.size()),
@@ -561,17 +644,22 @@ namespace RTC
 			if (this->sctpOptions.enablePartialReliability)
 			{
 				supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::FORWARD_TSN);
-
-				auto* forwardTsnSupportedParameter =
-				  chunk->BuildParameterInPlace<ForwardTsnSupportedParameter>();
-
-				forwardTsnSupportedParameter->Consolidate();
 			}
 
 			if (this->sctpOptions.enableMessageInterleaving)
 			{
 				supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::I_DATA);
 				supportedExtensionsParameter->AddChunkType(Chunk::ChunkType::I_FORWARD_TSN);
+			}
+
+			supportedExtensionsParameter->Consolidate();
+
+			if (this->sctpOptions.enablePartialReliability)
+			{
+				const auto* forwardTsnSupportedParameter =
+				  chunk->BuildParameterInPlace<ForwardTsnSupportedParameter>();
+
+				forwardTsnSupportedParameter->Consolidate();
 			}
 
 			if (
@@ -585,8 +673,6 @@ namespace RTC
 				  this->sctpOptions.zeroChecksumAlternateErrorDetectionMethod);
 				zeroChecksumAcceptableParameter->Consolidate();
 			}
-
-			supportedExtensionsParameter->Consolidate();
 		}
 
 		void Association::CreateTransmissionControlBlock(
@@ -674,8 +760,8 @@ namespace RTC
 
 			AssertHasTcb();
 
-			auto packet         = this->tcb->CreatePacket();
-			auto* shutdownChunk = packet->BuildChunkInPlace<ShutdownChunk>();
+			auto packet               = this->tcb->CreatePacket();
+			const auto* shutdownChunk = packet->BuildChunkInPlace<ShutdownChunk>();
 
 			// TODO: Implement it.
 			// shutdownChunk->SetCumulativeTsnAck(this->tcb->GetDataTracker().GetLastCumulativeAckedTsn());
@@ -690,8 +776,8 @@ namespace RTC
 
 			AssertHasTcb();
 
-			auto packet            = this->tcb->CreatePacket();
-			auto* shutdownAckChunk = packet->BuildChunkInPlace<ShutdownAckChunk>();
+			auto packet                  = this->tcb->CreatePacket();
+			const auto* shutdownAckChunk = packet->BuildChunkInPlace<ShutdownAckChunk>();
 
 			shutdownAckChunk->Consolidate();
 
@@ -737,7 +823,6 @@ namespace RTC
 			else if (this->state == State::SHUTDOWN_RECEIVED)
 			{
 				SendShutdownAckChunk();
-
 				SetState(State::SHUTDOWN_ACK_SENT, "no more outstanding data");
 			}
 		}
@@ -1295,9 +1380,10 @@ namespace RTC
 
 			switch (this->state)
 			{
+				case State::NEW:
 				case State::CLOSED:
 				{
-					MS_DEBUG_TAG(sctp, "INIT Chunk received in CLOSED state (normal scenario)");
+					MS_DEBUG_TAG(sctp, "INIT Chunk received in NEW or CLOSED state (normal scenario)");
 
 					localVerificationTag =
 					  Utils::Crypto::GetRandomUInt<uint32_t>(MinVerificationTag, MaxVerificationTag);
@@ -1456,8 +1542,8 @@ namespace RTC
 			const auto negotiatedCapabilities =
 			  NegotiatedCapabilities::Factory(this->sctpOptions, receivedInitAckChunk);
 
-			// If the connection is re-established (peer restarted, but re-used old
-			// connection), make sure that all message identifiers are reset and any
+			// If the Association is re-established (peer restarted, but re-used old
+			// Association), make sure that all message identifiers are reset and any
 			// partly sent message is re-sent in full. The same is true when the
 			// Association is closed and later re-opened, which never happens in
 			// WebRTC, but is a valid operation on the SCTP level.
@@ -1475,8 +1561,8 @@ namespace RTC
 
 			SetState(State::COOKIE_ECHOED, "INIT_ACK received");
 
-			// The connection isn't fully established just yet. Store the state cookie
-			// in the TCB.
+			// The Association isn't fully established just yet. Store the stat
+			// cookie in the TCB.
 			std::vector<uint8_t> remoteStateCookie(
 			  stateCookieParameter->GetCookie(),
 			  stateCookieParameter->GetCookie() + stateCookieParameter->GetCookieLength());
@@ -1487,6 +1573,7 @@ namespace RTC
 			// this->tcb->SendBufferedPackets(callbacks_.Now());
 
 			this->t1CookieTimer->Start();
+			this->listener.OnAssociationConnecting();
 		}
 
 		void Association::ProcessReceivedCookieEchoChunk(
@@ -1494,23 +1581,18 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			const auto* stateCookieParameter =
-			  receivedCookieEchoChunk->GetFirstParameterOfType<StateCookieParameter>();
-
-			if (!stateCookieParameter || !stateCookieParameter->GetCookie())
+			if (!receivedCookieEchoChunk->HasCookie())
 			{
-				MS_WARN_TAG(
-				  sctp, "ignoring received COOKIE_ECHO Chunk without StateCookieParameter or without Cookie");
+				MS_WARN_TAG(sctp, "ignoring received COOKIE_ECHO Chunk without Cookie");
 
 				this->listener.OnAssociationError(
-				  Types::ErrorKind::PARSE_FAILED,
-				  "received COOKIE_ECHO Chunk without StateCookieParameter or without Cookie");
+				  Types::ErrorKind::PARSE_FAILED, "received COOKIE_ECHO Chunk without Cookie");
 
 				return;
 			}
 
 			std::unique_ptr<StateCookie> cookie{ StateCookie::Parse(
-				stateCookieParameter->GetCookie(), stateCookieParameter->GetCookieLength()) };
+				receivedCookieEchoChunk->GetCookie(), receivedCookieEchoChunk->GetCookieLength()) };
 
 			if (!cookie)
 			{
@@ -1560,8 +1642,8 @@ namespace RTC
 
 			if (!this->tcb)
 			{
-				// If the connection is re-established (peer restarted, but re-used old
-				// connection), make sure that all message identifiers are reset and any
+				// If the Association is re-established (peer restarted, but re-used old
+				// Association), make sure that all message identifiers are reset and any
 				// partly sent message is re-sent in full. The same is true when the
 				// Association is closed and later re-opened, which never happens in
 				// WebRTC, but is a valid operation on the SCTP level.
@@ -1578,8 +1660,8 @@ namespace RTC
 				  cookie->GetNegotiatedCapabilities());
 			}
 
-			auto packet          = this->tcb->CreatePacket();
-			auto* cookieAckChunk = packet->BuildChunkInPlace<CookieAckChunk>();
+			auto packet                = this->tcb->CreatePacket();
+			const auto* cookieAckChunk = packet->BuildChunkInPlace<CookieAckChunk>();
 
 			cookieAckChunk->Consolidate();
 
@@ -1590,6 +1672,11 @@ namespace RTC
 			// packet."
 			// TODO: Implement it. Note that we pass Packet as argument!
 			// this->tcb->SendBufferedPackets(packet.get(), callbacks_.Now());
+
+			// TODO: SCTP: Remove this since COOKIE_ACK must be sent by
+			// tcb->SendBufferedPackets() call above.
+			MS_DUMP("TODO: REMOVE");
+			this->packetSender.SendPacket(packet.get());
 		}
 
 		bool Association::ProcessReceivedCookieEchoChunkWithTcb(
@@ -1619,12 +1706,12 @@ namespace RTC
 				if (this->state == State::SHUTDOWN_ACK_SENT)
 				{
 					auto packet = CreatePacketWithVerificationTag(cookie->GetRemoteVerificationTag());
-					auto* shutdownAckChunk = packet->BuildChunkInPlace<ShutdownAckChunk>();
+					const auto* shutdownAckChunk = packet->BuildChunkInPlace<ShutdownAckChunk>();
 
 					shutdownAckChunk->Consolidate();
 
 					auto* operationErrorChunk = packet->BuildChunkInPlace<OperationErrorChunk>();
-					auto* cookieReceivedWhileShuttingDownErrorCause =
+					const auto* cookieReceivedWhileShuttingDownErrorCause =
 					  operationErrorChunk->BuildErrorCauseInPlace<CookieReceivedWhileShuttingDownErrorCause>();
 
 					cookieReceivedWhileShuttingDownErrorCause->Consolidate();
@@ -1641,7 +1728,7 @@ namespace RTC
 				MS_DEBUG_DEV("received COOKIE_ECHO indicating a restarted peer");
 
 				this->tcb = nullptr;
-				this->listener.OnAssociationConnectionRestarted();
+				this->listener.OnAssociationRestarted();
 			}
 			// "B) In this case, both sides might be attempting to start an association
 			// at about the same time, but the peer endpoint sent its INIT chunk after
@@ -1652,7 +1739,7 @@ namespace RTC
 			{
 				// TODO: Handle the case in which remote Verification Tag is 0?
 
-				MS_DEBUG_DEV("received COOKIE_ECHO indicating simultaneous connections");
+				MS_DEBUG_DEV("received COOKIE_ECHO indicating simultaneous associations");
 
 				this->tcb = nullptr;
 			}
@@ -1703,7 +1790,6 @@ namespace RTC
 			AssertHasTcb();
 
 			this->t1CookieTimer->Stop();
-
 			this->tcb->ClearRemoteStateCookie();
 
 			SetState(State::ESTABLISHED, "COOKIE_ACK received");
@@ -1721,6 +1807,7 @@ namespace RTC
 
 			switch (this->state)
 			{
+				case State::NEW:
 				case State::CLOSED:
 				{
 					break;
@@ -1744,8 +1831,8 @@ namespace RTC
 				// state, restarting its T2-shutdown timer.
 				case State::SHUTDOWN_SENT:
 				{
-					SendShutdownAckChunk();
 					SetState(State::SHUTDOWN_ACK_SENT, "SHUTDOWN received");
+					SendShutdownAckChunk();
 
 					break;
 				}
@@ -1799,8 +1886,8 @@ namespace RTC
 				case State::SHUTDOWN_SENT:
 				case State::SHUTDOWN_ACK_SENT:
 				{
-					auto packet                 = this->tcb->CreatePacket();
-					auto* shutdownCompleteChunk = packet->BuildChunkInPlace<ShutdownCompleteChunk>();
+					auto packet                       = this->tcb->CreatePacket();
+					const auto* shutdownCompleteChunk = packet->BuildChunkInPlace<ShutdownCompleteChunk>();
 
 					// NOTE: Don't set bit T in the SHUTDOWN_COMPLETE chunk since TCB
 					// knows the Verification Tag expected by the remote.
@@ -1933,7 +2020,7 @@ namespace RTC
 				return;
 			}
 
-			MS_WARN_TAG(sctp, "received ABORT Chunk, closing connection: %s", errorCausesStr.c_str());
+			MS_WARN_TAG(sctp, "received ABORT Chunk, closing Association: %s", errorCausesStr.c_str());
 
 			InternalClose(Types::ErrorKind::PEER_REPORTED, errorCausesStr);
 		}
@@ -2492,6 +2579,21 @@ namespace RTC
 
 			switch (this->state)
 			{
+				case State::NEW:
+				{
+					MS_ASSERT(!this->tcb, "internal state is NEW but there is TCB");
+					MS_ASSERT(
+					  !this->t1InitTimer->IsRunning(), "internal state is NEW but T1 Init timer is running");
+					MS_ASSERT(
+					  !this->t1CookieTimer->IsRunning(),
+					  "internal state is NEW but T1 Cookie timer is running");
+					MS_ASSERT(
+					  !this->t2ShutdownTimer->IsRunning(),
+					  "internal state is NEW but T2 Shutdown timer is running");
+
+					break;
+				}
+
 				case State::CLOSED:
 				{
 					MS_ASSERT(!this->tcb, "internal state is CLOSED but there is TCB");

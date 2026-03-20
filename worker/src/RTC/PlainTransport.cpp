@@ -6,10 +6,10 @@
 #include "MediaSoupErrors.hpp"
 #include "Settings.hpp"
 #include "Utils.hpp"
-// TODO: For testing purposes. Must be removed.
 #ifdef MS_SCTP_STACK
 #include "RTC/SCTP/packet/Packet.hpp"
 #endif
+#include <cstring> // std::memcpy()
 
 namespace RTC
 {
@@ -905,10 +905,14 @@ namespace RTC
 	{
 		MS_TRACE();
 
+#ifdef MS_SCTP_STACK
+		// TODO: SCTP
+#else
 		this->sctpAssociation->SendSctpMessage(dataConsumer, msg, len, ppid, cb);
+#endif
 	}
 
-	void PlainTransport::SendSctpData(const uint8_t* data, size_t len)
+	bool PlainTransport::SendSctpData(const uint8_t* data, size_t len)
 	{
 		MS_TRACE();
 
@@ -916,31 +920,15 @@ namespace RTC
 		{
 			MS_WARN_TAG(sctp, "not connected, cannot send SCTP data");
 
-			return;
+			return false;
 		}
-
-// TODO: For testing purposes. Must be removed.
-#ifdef MS_SCTP_STACK
-		MS_DUMP(">>> sending SCTP packet...");
-
-		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
-
-		if (packet)
-		{
-			packet->Dump();
-
-			delete packet;
-		}
-		else
-		{
-			MS_ABORT("RTC::SCTP::Packet::Parse() failed to parse sent SCTP data");
-		}
-#endif
 
 		this->tuple->Send(data, len);
 
 		// Increase send transmission.
 		RTC::Transport::DataSent(len);
+
+		return true;
 	}
 
 	void PlainTransport::RecvStreamClosed(uint32_t ssrc)
@@ -982,7 +970,11 @@ namespace RTC
 			OnRtpDataReceived(tuple, data, len, bufferLen);
 		}
 		// Check if it's SCTP.
+#ifdef MS_SCTP_STACK
+		else if (RTC::SCTP::Packet::IsSctp(data, len))
+#else
 		else if (RTC::SctpAssociation::IsSctp(data, len))
+#endif
 		{
 			OnSctpDataReceived(tuple, data, len);
 		}
@@ -1229,24 +1221,6 @@ namespace RTC
 
 			return;
 		}
-
-// TODO: For testing purposes. Must be removed.
-#ifdef MS_SCTP_STACK
-		MS_DUMP("<<< received SCTP packet...");
-
-		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
-
-		if (packet)
-		{
-			packet->Dump();
-
-			delete packet;
-		}
-		else
-		{
-			MS_ABORT("RTC::SCTP::Packet::Parse() failed to parse received SCTP data");
-		}
-#endif
 
 		// Pass it to the parent transport.
 		RTC::Transport::ReceiveSctpData(data, len);

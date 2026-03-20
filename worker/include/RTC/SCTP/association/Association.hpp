@@ -37,6 +37,7 @@
 #include "RTC/SCTP/public/SctpOptions.hpp"
 #include "RTC/SCTP/public/SctpTypes.hpp"
 #include "handles/BackoffTimerHandle.hpp"
+#include <FBS/sctpParameters.h>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -59,6 +60,7 @@ namespace RTC
 			 */
 			enum class State : uint8_t
 			{
+				NEW,
 				CLOSED,
 				COOKIE_WAIT,
 				// NOTE: TCB is valid in these states:
@@ -78,6 +80,11 @@ namespace RTC
 
 				switch (state)
 				{
+					case State::NEW:
+					{
+						return "NEW";
+					}
+
 					case State::CLOSED:
 					{
 						return "CLOSED";
@@ -159,11 +166,15 @@ namespace RTC
 			};
 
 		public:
-			explicit Association(const SctpOptions& sctpOptions, AssociationListener& listener);
+			explicit Association(const SctpOptions& sctpOptions, AssociationListener* listener);
 
 			~Association() override;
 
+		public:
 			void Dump(int indentation = 0) const override;
+
+			flatbuffers::Offset<FBS::SctpParameters::SctpParameters> FillBuffer(
+			  flatbuffers::FlatBufferBuilder& builder) const override;
 
 			Types::AssociationState GetAssociationState() const override;
 
@@ -262,7 +273,7 @@ namespace RTC
 			Types::ResetStreamsStatus ResetStreams(std::span<const uint16_t> outboundStreamIds) override;
 
 			/**
-			 * Sends a SCTP message using the provided send options. Sending a message
+			 * Sends an SCTP message using the provided send options. Sending a message
 			 * is an asynchronous operation, and the `OnAssociationError()` callback
 			 * may be invoked to indicate any errors in sending the message.
 			 *
@@ -288,7 +299,7 @@ namespace RTC
 			 * message will be queued.
 			 *
 			 * This has identical semantics to `SendMessage()', except that it may
-			 * coalesce many messages into a single SCTP packet if they would fit.
+			 * coalesce many messages into a single SCTP Packet if they would fit.
 			 *
 			 * @remarks
 			 * - Same as in `SendMessage()`.
@@ -297,13 +308,9 @@ namespace RTC
 			  std::span<Message> messages, const SendMessageOptions& sendMessageOptions) override;
 
 			/**
-			 * Receive a Packet received from the remote peer.
-			 *
-			 * @remarks
-			 * - The caller is responsible of freeing given Packet once this method
-			 *   returns.
+			 * Receives SCTP data (hopefully an SCTP Packet) from the remote peer.
 			 */
-			void ReceivePacket(const Packet* receivedPacket) override;
+			void ReceiveSctpData(const uint8_t* data, size_t len) override;
 
 		private:
 			void InternalClose(Types::ErrorKind errorKind, const std::string_view& message);
@@ -456,7 +463,7 @@ namespace RTC
 			// AssociationDeferredListener which inherits from AssociationListener.
 			AssociationDeferredListener listener;
 			// SCTP association internal state.
-			State state{ State::CLOSED };
+			State state{ State::NEW };
 			// Private metrics.
 			AssociationPrivateMetrics privateMetrics{};
 			// The actual send queue implementation. As data can be sent before the

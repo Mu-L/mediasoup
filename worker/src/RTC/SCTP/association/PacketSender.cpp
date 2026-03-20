@@ -28,7 +28,15 @@ namespace RTC
 				packet->WriteCRC32cChecksum();
 			}
 
-			const bool sent = this->associationListener.OnAssociationSendPacket(packet);
+			// TODO: SCTP: For testing purposes. Must be removed.
+			{
+				MS_DUMP(">>> sending SCTP packet:");
+
+				packet->Dump();
+			}
+
+			const bool sent =
+			  this->associationListener.OnAssociationSendData(packet->GetBuffer(), packet->GetLength());
 
 			this->listener.OnPacketSenderPacketSent(this, packet, sent);
 

@@ -2,7 +2,6 @@
 #define MS_RTC_SCTP_ASSOCIATION_DEFERRED_LISTENER_HPP
 
 #include "common.hpp"
-#include "RTC/SCTP/packet/Packet.hpp"
 #include "RTC/SCTP/public/AssociationListener.hpp"
 #include "RTC/SCTP/public/Message.hpp"
 #include "RTC/SCTP/public/SctpTypes.hpp"
@@ -47,10 +46,10 @@ namespace RTC
 			// variant can hold all cases of stored data.
 			using CallbackData = std::variant<std::monostate, Message, Error, StreamReset, uint16_t>;
 
-			using Callback = std::function<void(CallbackData, AssociationListener&)>;
+			using Callback = std::function<void(CallbackData, AssociationListener*)>;
 
 		public:
-			explicit AssociationDeferredListener(AssociationListener& innerListener);
+			explicit AssociationDeferredListener(AssociationListener* innerListener);
 
 		private:
 			void SetReady();
@@ -59,17 +58,19 @@ namespace RTC
 
 		public:
 			/* Pure virtual methods inherited from RTC::STCP::AssociationListener. */
-			bool OnAssociationSendPacket(Packet* packet) override;
+			bool OnAssociationSendData(const uint8_t* data, size_t len) override;
+
+			void OnAssociationConnecting() override;
 
 			void OnAssociationConnected() override;
 
-			void OnAssociationClosed() override;
+			void OnAssociationFailed(Types::ErrorKind errorKind, std::string_view errorMessage) override;
 
-			void OnAssociationConnectionRestarted() override;
+			void OnAssociationClosed(Types::ErrorKind errorKind, std::string_view errorMessage) override;
+
+			void OnAssociationRestarted() override;
 
 			void OnAssociationError(Types::ErrorKind errorKind, std::string_view errorMessage) override;
-
-			void OnAssociationAborted(Types::ErrorKind errorKind, std::string_view errorMessage) override;
 
 			void OnAssociationMessageReceived(Message message) override;
 
@@ -85,7 +86,7 @@ namespace RTC
 			void OnAssociationTotalBufferedAmountLow() override;
 
 		private:
-			AssociationListener& innerListener;
+			AssociationListener* innerListener;
 			bool ready{ false };
 			std::vector<std::pair<Callback, CallbackData>> deferredCallbacks;
 		};

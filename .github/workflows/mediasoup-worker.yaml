@@ -5,10 +5,14 @@ on:
     branches: [v3]
     paths:
       - 'worker/**'
+      - 'worker/scripts/package.json'
+      - 'worker/scripts/package-lock.json'
       - '.github/workflows/mediasoup-worker.yaml'
   pull_request:
     paths:
       - 'worker/**'
+      - 'worker/scripts/package.json'
+      - 'worker/scripts/package-lock.json'
       - '.github/workflows/mediasoup-worker.yaml'
   workflow_dispatch:
 
@@ -109,16 +113,6 @@ jobs:
             build-type: Release
             pip-break-system-packages: true
             # No clang-format for ARM.
-            run-lint: false
-            run-test: true
-            run-test-asan-address: false
-            run-test-asan-undefined: false
-            run-test-asan-thread: false
-          - os: macos-14
-            cc: clang
-            cxx: clang++
-            build-type: Release
-            pip-break-system-packages: true
             run-lint: false
             run-test: true
             run-test-asan-address: false

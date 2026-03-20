@@ -7,10 +7,6 @@
 #include "Settings.hpp"
 #include "Utils.hpp"
 #include "FBS/webRtcTransport.h"
-// TODO: For testing purposes. Must be removed.
-#ifdef MS_SCTP_STACK
-#include "RTC/SCTP/packet/Packet.hpp"
-#endif
 #include <cmath> // std::pow()
 
 namespace RTC
@@ -860,10 +856,14 @@ namespace RTC
 	{
 		MS_TRACE();
 
+#ifdef MS_SCTP_STACK
+		// TODO: SCTP
+#else
 		this->sctpAssociation->SendSctpMessage(dataConsumer, msg, len, ppid, cb);
+#endif
 	}
 
-	void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
+	bool WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
 	{
 		MS_TRACE();
 
@@ -871,28 +871,10 @@ namespace RTC
 		{
 			MS_WARN_TAG(sctp, "DTLS not connected, cannot send SCTP data");
 
-			return;
+			return false;
 		}
 
-// TODO: For testing purposes. Must be removed.
-#ifdef MS_SCTP_STACK
-		MS_DUMP(">>> sending SCTP packet...");
-
-		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
-
-		if (packet)
-		{
-			packet->Dump();
-
-			delete packet;
-		}
-		else
-		{
-			MS_ABORT("RTC::SCTP::Packet::Parse() failed to parse sent SCTP data");
-		}
-#endif
-
-		this->dtlsTransport->SendApplicationData(data, len);
+		return this->dtlsTransport->SendApplicationData(data, len);
 	}
 
 	void WebRtcTransport::RecvStreamClosed(uint32_t ssrc)
@@ -1458,24 +1440,6 @@ namespace RTC
 	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		MS_TRACE();
-
-// TODO: For testing purposes. Must be removed.
-#ifdef MS_SCTP_STACK
-		MS_DUMP("<<< received SCTP packet...");
-
-		const auto* packet = RTC::SCTP::Packet::Parse(data, len);
-
-		if (packet)
-		{
-			packet->Dump();
-
-			delete packet;
-		}
-		else
-		{
-			MS_ABORT("RTC::SCTP::Packet::Parse() failed to parse received SCTP data");
-		}
-#endif
 
 		// Pass it to the parent transport.
 		RTC::Transport::ReceiveSctpData(data, len);
