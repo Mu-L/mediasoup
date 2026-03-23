@@ -563,7 +563,8 @@ mediasoup_worker_test_asan_address = executable(
     '-DMS_LOG_STD',
     '-DMS_TEST',
     '-g',
-    '-O0',
+    '-O3',
+    '-fno-omit-frame-pointer',
     '-fsanitize=address',
   ],
   link_args: [
@@ -594,7 +595,8 @@ mediasoup_worker_test_asan_undefined = executable(
     '-DMS_LOG_STD',
     '-DMS_TEST',
     '-g',
-    '-O0',
+    '-O3',
+    '-fno-omit-frame-pointer',
     '-fsanitize=undefined',
   ],
   link_args: [
@@ -625,7 +627,8 @@ mediasoup_worker_test_asan_thread = executable(
     '-DMS_LOG_STD',
     '-DMS_TEST',
     '-g',
-    '-O0',
+    '-O3',
+    '-fno-omit-frame-pointer',
     '-fsanitize=thread',
   ],
   link_args: [
@@ -698,10 +701,11 @@ executable(
   cpp_args: cpp_args + [
     '-DMS_LOG_STD',
     '-g',
-    '-O0',
-    '-fsanitize=address,fuzzer',
+    '-O3',
+    '-fno-omit-frame-pointer',
+    '-fsanitize=address,undefined,fuzzer',
   ],
   link_args: [
-    '-fsanitize=address,fuzzer',
+    '-fsanitize=address,undefined,fuzzer',
   ],
 )
