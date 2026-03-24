@@ -2,6 +2,12 @@
 
 ## Related to mediasoup SCTP implementation
 
+- `Association`: We should not accept transition from CLOSED to CONNECTING/CONNECTED. Technically we can but we don't want. Once closed or failed, it must be over.
+
+- `Association`: When transitioning to CLOSED (due to failure while connecting or closure) we should emit a new event "stcpclosed" in all `DataProducers/Consumers`.
+
+- When receiving SCTP RE-CONFIG, we should emit "streamclosed" in those `DataProducers/DataConsumers` whose stream ID have been closed.
+
 - Why the hell does `DataConsumer` have a `RTC::SctpAssociation* sctpAssociation` member?
 
 - `OnAssociationFailed()` and `OnAssociationClosed()` should report an error (if present) to JS.
