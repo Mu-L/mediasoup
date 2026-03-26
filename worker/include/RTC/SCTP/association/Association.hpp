@@ -2,7 +2,7 @@
 #define MS_RTC_SCTP_ASSOCIATION_HPP
 
 #include "common.hpp"
-#include "RTC/SCTP/association/AssociationDeferredListener.hpp"
+#include "RTC/SCTP/association/AssociationListenerDeferrer.hpp"
 #include "RTC/SCTP/association/NegotiatedCapabilities.hpp"
 #include "RTC/SCTP/association/PacketSender.hpp"
 #include "RTC/SCTP/association/StateCookie.hpp"
@@ -179,11 +179,19 @@ namespace RTC
 			Types::AssociationState GetAssociationState() const override;
 
 			/**
+			 * May invoke `Connect()` but only if the parent transport is ready for
+			 * SCTP transmission (e.g. the WebRtcTransport has ICE and DTLS connected).
+			 */
+			void MayConnect() override;
+
+			/**
 			 * Initiate the SCTP association with the remote peer. It sends an INIT
 			 * Chunk.
 			 *
 			 * @remarks
-			 * - The SCTP association must be in Closed state.
+			 * - The SCTP association must be in New state.
+			 * - Despite this method is public, it's never invoked since `MayConnect()`
+			 *   method is invoked instead.
 			 */
 			void Connect() override;
 
@@ -459,13 +467,13 @@ namespace RTC
 		private:
 			// SCTP options given in the constructor.
 			SctpOptions sctpOptions;
-			// Listener. It's not an AssociationListener but an
-			// AssociationDeferredListener which inherits from AssociationListener.
-			AssociationDeferredListener listener;
+			// Listener. It's not an `AssociationListener` but an
+			// `AssociationListenerDeferrer` which inherits from `AssociationListener`.
+			AssociationListenerDeferrer listener;
 			// SCTP association internal state.
 			State state{ State::NEW };
-			// Private metrics.
-			AssociationPrivateMetrics privateMetrics{};
+			// Packet sender.
+			PacketSender packetSender;
 			// The actual send queue implementation. As data can be sent before the
 			// connection is established, this component is not in the TCB.
 			// TODO: Implement this class.
@@ -476,8 +484,8 @@ namespace RTC
 			// Once the SCTP association is established a Transmission Control Block
 			// is created.
 			std::unique_ptr<TransmissionControlBlock> tcb;
-			// Packet sender.
-			PacketSender packetSender;
+			// Private metrics.
+			AssociationPrivateMetrics privateMetrics{};
 			// T1-init timer.
 			const std::unique_ptr<BackoffTimerHandle> t1InitTimer;
 			// T1-cookie timer.

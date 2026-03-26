@@ -2,8 +2,6 @@
 
 ## Related to mediasoup SCTP implementation
 
-- `Association`: We should not accept transition from CLOSED to CONNECTING/CONNECTED. Technically we can but we don't want. Once closed or failed, it must be over.
-
 - `Association`: When transitioning to CLOSED (due to failure while connecting or closure) we should emit a new event "stcpclosed" in all `DataProducers/Consumers`.
 
 - When receiving SCTP RE-CONFIG, we should emit "streamclosed" in those `DataProducers/DataConsumers` whose stream ID have been closed.
@@ -18,7 +16,7 @@
 
 - In `Association::FillBuffer()` we should not pass `this->sctpOptions.maxOutboundStreams/maxInboundStreams` but the current values (they may have been modified via "reconfig").
 
-- We must call `association->Connect()` somewhere when appropriate! Probably same as the `MayConnect()` in former `SctpAssociation`.
+- Probably remove those `MS_DEBUG_TAG(sctp, "xxxx timer has expired")` and make it be `MS_DEBUG_DEV()` instead.
 
 - Test Chrome with I-DATA (message interleaving):
 
@@ -28,8 +26,9 @@
     --force-fieldtrials="WebRTC-DataChannelMessageInterleaving/Enabled/"
   ```
 
-- Look for "TODO: SCTP" and `MS_SCTP_STACK`.
+- Look for "TODO: SCTP" and `MS_SCTP_STACK` everywhere.
 
 ## Related to dcsctp
 
 - Investigate `DcSctpSocket::HandleTimeout()` which is only called from `media/sctp/dcsctp_transport.cc`.
+  - Update: This is the entry point when a timer expires. It's the same as our `OnTimer()`.
