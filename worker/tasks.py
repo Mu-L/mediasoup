@@ -369,7 +369,7 @@ def format(ctx):
         );
 
 
-@task
+@task(pre=[call(setup, meson_args=MESON_ARGS + ' -Dms_build_tests=true')])
 def tidy(ctx):
     """
     Performs C++ code checks according to `worker/.clang-tidy` rules
@@ -383,7 +383,7 @@ def tidy(ctx):
         );
 
 
-@task
+@task(pre=[call(setup, meson_args=MESON_ARGS + ' -Dms_build_tests=true')])
 def tidy_fix(ctx):
     """
     Performs C++ code checks according to `worker/.clang-tidy` rules and applies
