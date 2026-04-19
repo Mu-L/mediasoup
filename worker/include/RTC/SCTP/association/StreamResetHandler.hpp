@@ -4,7 +4,10 @@
 #include "common.hpp"
 #include "RTC/SCTP/association/TCBContext.hpp"
 #include "RTC/SCTP/common/UnwrappedSequenceNumber.hpp"
+#include "RTC/SCTP/packet/Packet.hpp"
 #include "RTC/SCTP/packet/chunks/ReConfigChunk.hpp"
+#include "RTC/SCTP/packet/parameters/IncomingSsnResetRequestParameter.hpp"
+#include "RTC/SCTP/packet/parameters/OutgoingSsnResetRequestParameter.hpp"
 #include "RTC/SCTP/packet/parameters/ReconfigurationResponseParameter.hpp"
 #include "RTC/SCTP/public/AssociationListener.hpp"
 #include "handles/BackoffTimerHandle.hpp"
@@ -53,7 +56,7 @@ namespace RTC
 			{
 				VALID,
 				RETRANSMISSION,
-				BADSEQUENCE_NUMBER,
+				BAD_SEQUENCE_NUMBER,
 			};
 
 			/**
@@ -156,6 +159,9 @@ namespace RTC
 				bool isDeferred{ false };
 			};
 
+		private:
+			using UnwrappedReConfigRequestSn = UnwrappedSequenceNumber<uint32_t>;
+
 		public:
 			StreamResetHandler(
 			  AssociationListener& associationListener, TCBContext* tcbContext
@@ -178,22 +184,65 @@ namespace RTC
 			void ResetStreams(std::span<const uint16_t> outgoingStreamIds);
 
 			/**
+			 * Called when handling and incoming RE-CONFIG chunk. Processes a stream
+			 * reconfiguration chunk and may send a RE-CONFIG back to the peer with
+			 * either 1 or 2 responses.
+			 */
+			void HandleReceivedReConfigChunk(const ReConfigChunk* receivedReConfigChunk);
+
+		private:
+			/**
+			 * Called to validate a received RE-CONFIG chunk.
+			 */
+			bool ValidateReceivedReConfigChunk(const ReConfigChunk* receivedReConfigChunk);
+
+			/**
 			 * Creates a Reset Streams request that must be sent if returned. Will
 			 * start the reconfig timer. Will return `nullptr` if there is no need
 			 * to create a request (no streams to reset) or if there already is an
 			 * ongoing stream reset request that hasn't completed yet.
 			 */
-			// TODO: SCTP: Do we really want to return a Chunk? Maybe we should pass
-			// a Packet to use BuilChunkInPlace().
-			ReConfigChunk* MakeStreamResetRequest();
+			ReConfigChunk* CreateStreamResetRequest();
 
 			/**
-			 * Called when handling and incoming RE-CONFIG chunk.
+			 * Creates the actual RE-CONFIG chunk. A request (which set
+			 * `currentRequest`) must have been created prior.
 			 */
-			void ProcessReceivedReConfigChunk(const ReConfigChunk* receivedReConfigChunk);
+			ReConfigChunk* CreateReconfigChunk();
 
-		private:
-			void OnReconfigTimer(uint64_t& baseTimeoutMs, bool& stop);
+			/**
+			 * Called to validate the `reqSeqNbr`, that it's the next in sequence.
+			 */
+			ReqSeqNbrValidationResult ValidateReqSeqNbr(UnwrappedReConfigRequestSn reqSeqNbr);
+
+			/**
+			 * Called when this Association receives an outgoing stream reset request.
+			 * It might either be performed straight away, or have to be deferred, and
+			 * the result of that will be put in `responses`.
+			 */
+			void HandleReceivedOutgoingSsnResetRequestParameter(
+			  const OutgoingSsnResetRequestParameter* receivedOutgoingSsnResetRequestParameter,
+			  ReConfigChunk* reConfigChunk);
+
+			/**
+			 * Called when this Association receives an incoming stream reset request.
+			 * This isn't really supported, but a successful response is put in
+			 * `responses`.
+			 */
+			void HandleReceivedIncomingSsnResetRequestParameter(
+			  const IncomingSsnResetRequestParameter* receivedIncomingSsnResetRequestParameter,
+			  ReConfigChunk* reConfigChunk);
+
+			/**
+			 * Called when receiving a response to an outgoing stream reset request.
+			 * It will either commit the stream resetting, if the operation was
+			 * successful, or will schedule a retry if it was deferred. And if it
+			 * failed, the operation will be rolled back.
+			 */
+			void HandleReceivedReconfigurationResponseParameter(
+			  const ReconfigurationResponseParameter* receivedReconfigurationResponseParameter);
+
+			void OnReConfigTimer(uint64_t& baseTimeoutMs, bool& stop);
 
 			/* Pure virtual methods inherited from BackoffTimerHandle::Listener. */
 		public:
@@ -206,14 +255,14 @@ namespace RTC
 			// DataTracker* dataTracker{ nullptr };,
 			// ReassemblyQueue* reassemblyQueue{ nullptr };,
 			// RetransmissionQueue* retransmissionQueue{ nullptr };
-			UnwrappedSequenceNumber<uint32_t>::Unwrapper incomingReconfigRequestSnUnwrapper;
-			const std::unique_ptr<BackoffTimerHandle> reconfigTimer;
+			UnwrappedReConfigRequestSn::Unwrapper incomingReConfigRequestSnUnwrapper;
+			const std::unique_ptr<BackoffTimerHandle> reConfigTimer;
 			// The next sequence number for outgoing stream requests.
 			uint32_t nextOutgoingReqSeqNbr{ 0 };
 			// The current stream request operation.
 			std::optional<CurrentRequest> currentRequest;
 			// For incoming requests. Last processed request sequence number.
-			UnwrappedSequenceNumber<uint32_t> lastProcessedReqSeqNbr;
+			UnwrappedReConfigRequestSn lastProcessedReqSeqNbr;
 			// The result from last processed incoming request.
 			ReconfigurationResponseParameter::Result lastProcessedReqResult;
 		};
