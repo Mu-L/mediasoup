@@ -107,6 +107,6 @@ You can support mediasoup by [sponsoring][sponsor] it. Thanks!
 [github-actions-mediasoup-codeql-shield-mediasoup]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-codeql.yaml/badge.svg?branch=v3
 [github-actions-mediasoup-codeql-mediasoup]: https://github.com/versatica/mediasoup/actions/workflows/mediasoup-codeql.yaml?query=branch%3Av3
 [sponsor]: https://mediasoup.org/sponsor
-[mediasoup-architecture]: /art/mediasoup-v3-architecture-01.svg
+[mediasoup-architecture]: /art/mediasoup-v3-architecture-02.png
 [mediasoup-demo-screenshot]: /art/mediasoup-v3.png
 [mediasoup-demo]: https://v3demo.mediasoup.org
