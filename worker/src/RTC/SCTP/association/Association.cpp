@@ -119,11 +119,11 @@ namespace RTC
 			  // Add OS.
 			  // TODO: SCTP: We should put here current value which may be different after
 			  // negotiation with peer and reconfig.
-			  this->sctpOptions.maxOutboundStreams,
+			  this->sctpOptions.announcedMaxOutboundStreams,
 			  // Add MIS.
 			  // TODO: SCTP: We should put here current value which may be different after
 			  // negotiation with peer and reconfig.
-			  this->sctpOptions.maxInboundStreams,
+			  this->sctpOptions.announcedMaxInboundStreams,
 			  // Add maxMessageSize.
 			  this->sctpOptions.maxSendMessageSize,
 			  // Add sendBufferSize.
@@ -548,13 +548,16 @@ namespace RTC
 				}
 			}
 
-			const AssociationListenerDeferrer::ScopedDeferrer deferrer(this->listener);
-
 			this->privateMetrics.rxPacketsCount++;
 
 			// If we are received SCTP data from the remote peer it means that we may
 			// initiate the SCTP association (if not already connected).
 			MayConnect();
+
+			// NOTE: It's important to create the deferrer here, otherwise it may
+			// happen that MayConnect() ends calling to Connect() so we end with two
+			// nested deferreds (and hence an assertion).
+			const AssociationListenerDeferrer::ScopedDeferrer deferrer(this->listener);
 
 			std::unique_ptr<Packet> receivedPacket{ Packet::Parse(data, len) };
 
@@ -736,9 +739,11 @@ namespace RTC
 				  return this->state == State::ESTABLISHED;
 			  });
 
-			this->privateMetrics.negotiatedMaxOutboundStreams = negotiatedCapabilities.maxOutboundStreams;
-			this->privateMetrics.negotiatedMaxInboundStreams  = negotiatedCapabilities.maxInboundStreams;
-			this->privateMetrics.usesPartialReliability       = negotiatedCapabilities.partialReliability;
+			this->privateMetrics.negotiatedMaxOutboundStreams =
+			  negotiatedCapabilities.negotiatedMaxOutboundStreams;
+			this->privateMetrics.negotiatedMaxInboundStreams =
+			  negotiatedCapabilities.negotiatedMaxInboundStreams;
+			this->privateMetrics.usesPartialReliability  = negotiatedCapabilities.partialReliability;
 			this->privateMetrics.usesMessageInterleaving = negotiatedCapabilities.messageInterleaving;
 			this->privateMetrics.usesReConfig            = negotiatedCapabilities.reConfig;
 			this->privateMetrics.usesZeroChecksum        = negotiatedCapabilities.zeroChecksum;
@@ -776,8 +781,8 @@ namespace RTC
 
 			initChunk->SetInitiateTag(this->preTcb.localVerificationTag);
 			initChunk->SetAdvertisedReceiverWindowCredit(this->sctpOptions.maxReceiverWindowBufferSize);
-			initChunk->SetNumberOfOutboundStreams(this->sctpOptions.maxOutboundStreams);
-			initChunk->SetNumberOfInboundStreams(this->sctpOptions.maxInboundStreams);
+			initChunk->SetNumberOfOutboundStreams(this->sctpOptions.announcedMaxOutboundStreams);
+			initChunk->SetNumberOfInboundStreams(this->sctpOptions.announcedMaxInboundStreams);
 			initChunk->SetInitialTsn(this->preTcb.localInitialTsn);
 
 			// Insert capabilities related Parameters in the INIT Chunk.
@@ -1494,8 +1499,8 @@ namespace RTC
 
 			initAckChunk->SetInitiateTag(localVerificationTag);
 			initAckChunk->SetAdvertisedReceiverWindowCredit(this->sctpOptions.maxReceiverWindowBufferSize);
-			initAckChunk->SetNumberOfOutboundStreams(this->sctpOptions.maxOutboundStreams);
-			initAckChunk->SetNumberOfInboundStreams(this->sctpOptions.maxInboundStreams);
+			initAckChunk->SetNumberOfOutboundStreams(this->sctpOptions.announcedMaxOutboundStreams);
+			initAckChunk->SetNumberOfInboundStreams(this->sctpOptions.announcedMaxInboundStreams);
 			initAckChunk->SetInitialTsn(localInitialTsn);
 
 			// Insert a StateCookieParameter in the INIT_ACK Chunk.
