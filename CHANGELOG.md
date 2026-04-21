@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.19.21
+
 - Worker: Fix regression in `DirectTransport` when closing a `DataProducer` or `DataConsumer` ([PR #1780](https://github.com/versatica/mediasoup/pull/1780)).
 
 ### 3.19.20
