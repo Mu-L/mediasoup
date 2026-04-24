@@ -27,7 +27,7 @@ namespace RTC
 		  // SendQueue& sendQueue,
 		  BackoffTimerHandle* t3RtxTimer,
 		  const SctpOptions& sctpOptions,
-		  // TODO: SCTP: I don't like these defaults in dcsctp (true and false),
+		  // NOTE: I don't like default argument values in dcsctp (true and false),
 		  // let's be explicit.
 		  bool supportsPartialReliability,
 		  bool useMessageInterleaving)
