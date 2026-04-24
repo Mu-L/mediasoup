@@ -145,11 +145,11 @@ namespace RTC
 
 			if (createdAtMs > 0 && createdAtMs <= nowMs)
 			{
-				const uint64_t rtt = nowMs - createdAtMs;
+				const uint64_t rttMs = nowMs - createdAtMs;
 
-				MS_DEBUG_DEV("valid HEARTBEAT_ACK Chunk received, calling ObserveRtt(%" PRIu64 ")", rtt);
+				MS_DEBUG_DEV("valid HEARTBEAT_ACK Chunk received, calling ObserveRttMs(%" PRIu64 ")", rttMs);
 
-				this->tcbContext->ObserveRtt(rtt);
+				this->tcbContext->ObserveRttMs(rttMs);
 			}
 			else
 			{
@@ -182,7 +182,7 @@ namespace RTC
 
 			MS_DEBUG_TAG(
 			  sctp,
-			  "interval timer has expired %zu/%s]",
+			  "interval timer has expired [%zu/%s]",
 			  this->intervalTimer->GetExpirationCount(),
 			  maxRestarts ? std::to_string(maxRestarts.value()).c_str() : "Infinite");
 
@@ -216,7 +216,7 @@ namespace RTC
 
 			MS_DEBUG_TAG(
 			  sctp,
-			  "timeout timer has expired %zu/%s]",
+			  "timeout timer has expired [%zu/%s]",
 			  this->timeoutTimer->GetExpirationCount(),
 			  maxRestarts ? std::to_string(maxRestarts.value()).c_str() : "Infinite");
 

@@ -10,6 +10,7 @@
 #include "RTC/SCTP/packet/parameters/OutgoingSsnResetRequestParameter.hpp"
 #include "RTC/SCTP/packet/parameters/ReconfigurationResponseParameter.hpp"
 #include "RTC/SCTP/public/AssociationListener.hpp"
+#include "RTC/SCTP/tx/RetransmissionQueue.hpp"
 #include "handles/BackoffTimerHandle.hpp"
 #include <span>
 #include <vector>
@@ -49,7 +50,7 @@ namespace RTC
 		 * not-yet-sent messages will be discarded, but that may change in the future.
 		 * RFC8831 allows both behaviors.
 		 */
-		class StreamResetHandler : public TCBContext, public BackoffTimerHandle::Listener
+		class StreamResetHandler : public BackoffTimerHandle::Listener
 		{
 		private:
 			enum class ReqSeqNbrValidationResult : uint8_t
@@ -164,12 +165,12 @@ namespace RTC
 
 		public:
 			StreamResetHandler(
-			  AssociationListener& associationListener, TCBContext* tcbContext
+			  AssociationListener& associationListener,
+			  TCBContext* tcbContext,
 			  // TODO: SCTP: Implement
 			  // DataTracker* dataTracker,
 			  // ReassemblyQueue* reassemblyQueue,
-			  // RetransmissionQueue* retransmissionQueue
-			);
+			  RetransmissionQueue* retransmissionQueue);
 
 			~StreamResetHandler() override;
 
@@ -182,6 +183,23 @@ namespace RTC
 			 * ongoing request has completed.
 			 */
 			void ResetStreams(std::span<const uint16_t> outgoingStreamIds);
+
+			/**
+			 * Whether a Reset Streams request should be send. Will return `false` if
+			 * there is no need to create a request (no streams to reset) or if there
+			 * already is an ongoing stream reset request that hasn't completed yet.
+			 */
+			bool ShouldCreateStreamResetRequest() const;
+
+			/**
+			 * Creates a Reset Streams request that must be sent if returned. Will
+			 * start the reconfig timer.
+			 *
+			 * @remarks
+			 * - The caller must check `ShouldCreateStreamResetRequest()` first and
+			 *   only invoke this method if the former returns `true`.
+			 */
+			void CreateStreamResetRequest(Packet* packet);
 
 			/**
 			 * Called when handling and incoming RE-CONFIG chunk. Processes a stream
@@ -197,18 +215,10 @@ namespace RTC
 			bool ValidateReceivedReConfigChunk(const ReConfigChunk* receivedReConfigChunk);
 
 			/**
-			 * Creates a Reset Streams request that must be sent if returned. Will
-			 * start the reconfig timer. Will return `nullptr` if there is no need
-			 * to create a request (no streams to reset) or if there already is an
-			 * ongoing stream reset request that hasn't completed yet.
+			 * Adds the actual RE-CONFIG chunk to the given Packet. A request (which
+			 * set `this->currentRequest`) must have been created prior.
 			 */
-			ReConfigChunk* CreateStreamResetRequest();
-
-			/**
-			 * Creates the actual RE-CONFIG chunk. A request (which set
-			 * `currentRequest`) must have been created prior.
-			 */
-			ReConfigChunk* CreateReconfigChunk();
+			void CreateReConfigChunk(Packet* packet);
 
 			/**
 			 * Called to validate the `reqSeqNbr`, that it's the next in sequence.
@@ -250,11 +260,12 @@ namespace RTC
 
 		private:
 			AssociationListener& associationListener;
-			TCBContext* tcbContext{ nullptr };
+			TCBContext* tcbContext;
 			// TODO: SCTP: Implement
-			// DataTracker* dataTracker{ nullptr };,
-			// ReassemblyQueue* reassemblyQueue{ nullptr };,
-			// RetransmissionQueue* retransmissionQueue{ nullptr };
+			// DataTracker* dataTracker;,
+			// TODO: SCTP: Implement
+			// ReassemblyQueue* reassemblyQueue;,
+			RetransmissionQueue* retransmissionQueue;
 			UnwrappedReConfigRequestSn::Unwrapper incomingReConfigRequestSnUnwrapper;
 			const std::unique_ptr<BackoffTimerHandle> reConfigTimer;
 			// The next sequence number for outgoing stream requests.

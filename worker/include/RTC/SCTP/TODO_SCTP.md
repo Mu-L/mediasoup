@@ -2,6 +2,14 @@
 
 ## Related to mediasoup SCTP implementation
 
+- `DataChunk`, IDataChunk`and`AnyDataChunk`: Add `SetUserData(UserData)`.
+
+- Remove all default values of class memners in .hpp of all classes in case the constructor must give them initial value.
+
+- Lot of stuff missing in `TransmissionControlBock` class and I forgot to add "TODO: SCTP" in them.
+
+- dcsctp uses µs (webrtc::Timestamp::Micros()) internally, while mediasoup uses ms (`DepLibUV::GetTimeMs()`). When porting dcsctp timeout/duration logic, make sure to convert accordingly. Do not mix units in the same field.
+
 - `Association`: When transitioning to CLOSED (due to failure while connecting or closure) we should emit a new event "stcpclosed" in all `DataProducers/Consumers`.
 
 - When receiving SCTP RE-CONFIG, we should emit "streamclosed" in those `DataProducers/DataConsumers` whose stream ID have been closed.
@@ -18,6 +26,10 @@
   - Remove it in Rust layer.
   - We must also remove `device.sctpCapabilities` getter from mediasoup-client because anyway we are making up those values!
   - Also must update the website documentation.
+
+- Replicate `retransmission_queue_test.cc` of dcsctp.
+
+- When we invoke `close()` on a `DataProducer/Consumer` in server, we must end calling `sctpAssociation->ResetStream([streamId])` so it sends `ReConfig` to peer.
 
 - In `transport.dump()` (maybe also in `getStats()`) we must properly obtain `OS` and `MIS` according to the number of SCTP streams negotiated via INIT + INIT_ACK. And if SCTP is not yet established, then... not sure.
   - In `Association::FillBuffer()` we should not pass `this->sctpOptions.negotiatedMaxOutboundStreams/negotiatedMaxInboundStreams` but the current values.

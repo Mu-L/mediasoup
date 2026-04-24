@@ -4,7 +4,6 @@
 
 #include "RTC/SCTP/association/StreamResetHandler.hpp"
 #include "Logger.hpp"
-#include "RTC/Consts.hpp"
 #include "RTC/SCTP/packet/Parameter.hpp"
 #include "RTC/SCTP/packet/parameters/ReconfigurationResponseParameter.hpp"
 
@@ -12,21 +11,18 @@ namespace RTC
 {
 	namespace SCTP
 	{
-		/* Static. */
-
-		alignas(4) thread_local static uint8_t ChunkFactoryBuffer[RTC::Consts::MaxSafeMtuSizeForSctp];
-
 		/* Instance methods. */
 
 		StreamResetHandler::StreamResetHandler(
-		  AssociationListener& associationListener, TCBContext* tcbContext
+		  AssociationListener& associationListener,
+		  TCBContext* tcbContext,
 		  // TODO: SCTP: Implement
 		  // DataTracker* dataTracker,
 		  // ReassemblyQueue* reassemblyQueue,
-		  // RetransmissionQueue* retransmissionQueue
-		  )
+		  RetransmissionQueue* retransmissionQueue)
 		  : associationListener(associationListener),
 		    tcbContext(tcbContext),
+		    retransmissionQueue(retransmissionQueue),
 		    reConfigTimer(
 		      std::make_unique<BackoffTimerHandle>(
 		        /*listener*/ this,
@@ -47,16 +43,40 @@ namespace RTC
 			MS_TRACE();
 		}
 
-		void StreamResetHandler::ResetStreams(std::span<const uint16_t> /*outgoingStreamIds*/)
+		void StreamResetHandler::ResetStreams(std::span<const uint16_t> outgoingStreamIds)
 		{
 			MS_TRACE();
 
-			// TODO: SCTP: Uncomment.
-			// for (const auto streamId : outgoingStreamIds)
+			for (const auto streamId : outgoingStreamIds)
 			{
-				// TODO: SCTP: Implement it.
-				// this->retransmissionQueue->PrepareResetStream(streamId);
+				this->retransmissionQueue->PrepareResetStream(streamId);
 			}
+		}
+
+		bool StreamResetHandler::ShouldCreateStreamResetRequest() const
+		{
+			MS_TRACE();
+
+			// Only send stream resets if there are streams to reset and no current
+			// ongoing request (there can only be one at a time).
+			return !this->currentRequest.has_value() &&
+			       this->retransmissionQueue->HasStreamsReadyToBeReset();
+		}
+
+		void StreamResetHandler::CreateStreamResetRequest(Packet* packet)
+		{
+			MS_TRACE();
+
+			MS_ASSERT(ShouldCreateStreamResetRequest(), "should not create a stream reset request");
+
+			this->currentRequest.emplace(
+			  this->retransmissionQueue->GetLastAssignedTsn(),
+			  this->retransmissionQueue->BeginResetStreams());
+
+			this->reConfigTimer->SetBaseTimeoutMs(this->tcbContext->GetCurrentRtoMs());
+			this->reConfigTimer->Start();
+
+			CreateReConfigChunk(packet);
 		}
 
 		void StreamResetHandler::HandleReceivedReConfigChunk(const ReConfigChunk* receivedReConfigChunk)
@@ -169,32 +189,7 @@ namespace RTC
 			return false;
 		}
 
-		ReConfigChunk* StreamResetHandler::CreateStreamResetRequest()
-		{
-			MS_TRACE();
-
-			// Only send stream resets if there are streams to reset, and no current
-			// ongoing request (there can only be one at a time), and if the stream
-			// can be reset.
-			// TODO: SCTP: Implement it.
-			// if (this->currentRequest.has_value() ||
-			//     !this->retransmissionQueue->HasStreamsReadyToBeReset())
-			// {
-			//   return nullptr;
-			// }
-
-			// TODO: SCTP: Implement it.
-			// this->currentRequest.emplace(
-			//   this->retransmissionQueue->GetLastAssignedTsn(),
-			//   this->retransmissionQueue->BeginResetStreams());
-
-			this->reConfigTimer->SetBaseTimeoutMs(this->tcbContext->GetCurrentRtoMs());
-			this->reConfigTimer->Start();
-
-			return CreateReconfigChunk();
-		}
-
-		ReConfigChunk* StreamResetHandler::CreateReconfigChunk()
+		void StreamResetHandler::CreateReConfigChunk(Packet* packet)
 		{
 			MS_TRACE();
 
@@ -211,7 +206,7 @@ namespace RTC
 				this->nextOutgoingReqSeqNbr = uint32_t{ this->nextOutgoingReqSeqNbr + 1 };
 			}
 
-			auto* reConfigChunk = ReConfigChunk::Factory(ChunkFactoryBuffer, sizeof(ChunkFactoryBuffer));
+			auto* reConfigChunk = packet->BuildChunkInPlace<ReConfigChunk>();
 			auto* outgoingSsnResetRequestParameter =
 			  reConfigChunk->BuildParameterInPlace<OutgoingSsnResetRequestParameter>();
 
@@ -228,8 +223,7 @@ namespace RTC
 			}
 
 			outgoingSsnResetRequestParameter->Consolidate();
-
-			return reConfigChunk;
+			reConfigChunk->Consolidate();
 		}
 
 		StreamResetHandler::ReqSeqNbrValidationResult StreamResetHandler::ValidateReqSeqNbr(
@@ -413,8 +407,7 @@ namespace RTC
 
 						this->currentRequest = std::nullopt;
 
-						// TODO: SCTP: Implement it.
-						// this->retransmissionQueue->CommitResetSteam();
+						this->retransmissionQueue->CommitResetStreams();
 
 						break;
 					}
@@ -454,8 +447,7 @@ namespace RTC
 
 						this->currentRequest = std::nullopt;
 
-						// TODO: SCTP: Implement it.
-						// this->retransmissionQueue->RollbackResetStreams();
+						this->retransmissionQueue->RollbackResetStreams();
 
 						break;
 					}
@@ -492,7 +484,7 @@ namespace RTC
 
 			auto packet = this->tcbContext->CreatePacket();
 
-			packet->AddChunk(CreateReconfigChunk());
+			CreateReConfigChunk(packet.get());
 
 			this->tcbContext->Send(packet.get());
 
