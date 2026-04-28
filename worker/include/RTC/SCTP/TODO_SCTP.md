@@ -48,12 +48,8 @@
 
 - Test Chrome/Canary with I-DATA (message interleaving):
   ```bash
-  open -a "Google Chrome" \
-    --args \
-    --force-fieldtrials="WebRTC-DataChannelMessageInterleaving/Enabled/"
-  ```
-  ```bash
-  open -a "Google Chrome Canary" \
-    --args \
-    --force-fieldtrials="WebRTC-DataChannelMessageInterleaving/Enabled/"
+  /Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary \
+    --force-fieldtrials="WebRTC-DataChannelMessageInterleaving/Enabled/" \
+    --enable-logging=stderr \
+    --v=1 \
   ```
