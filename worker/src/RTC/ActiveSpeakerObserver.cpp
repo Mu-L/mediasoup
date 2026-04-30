@@ -4,7 +4,6 @@
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
 #include "RTC/RtpDictionaries.hpp"
-#include "handles/TimerHandle.hpp"
 
 namespace RTC
 {
@@ -89,7 +88,7 @@ namespace RTC
 	}
 
 	ActiveSpeakerObserver::ActiveSpeakerObserver(
-	  RTC::Shared* shared,
+	  SharedInterface* shared,
 	  const std::string& id,
 	  RTC::RtpObserver::Listener* listener,
 	  const FBS::ActiveSpeakerObserver::ActiveSpeakerObserverOptions* options)
@@ -106,12 +105,12 @@ namespace RTC
 			this->interval = 5000;
 		}
 
-		this->periodicTimer = new TimerHandle(this);
+		this->periodicTimer = this->shared->CreateTimer(this);
 
 		this->periodicTimer->Start(interval, interval);
 
 		// NOTE: This may throw.
-		this->shared->channelMessageRegistrator->RegisterHandler(
+		this->shared->GetChannelMessageRegistrator()->RegisterHandler(
 		  this->id,
 		  /*channelRequestHandler*/ this,
 		  /*channelNotificationHandler*/ nullptr);
@@ -121,7 +120,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		this->shared->channelMessageRegistrator->UnregisterHandler(this->id);
+		this->shared->GetChannelMessageRegistrator()->UnregisterHandler(this->id);
 
 		delete this->periodicTimer;
 
@@ -276,9 +275,9 @@ namespace RTC
 		if (!this->mapProducerSpeakers.empty() && CalculateActiveSpeaker())
 		{
 			auto notification = FBS::ActiveSpeakerObserver::CreateDominantSpeakerNotificationDirect(
-			  this->shared->channelNotifier->GetBufferBuilder(), this->dominantId.c_str());
+			  this->shared->GetChannelNotifier()->GetBufferBuilder(), this->dominantId.c_str());
 
-			this->shared->channelNotifier->Emit(
+			this->shared->GetChannelNotifier()->Emit(
 			  this->id,
 			  FBS::Notification::Event::ACTIVESPEAKEROBSERVER_DOMINANT_SPEAKER,
 			  FBS::Notification::Body::ActiveSpeakerObserver_DominantSpeakerNotification,

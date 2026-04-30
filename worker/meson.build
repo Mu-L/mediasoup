@@ -33,6 +33,13 @@ if get_option('ms_build_tests')
   ]
 endif
 
+if get_option('ms_build_fuzzer')
+  cpp_args += [
+    '-DMS_FUZZER',
+    '-DMS_LOG_STD'
+  ]
+endif
+
 if get_option('ms_log_trace')
   cpp_args += [
     '-DMS_LOG_TRACE',
@@ -86,8 +93,8 @@ common_sources = [
   'src/Logger.cpp',
   'src/MediaSoupErrors.cpp',
   'src/Settings.cpp',
+  'src/Shared.cpp',
   'src/Worker.cpp',
-  'src/ChannelMessageRegistrator.cpp',
   'src/Utils/BitStream.cpp',
   'src/Utils/Crypto.cpp',
   'src/Utils/File.cpp',
@@ -102,6 +109,7 @@ common_sources = [
   'src/handles/UnixStreamSocketHandle.cpp',
   'src/Channel/ChannelNotifier.cpp',
   'src/Channel/ChannelRequest.cpp',
+  'src/Channel/ChannelMessageRegistrator.cpp',
   'src/Channel/ChannelNotification.cpp',
   'src/Channel/ChannelSocket.cpp',
   'src/RTC/ActiveSpeakerObserver.cpp',
@@ -129,7 +137,6 @@ common_sources = [
   'src/RTC/SenderBandwidthEstimator.cpp',
   'src/RTC/SeqManager.cpp',
   'src/RTC/Serializable.cpp',
-  'src/RTC/Shared.cpp',
   'src/RTC/SimpleConsumer.cpp',
   'src/RTC/SimulcastConsumer.cpp',
   'src/RTC/SrtpSession.cpp',
@@ -548,6 +555,8 @@ test_sources = [
   'test/src/Utils/TestNumber.cpp',
   'test/src/Utils/TestString.cpp',
   'test/src/Utils/TestTime.cpp',
+  'mocks/src/MockShared.cpp',
+  'mocks/src/Channel/MockChannelMessageRegistrator.cpp',
 ]
 
 mediasoup_worker_test = executable(
@@ -560,6 +569,7 @@ mediasoup_worker_test = executable(
   include_directories: include_directories(
     'include',
     'test/include',
+    'mocks/include',
   ),
   cpp_args: cpp_args,
 )
@@ -580,6 +590,7 @@ mediasoup_worker_test_asan_address = executable(
   include_directories: include_directories(
     'include',
     'test/include',
+    'mocks/include',
   ),
   cpp_args: cpp_args + [
     '-g',
@@ -608,6 +619,7 @@ mediasoup_worker_test_asan_undefined = executable(
   include_directories: include_directories(
     'include',
     'test/include',
+    'mocks/include',
   ),
   cpp_args: cpp_args + [
     '-g',
@@ -668,7 +680,9 @@ fuzzer_sources = common_sources + [
   'fuzzer/src/RTC/RTCP/FuzzerSenderReport.cpp',
   'fuzzer/src/RTC/RTCP/FuzzerXr.cpp',
   'fuzzer/src/RTC/SCTP/association/FuzzerStateCookie.cpp',
-  'fuzzer/src/RTC/SCTP/packet/FuzzerPacket.cpp'
+  'fuzzer/src/RTC/SCTP/packet/FuzzerPacket.cpp',
+  'mocks/src/MockShared.cpp',
+  'mocks/src/Channel/MockChannelMessageRegistrator.cpp',
 ]
 
 executable(
@@ -681,9 +695,9 @@ executable(
   include_directories: include_directories(
     'include',
     'fuzzer/include',
+    'mocks/include',
   ),
   cpp_args: cpp_args + [
-    '-DMS_LOG_STD',
     '-g',
     '-O3',
     '-fno-omit-frame-pointer',

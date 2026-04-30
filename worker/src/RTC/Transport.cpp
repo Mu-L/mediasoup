@@ -6,7 +6,6 @@
 #include "MediaSoupErrors.hpp"
 #include "Settings.hpp"
 #include "Utils.hpp"
-#include "handles/TimerHandle.hpp"
 #ifdef MS_LIBURING_SUPPORTED
 #include "DepLibUring.hpp"
 #endif
@@ -41,7 +40,7 @@ namespace RTC
 	/* Instance methods. */
 
 	Transport::Transport(
-	  RTC::Shared* shared,
+	  SharedInterface* shared,
 	  const std::string& id,
 	  RTC::Transport::Listener* listener,
 	  const FBS::Transport::Options* options)
@@ -121,7 +120,8 @@ namespace RTC
 					                                           .maxSendBufferSize  = sctpSendBufferSize
 				};
 
-				this->sctpAssociation = std::make_unique<RTC::SCTP::Association>(sctpOptions, this);
+				this->sctpAssociation =
+				  std::make_unique<RTC::SCTP::Association>(sctpOptions, this, this->shared);
 			}
 			// TODO: Remove once we only use built-in SCTP stack.
 			else
@@ -138,7 +138,7 @@ namespace RTC
 		}
 
 		// Create the RTCP timer.
-		this->rtcpTimer = new TimerHandle(this);
+		this->rtcpTimer = this->shared->CreateTimer(this);
 	}
 
 	Transport::~Transport()
@@ -881,7 +881,7 @@ namespace RTC
 					if (createTccServer)
 					{
 						this->tccServer = std::make_shared<RTC::TransportCongestionControlServer>(
-						  this, bweType, RTC::Consts::RtcpPacketMaxSize);
+						  this, this->shared, bweType, RTC::Consts::RtcpPacketMaxSize);
 
 						if (this->maxIncomingBitrate != 0u)
 						{
@@ -1074,6 +1074,7 @@ namespace RTC
 
 						this->tccClient = std::make_shared<RTC::TransportCongestionControlClient>(
 						  this,
+						  this->shared,
 						  bweType,
 						  this->initialAvailableOutgoingBitrate,
 						  this->maxOutgoingBitrate,
@@ -2554,12 +2555,12 @@ namespace RTC
 
 		// TODO: Missing trace info (RTP packet dump).
 		auto notification = FBS::Transport::CreateTraceNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(),
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
 		  FBS::Transport::TraceEventType::PROBATION,
 		  DepLibUV::GetTimeMs(),
 		  FBS::Common::TraceDirection::DIRECTION_OUT);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_TRACE,
 		  FBS::Notification::Body::Transport_TraceNotification,
@@ -2577,7 +2578,7 @@ namespace RTC
 		}
 
 		auto traceInfo = FBS::Transport::CreateBweTraceInfo(
-		  this->shared->channelNotifier->GetBufferBuilder(),
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
 		  this->tccClient->GetBweType() == RTC::BweType::TRANSPORT_CC
 		    ? FBS::Transport::BweType::TRANSPORT_CC
 		    : FBS::Transport::BweType::REMB,
@@ -2590,14 +2591,14 @@ namespace RTC
 		  bitrates.availableBitrate);
 
 		auto notification = FBS::Transport::CreateTraceNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(),
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
 		  FBS::Transport::TraceEventType::BWE,
 		  DepLibUV::GetTimeMs(),
 		  FBS::Common::TraceDirection::DIRECTION_OUT,
 		  FBS::Transport::TraceInfo::BweTraceInfo,
 		  traceInfo.Union());
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_TRACE,
 		  FBS::Notification::Body::Transport_TraceNotification,
@@ -3033,9 +3034,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::CONNECTING);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::CONNECTING);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3059,9 +3061,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::CONNECTED);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::CONNECTED);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3090,9 +3093,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::FAILED);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::FAILED);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3117,9 +3121,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::CLOSED);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::CLOSED);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3214,9 +3219,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::CONNECTING);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::CONNECTING);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3240,9 +3246,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::CONNECTED);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::CONNECTED);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3266,9 +3273,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::FAILED);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::FAILED);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
@@ -3292,9 +3300,10 @@ namespace RTC
 
 		// Notify the Node Transport.
 		auto sctpStateChangeOffset = FBS::Transport::CreateSctpStateChangeNotification(
-		  this->shared->channelNotifier->GetBufferBuilder(), FBS::SctpAssociation::SctpState::CLOSED);
+		  this->shared->GetChannelNotifier()->GetBufferBuilder(),
+		  FBS::SctpAssociation::SctpState::CLOSED);
 
-		this->shared->channelNotifier->Emit(
+		this->shared->GetChannelNotifier()->Emit(
 		  this->id,
 		  FBS::Notification::Event::TRANSPORT_SCTP_STATE_CHANGE,
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
