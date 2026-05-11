@@ -111,13 +111,13 @@ SCENARIO("SCTP RetransmissionQueue", "[sctp][retransmissionqueue]")
 		};
 	};
 
-	auto createSackChunk = [](
+	auto createSackChunk = [sctpOptions](
 	                         uint32_t tsn,
 	                         uint32_t arwnd,
 	                         const std::vector<RTC::SCTP::SackChunk::GapAckBlock>&& gapAckBlocks = {})
 	{
 		std::unique_ptr<RTC::SCTP::SackChunk> chunk{ RTC::SCTP::SackChunk::Factory(
-			sctpCommon::FactoryBuffer, Mtu) };
+			sctpCommon::FactoryBuffer, sctpOptions.mtu) };
 
 		chunk->SetCumulativeTsnAck(tsn);
 		chunk->SetAdvertisedReceiverWindowCredit(arwnd);

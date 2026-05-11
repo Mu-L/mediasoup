@@ -17,7 +17,7 @@ namespace RTC
 	{
 		/* Static. */
 
-		alignas(4) thread_local static uint8_t PacketFactoryBuffer[RTC::Consts::MaxSafeMtuSizeForSctp];
+		alignas(4) thread_local static uint8_t PacketFactoryBuffer[65536];
 
 		/* Instance methods. */
 
@@ -34,6 +34,7 @@ namespace RTC
 		  uint32_t remoteAdvertisedReceiverWindowCredit,
 		  uint64_t tieTag,
 		  const NegotiatedCapabilities& negotiatedCapabilities,
+		  size_t maxPacketLength,
 		  std::function<bool()> isAssociationEstablished)
 		  : associationListener(associationListener),
 		    sctpOptions(sctpOptions),
@@ -46,6 +47,7 @@ namespace RTC
 		    remoteAdvertisedReceiverWindowCredit(remoteAdvertisedReceiverWindowCredit),
 		    tieTag(tieTag),
 		    negotiatedCapabilities(negotiatedCapabilities),
+		    maxPacketLength(maxPacketLength),
 		    isAssociationEstablished(std::move(isAssociationEstablished)),
 		    t3RtxTimer(this->shared->CreateBackoffTimer(
 		      BackoffTimerHandleInterface::BackoffTimerHandleOptions{
@@ -162,7 +164,7 @@ namespace RTC
 			MS_TRACE();
 
 			auto packet =
-			  std::unique_ptr<Packet>(Packet::Factory(PacketFactoryBuffer, sizeof(PacketFactoryBuffer)));
+			  std::unique_ptr<Packet>{ Packet::Factory(PacketFactoryBuffer, this->maxPacketLength) };
 
 			packet->SetSourcePort(this->sctpOptions.sourcePort);
 			packet->SetDestinationPort(this->sctpOptions.destinationPort);

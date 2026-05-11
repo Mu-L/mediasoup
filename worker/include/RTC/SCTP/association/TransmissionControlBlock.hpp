@@ -47,6 +47,7 @@ namespace RTC
 			  uint32_t remoteAdvertisedReceiverWindowCredit,
 			  uint64_t tieTag,
 			  const NegotiatedCapabilities& negotiatedCapabilities,
+			  size_t maxPacketLength,
 			  std::function<bool()> isAssociationEstablished);
 
 			~TransmissionControlBlock() override;
@@ -301,6 +302,8 @@ namespace RTC
 			// Nonce, used to detect reconnections.
 			uint64_t tieTag{ 0 };
 			NegotiatedCapabilities negotiatedCapabilities;
+			// Max SCTP Packet length.
+			const size_t maxPacketLength;
 			std::function<bool()> isAssociationEstablished;
 			// The data retransmission timer.
 			const std::unique_ptr<BackoffTimerHandleInterface> t3RtxTimer;

@@ -27,7 +27,7 @@ namespace RTC
 	{
 		/* Static. */
 
-		alignas(4) thread_local static uint8_t PacketFactoryBuffer[RTC::Consts::MaxSafeMtuSizeForSctp];
+		alignas(4) thread_local static uint8_t PacketFactoryBuffer[65536];
 		// @see https://tools.ietf.org/html/rfc9260#section-5.1
 		constexpr uint32_t MinVerificationTag{ 1 };
 		constexpr uint32_t MaxVerificationTag{ std::numeric_limits<uint32_t>::max() };
@@ -75,7 +75,8 @@ namespace RTC
 		        .baseTimeoutMs       = sctpOptions.t2ShutdownTimeoutMs,
 		        .backoffAlgorithm    = BackoffTimerHandleInterface::BackoffAlgorithm::EXPONENTIAL,
 		        .maxBackoffTimeoutMs = sctpOptions.timerMaxBackoffTimeoutMs,
-		        .maxRestarts         = sctpOptions.maxRetransmissions }))
+		        .maxRestarts         = sctpOptions.maxRetransmissions })),
+		    maxPacketLength(Utils::Byte::PadDownTo4Bytes(this->sctpOptions.mtu))
 		{
 			MS_TRACE();
 		}
@@ -725,6 +726,7 @@ namespace RTC
 			  remoteAdvertisedReceiverWindowCredit,
 			  tieTag,
 			  negotiatedCapabilities,
+			  this->maxPacketLength,
 			  [this]()
 			  {
 				  return this->state == State::ESTABLISHED;
@@ -752,7 +754,7 @@ namespace RTC
 			MS_TRACE();
 
 			auto packet =
-			  std::unique_ptr<Packet>(Packet::Factory(PacketFactoryBuffer, sizeof(PacketFactoryBuffer)));
+			  std::unique_ptr<Packet>{ Packet::Factory(PacketFactoryBuffer, this->maxPacketLength) };
 
 			packet->SetSourcePort(this->sctpOptions.sourcePort);
 			packet->SetDestinationPort(this->sctpOptions.destinationPort);

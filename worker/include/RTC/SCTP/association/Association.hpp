@@ -496,6 +496,8 @@ namespace RTC
 			const std::unique_ptr<BackoffTimerHandleInterface> t1CookieTimer;
 			// T2-shutdown timer.
 			const std::unique_ptr<BackoffTimerHandleInterface> t2ShutdownTimer;
+			// Max SCTP Packet length.
+			const size_t maxPacketLength;
 		};
 	} // namespace SCTP
 } // namespace RTC
