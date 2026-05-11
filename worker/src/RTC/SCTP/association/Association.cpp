@@ -1682,8 +1682,9 @@ namespace RTC
 			// "A COOKIE ACK chunk MAY be bundled with any pending DATA chunks (and/or
 			// SACK chunks), but the COOKIE ACK chunk MUST be the first chunk in the
 			// packet."
-			// TODO: SCTP: Implement it. Note that we pass Packet as argument!
-			// this->tcb->SendBufferedPackets(packet.get(), nowMs);
+			const uint64_t nowMs = this->shared->GetTimeMs();
+
+			this->tcb->SendBufferedPackets(packet.get(), nowMs);
 
 			// TODO: SCTP: Remove this since COOKIE_ACK must be sent by
 			// tcb->SendBufferedPackets() call above.

@@ -18,7 +18,7 @@ namespace RTC
 		  AssociationListener& associationListener,
 		  SharedInterface* shared,
 		  TransmissionControlBlockInterface* tcbContext,
-		  // TODO: SCTP: Implement
+		  // TODO: SCTP: Implement it.
 		  // DataTracker* dataTracker,
 		  // ReassemblyQueue* reassemblyQueue,
 		  RetransmissionQueue* retransmissionQueue)
@@ -301,7 +301,7 @@ namespace RTC
 			// "In Progress" request. In all cases, re-evaluate the state.
 			this->lastProcessedReqSeqNbr = requestSn;
 
-			// // TODO: SCTP implement.
+			// // TODO: SCTP implement it.
 			// if (this->dataTracker->IsLaterThanCumulativeAckedTsn(
 			//         receivedOutgoingSsnResetRequestParameter->GetSenderLastAssignedTsn()))
 			// {

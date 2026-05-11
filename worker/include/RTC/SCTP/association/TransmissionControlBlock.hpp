@@ -309,11 +309,11 @@ namespace RTC
 			const std::unique_ptr<BackoffTimerHandleInterface> delayedAckTimer;
 			RetransmissionTimeout rto;
 			RetransmissionErrorCounter txErrorCounter;
-			// TODO: SCTP: Implement.
+			// TODO: SCTP: Implement it.
 			// DataTracker dataTracker;
-			// TODO: SCTP: Implement.
+			// TODO: SCTP: Implement it.
 			// ReassemblyQueue reassemblyQueue;
-			// TODO: SCTP: Implement.
+			// TODO: SCTP: Implement it.
 			RetransmissionQueue retransmissionQueue;
 			StreamResetHandler streamResetHandler;
 			HeartbeatHandler heartbeatHandler;

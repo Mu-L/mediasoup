@@ -169,7 +169,7 @@ namespace RTC
 			  AssociationListener& associationListener,
 			  SharedInterface* shared,
 			  TransmissionControlBlockInterface* tcbContext,
-			  // TODO: SCTP: Implement
+			  // TODO: SCTP: Implement it.
 			  // DataTracker* dataTracker,
 			  // ReassemblyQueue* reassemblyQueue,
 			  RetransmissionQueue* retransmissionQueue);
@@ -265,9 +265,9 @@ namespace RTC
 			AssociationListener& associationListener;
 			SharedInterface* shared;
 			TransmissionControlBlockInterface* tcbContext;
-			// TODO: SCTP: Implement
-			// DataTracker* dataTracker;,
-			// TODO: SCTP: Implement
+			// TODO: SCTP: Implement it.
+			// DataTracker* dataTracker,
+			// TODO: SCTP: Implement it.
 			// ReassemblyQueue* reassemblyQueue;,
 			RetransmissionQueue* retransmissionQueue;
 			UnwrappedReConfigRequestSn::Unwrapper incomingReConfigRequestSnUnwrapper;
