@@ -7,7 +7,7 @@
 #include "RTC/SCTP/packet/chunks/ForwardTsnChunk.hpp"
 #include "RTC/SCTP/packet/chunks/IForwardTsnChunk.hpp"
 #include "RTC/SCTP/packet/chunks/SackChunk.hpp"
-#include "RTC/SCTP/public/AssociationListener.hpp"
+#include "RTC/SCTP/public/AssociationListenerInterface.hpp"
 #include "RTC/SCTP/public/SctpOptions.hpp"
 #include "RTC/SCTP/tx/OutstandingData.hpp"
 #include "RTC/SCTP/tx/SendQueueInterface.hpp"
@@ -65,7 +65,7 @@ namespace RTC
 			 */
 			RetransmissionQueue(
 			  Listener* listener,
-			  AssociationListener& associationListener,
+			  AssociationListenerInterface& associationListener,
 			  uint32_t localInitialTsn,
 			  uint32_t remoteAdvertisedReceiverWindowCredit,
 			  SendQueueInterface& sendQueue,
@@ -193,19 +193,19 @@ namespace RTC
 			bool ShouldSendForwardTsn(uint64_t nowMs);
 
 			/**
-			 * Creates a FORWARD-TSN Chunk and adds it to the given Packet.
+			 * Adds a FORWARD-TSN Chunk to the given Packet and returns it.
 			 */
-			const ForwardTsnChunk* CreateForwardTsn(Packet* packet) const
+			const ForwardTsnChunk* AddForwardTsn(Packet* packet) const
 			{
-				return this->outstandingData.CreateForwardTsn(packet);
+				return this->outstandingData.AddForwardTsn(packet);
 			}
 
 			/**
-			 * Creates an I-FORWARD-TSN Chunk and adds it to the given Packet.
+			 * Adds an I-FORWARD-TSN Chunk to the given Packet and returns it.
 			 */
-			const IForwardTsnChunk* CreateIForwardTsn(Packet* packet) const
+			const IForwardTsnChunk* AddIForwardTsn(Packet* packet) const
 			{
-				return this->outstandingData.CreateIForwardTsn(packet);
+				return this->outstandingData.AddIForwardTsn(packet);
 			}
 
 			/**
@@ -295,7 +295,7 @@ namespace RTC
 
 		private:
 			Listener* listener;
-			AssociationListener& associationListener;
+			AssociationListenerInterface& associationListener;
 			const SctpOptions sctpOptions;
 			// If the peer supports RFC3758 "SCTP Partial Reliability Extension".
 			bool supportsPartialReliability;

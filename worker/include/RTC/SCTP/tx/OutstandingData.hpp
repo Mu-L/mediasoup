@@ -266,12 +266,21 @@ namespace RTC
 				}
 
 				const uint32_t outgoingMessageId;
+				// The actual data to send/retransmit.
+				const UserData data;
 				// When the packet was sent, and placed in this queue.
 				const uint64_t timeSentMs;
 				// If the message was sent with a maximum number of retransmissions,
 				// this is set to that number. The value zero (0) means that it will
 				// never be retransmitted.
 				const uint16_t maxRetransmissions;
+				// At this exact millisecond, the item is considered expired. If the
+				// message is not to be expired, this is set to the infinite future.
+				// NOTE: If 0 it means infinite time.
+				const uint64_t expiresAtMs;
+				// An optional lifecycle id, which may only be set for the last
+				// fragment.
+				const std::optional<uint64_t> lifecycleId;
 				// Indicates the life cycle status of this Chunk.
 				Lifecycle lifecycle{ Lifecycle::ACTIVE };
 				// Indicates the presence of this Chunk, if it's in flight (UNACKED),
@@ -283,15 +292,6 @@ namespace RTC
 				uint8_t nackCount{ 0 };
 				// The number of times the DATA Chunk has been retransmitted.
 				uint16_t numRetransmissions{ 0 };
-				// At this exact millisecond, the item is considered expired. If the
-				// message is not to be expired, this is set to the infinite future.
-				// NOTE: If 0 it means infinite time.
-				const uint64_t expiresAtMs;
-				// An optional lifecycle id, which may only be set for the last
-				// fragment.
-				const std::optional<uint64_t> lifecycleId;
-				// The actual data to send/retransmit.
-				const UserData data;
 			};
 
 		public:
@@ -397,14 +397,14 @@ namespace RTC
 			void NackAll();
 
 			/**
-			 * Creates a FORWARD-TSN Chunk and adds it to the given Packet.
+			 * Adds a FORWARD-TSN Chunk to the given Packet and returns it.
 			 */
-			const ForwardTsnChunk* CreateForwardTsn(Packet* packet) const;
+			const ForwardTsnChunk* AddForwardTsn(Packet* packet) const;
 
 			/**
-			 * Creates an I-FORWARD-TSN Chunk and adds it to the given Packet.
+			 * Adds an I-FORWARD-TSN Chunk to the given Packet and returns it.
 			 */
-			const IForwardTsnChunk* CreateIForwardTsn(Packet* packet) const;
+			const IForwardTsnChunk* AddIForwardTsn(Packet* packet) const;
 
 			/**
 			 * Given the current time and a TSN, it returns the measured RTT between

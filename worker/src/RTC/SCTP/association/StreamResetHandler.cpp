@@ -6,7 +6,6 @@
 #include "Logger.hpp"
 #include "RTC/SCTP/packet/Parameter.hpp"
 #include "RTC/SCTP/packet/parameters/ReconfigurationResponseParameter.hpp"
-#include "handles/BackoffTimerHandle.hpp"
 
 namespace RTC
 {
@@ -15,9 +14,9 @@ namespace RTC
 		/* Instance methods. */
 
 		StreamResetHandler::StreamResetHandler(
-		  AssociationListener& associationListener,
+		  AssociationListenerInterface& associationListener,
 		  SharedInterface* shared,
-		  TransmissionControlBlockInterface* tcbContext,
+		  TransmissionControlBlockContextInterface* tcbContext,
 		  // TODO: SCTP: Implement it.
 		  // DataTracker* dataTracker,
 		  // ReassemblyQueue* reassemblyQueue,
@@ -58,7 +57,7 @@ namespace RTC
 			}
 		}
 
-		bool StreamResetHandler::ShouldCreateStreamResetRequest() const
+		bool StreamResetHandler::ShouldSendStreamResetRequest() const
 		{
 			MS_TRACE();
 
@@ -68,11 +67,11 @@ namespace RTC
 			       this->retransmissionQueue->HasStreamsReadyToBeReset();
 		}
 
-		void StreamResetHandler::CreateStreamResetRequest(Packet* packet)
+		void StreamResetHandler::AddStreamResetRequest(Packet* packet)
 		{
 			MS_TRACE();
 
-			MS_ASSERT(ShouldCreateStreamResetRequest(), "should not create a stream reset request");
+			MS_ASSERT(ShouldSendStreamResetRequest(), "should not send a stream reset request");
 
 			this->currentRequest.emplace(
 			  this->retransmissionQueue->GetLastAssignedTsn(),
@@ -81,7 +80,7 @@ namespace RTC
 			this->reConfigTimer->SetBaseTimeoutMs(this->tcbContext->GetCurrentRtoMs());
 			this->reConfigTimer->Start();
 
-			CreateReConfigChunk(packet);
+			AddReConfigChunk(packet);
 		}
 
 		void StreamResetHandler::HandleReceivedReConfigChunk(const ReConfigChunk* receivedReConfigChunk)
@@ -139,7 +138,7 @@ namespace RTC
 
 			if (reConfigChunk->GetParametersCount() > 0)
 			{
-				this->tcbContext->Send(packet.get());
+				this->tcbContext->SendPacket(packet.get());
 			}
 		}
 
@@ -194,7 +193,7 @@ namespace RTC
 			return false;
 		}
 
-		void StreamResetHandler::CreateReConfigChunk(Packet* packet)
+		void StreamResetHandler::AddReConfigChunk(Packet* packet)
 		{
 			MS_TRACE();
 
@@ -489,9 +488,9 @@ namespace RTC
 
 			auto packet = this->tcbContext->CreatePacket();
 
-			CreateReConfigChunk(packet.get());
+			AddReConfigChunk(packet.get());
 
-			this->tcbContext->Send(packet.get());
+			this->tcbContext->SendPacket(packet.get());
 
 			baseTimeoutMs = this->tcbContext->GetCurrentRtoMs();
 		}

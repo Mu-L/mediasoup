@@ -3,13 +3,13 @@
 
 #include "common.hpp"
 #include "SharedInterface.hpp"
-#include "RTC/SCTP/association/TransmissionControlBlockInterface.hpp"
+#include "RTC/SCTP/association/TransmissionControlBlockContextInterface.hpp"
 #include "RTC/SCTP/packet/Packet.hpp"
 #include "RTC/SCTP/packet/chunks/ReConfigChunk.hpp"
 #include "RTC/SCTP/packet/parameters/IncomingSsnResetRequestParameter.hpp"
 #include "RTC/SCTP/packet/parameters/OutgoingSsnResetRequestParameter.hpp"
 #include "RTC/SCTP/packet/parameters/ReconfigurationResponseParameter.hpp"
-#include "RTC/SCTP/public/AssociationListener.hpp"
+#include "RTC/SCTP/public/AssociationListenerInterface.hpp"
 #include "RTC/SCTP/tx/RetransmissionQueue.hpp"
 #include "Utils/UnwrappedSequenceNumber.hpp"
 #include "handles/BackoffTimerHandleInterface.hpp"
@@ -166,9 +166,9 @@ namespace RTC
 
 		public:
 			StreamResetHandler(
-			  AssociationListener& associationListener,
+			  AssociationListenerInterface& associationListener,
 			  SharedInterface* shared,
-			  TransmissionControlBlockInterface* tcbContext,
+			  TransmissionControlBlockContextInterface* tcbContext,
 			  // TODO: SCTP: Implement it.
 			  // DataTracker* dataTracker,
 			  // ReassemblyQueue* reassemblyQueue,
@@ -191,17 +191,17 @@ namespace RTC
 			 * there is no need to create a request (no streams to reset) or if there
 			 * already is an ongoing stream reset request that hasn't completed yet.
 			 */
-			bool ShouldCreateStreamResetRequest() const;
+			bool ShouldSendStreamResetRequest() const;
 
 			/**
-			 * Creates a Reset Streams request that must be sent if returned. Will
-			 * start the reconfig timer.
+			 * Adds a Reset Streams request to the given Packet. Will start the
+			 * reconfig timer.
 			 *
 			 * @remarks
 			 * - The caller must check `ShouldCreateStreamResetRequest()` first and
 			 *   only invoke this method if the former returns `true`.
 			 */
-			void CreateStreamResetRequest(Packet* packet);
+			void AddStreamResetRequest(Packet* packet);
 
 			/**
 			 * Called when handling and incoming RE-CONFIG chunk. Processes a stream
@@ -220,7 +220,7 @@ namespace RTC
 			 * Adds the actual RE-CONFIG chunk to the given Packet. A request (which
 			 * set `this->currentRequest`) must have been created prior.
 			 */
-			void CreateReConfigChunk(Packet* packet);
+			void AddReConfigChunk(Packet* packet);
 
 			/**
 			 * Called to validate the `reqSeqNbr`, that it's the next in sequence.
@@ -262,9 +262,9 @@ namespace RTC
 			  BackoffTimerHandleInterface* backoffTimer, uint64_t& baseTimeoutMs, bool& stop) override;
 
 		private:
-			AssociationListener& associationListener;
+			AssociationListenerInterface& associationListener;
 			SharedInterface* shared;
-			TransmissionControlBlockInterface* tcbContext;
+			TransmissionControlBlockContextInterface* tcbContext;
 			// TODO: SCTP: Implement it.
 			// DataTracker* dataTracker,
 			// TODO: SCTP: Implement it.
@@ -273,13 +273,13 @@ namespace RTC
 			UnwrappedReConfigRequestSn::Unwrapper incomingReConfigRequestSnUnwrapper;
 			const std::unique_ptr<BackoffTimerHandleInterface> reConfigTimer;
 			// The next sequence number for outgoing stream requests.
-			uint32_t nextOutgoingReqSeqNbr{ 0 };
-			// The current stream request operation.
-			std::optional<CurrentRequest> currentRequest;
+			uint32_t nextOutgoingReqSeqNbr;
 			// For incoming requests. Last processed request sequence number.
 			UnwrappedReConfigRequestSn lastProcessedReqSeqNbr;
 			// The result from last processed incoming request.
 			ReconfigurationResponseParameter::Result lastProcessedReqResult;
+			// The current stream request operation.
+			std::optional<CurrentRequest> currentRequest;
 		};
 	} // namespace SCTP
 } // namespace RTC

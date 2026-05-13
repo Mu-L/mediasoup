@@ -28,11 +28,11 @@ namespace RTC
 		  uint64_t expiresAtMs,
 		  std::optional<uint64_t> lifecycleId)
 		  : outgoingMessageId(outgoingMessageId),
+		    data(std::move(data)),
 		    timeSentMs(timeSentMs),
 		    maxRetransmissions(maxRetransmissions),
 		    expiresAtMs(expiresAtMs),
-		    lifecycleId(lifecycleId),
-		    data(std::move(data))
+		    lifecycleId(lifecycleId)
 		{
 			MS_TRACE();
 		}
@@ -300,7 +300,7 @@ namespace RTC
 			AssertIsConsistent();
 		}
 
-		const ForwardTsnChunk* OutstandingData::CreateForwardTsn(Packet* packet) const
+		const ForwardTsnChunk* OutstandingData::AddForwardTsn(Packet* packet) const
 		{
 			MS_TRACE();
 
@@ -344,7 +344,7 @@ namespace RTC
 			return forwardTsnChunk;
 		}
 
-		const IForwardTsnChunk* OutstandingData::CreateIForwardTsn(Packet* packet) const
+		const IForwardTsnChunk* OutstandingData::AddIForwardTsn(Packet* packet) const
 		{
 			MS_TRACE();
 

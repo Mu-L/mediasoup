@@ -18,8 +18,24 @@ BackoffTimerHandle::BackoffTimerHandle(BackoffTimerHandleOptions options)
 {
 	MS_TRACE();
 
-	// NOTE: This may throw.
-	SetBaseTimeoutMs(baseTimeoutMs);
+	if (!this->listener)
+	{
+		MS_THROW_TYPE_ERROR("options.listener must be given");
+	}
+
+	if (this->label.empty())
+	{
+		MS_THROW_TYPE_ERROR("options.label must be given");
+	}
+
+	if (this->baseTimeoutMs > BackoffTimerHandleInterface::MaxTimeoutMs)
+	{
+		MS_THROW_ERROR(
+		  "[%s] base timeout (%" PRIu64 " ms) cannot be greater than %" PRIu64 " ms",
+		  this->label.c_str(),
+		  this->baseTimeoutMs,
+		  BackoffTimerHandleInterface::MaxTimeoutMs);
+	}
 
 	this->timer = new TimerHandle(this);
 }
@@ -110,7 +126,7 @@ void BackoffTimerHandle::OnTimer(TimerHandleInterface* /*timer*/)
 	this->expirationCount++;
 
 	// Compute whether the BackoffTimer should still be running after this timeout
-	// expiration so the parent can check IsRunning() within the OnBackoffTimer()
+	// expiration so the parent can check IsRunning() within the `OnBackoffTimer()`
 	// callback.
 	this->running =
 	  !this->maxRestarts.has_value() || this->expirationCount <= this->maxRestarts.value();

@@ -7,7 +7,6 @@
 #include "Utils.hpp"
 #include "RTC/SCTP/packet/parameters/HeartbeatInfoParameter.hpp"
 #include "RTC/SCTP/public/SctpTypes.hpp"
-#include "handles/BackoffTimerHandle.hpp"
 #include <string>
 
 namespace RTC
@@ -21,10 +20,10 @@ namespace RTC
 		/* Instance methods. */
 
 		HeartbeatHandler::HeartbeatHandler(
-		  AssociationListener& associationListener,
+		  AssociationListenerInterface& associationListener,
 		  const SctpOptions& sctpOptions,
 		  SharedInterface* shared,
-		  TransmissionControlBlockInterface* tcbContext)
+		  TransmissionControlBlockContextInterface* tcbContext)
 		  : associationListener(associationListener),
 		    sctpOptions(sctpOptions),
 		    shared(shared),
@@ -49,6 +48,11 @@ namespace RTC
 		        .maxRestarts         = 0 }))
 		{
 			MS_TRACE();
+
+			// The interval timer must always be running as long as the association
+			// is up (so when the TCB is created, which is the one that creates the
+			// HeartbeatHandler.
+			RestartTimer();
 		}
 
 		HeartbeatHandler::~HeartbeatHandler()
@@ -106,7 +110,7 @@ namespace RTC
 
 			heartbeatAckChunk->Consolidate();
 
-			this->tcbContext->Send(packet.get());
+			this->tcbContext->SendPacket(packet.get());
 		}
 
 		void HeartbeatHandler::HandleReceivedHeartbeatAckChunk(
@@ -204,7 +208,7 @@ namespace RTC
 
 			MS_DEBUG_DEV("sending HEARTBEAT_REQUEST Chunk with info content [nowMs:%" PRIu64 "]", nowMs);
 
-			this->tcbContext->Send(packet.get());
+			this->tcbContext->SendPacket(packet.get());
 		}
 
 		void HeartbeatHandler::OnTimeoutTimer(uint64_t& /*baseTimeoutMs*/, bool& /*stop*/)

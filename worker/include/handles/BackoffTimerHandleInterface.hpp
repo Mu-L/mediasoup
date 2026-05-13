@@ -41,9 +41,9 @@ public:
 	struct BackoffTimerHandleOptions
 	{
 		/**
-		 * Listener on which OnTimer() callback will be invoked.
+		 * Listener on which `OnBackoffTimer()` callback will be invoked.
 		 */
-		BackoffTimerHandleInterface::Listener* listener;
+		BackoffTimerHandleInterface::Listener* listener{ nullptr };
 		/**
 		 * Label.
 		 */

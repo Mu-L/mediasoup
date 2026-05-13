@@ -19,17 +19,7 @@ namespace mocks
 		explicit MockBackoffTimerHandle(
 		  BackoffTimerHandleOptions options,
 		  std::function<uint64_t()> getTimeMs,
-		  std::function<void()> onDelete)
-		  : label(std::move(options.label)),
-		    baseTimeoutMs(options.baseTimeoutMs),
-		    backoffAlgorithm(options.backoffAlgorithm),
-		    maxBackoffTimeoutMs(options.maxBackoffTimeoutMs),
-		    maxRestarts(options.maxRestarts),
-		    getTimeMs(std::move(getTimeMs)),
-		    onDelete(std::move(onDelete))
-		{
-			SetBaseTimeoutMs(baseTimeoutMs);
-		}
+		  std::function<void()> onDelete);
 
 	public:
 		MockBackoffTimerHandle& operator=(const MockBackoffTimerHandle&) = delete;
@@ -56,10 +46,15 @@ namespace mocks
 			this->expiresAtMs = std::numeric_limits<uint64_t>::max();
 		}
 
-		void SetBaseTimeoutMs(uint64_t baseTimeoutMs) override
-		{
-			this->baseTimeoutMs = baseTimeoutMs;
-		}
+		/**
+		 * @remarks
+		 * - This method must be defined in the .cpp since it's called by the
+		 *   constructor. Otherwise clang-tidy complains:
+		 *   "warning: Call to virtual method 'BackoffTimerHandle::SetBaseTimeoutMs'
+		 *   during construction bypasses virtual dispatch
+		 *   [clang-analyzer-optin.cplusplus.VirtualCall]"
+		 */
+		void SetBaseTimeoutMs(uint64_t baseTimeoutMs) override;
 
 		bool IsRunning() const override
 		{
@@ -81,8 +76,8 @@ namespace mocks
 			return this->expirationCount;
 		}
 
-		// For tests.
-
+		// Methods for testing.
+	public:
 		uint64_t GetExpiresAtMs() const
 		{
 			return this->expiresAtMs;
@@ -92,8 +87,7 @@ namespace mocks
 		{
 			if (this->getTimeMs() >= this->expiresAtMs)
 			{
-				this->expirationCount++;
-				this->expiresAtMs = std::numeric_limits<uint64_t>::max();
+				TriggerExpire();
 
 				return true;
 			}
@@ -137,10 +131,13 @@ namespace mocks
 			}
 		}
 
+		void TriggerExpire();
+
 	private:
-		// Given by argument.
+		// Passed by argument.
+		BackoffTimerHandleInterface::Listener* listener{ nullptr };
 		const std::string label;
-		uint64_t baseTimeoutMs{ 0 };
+		uint64_t baseTimeoutMs;
 		BackoffAlgorithm backoffAlgorithm;
 		std::optional<uint64_t> maxBackoffTimeoutMs;
 		std::optional<size_t> maxRestarts;

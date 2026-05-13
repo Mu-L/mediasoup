@@ -4,8 +4,6 @@
 #include "common.hpp"
 #include "RTC/SCTP/packet/Packet.hpp"
 #include "RTC/SCTP/packet/chunks/IDataChunk.hpp"
-#include "RTC/SCTP/public/AssociationListener.hpp"
-#include "RTC/SCTP/public/SctpOptions.hpp"
 #include "RTC/SCTP/tx/SendQueueInterface.hpp"
 #include <set>
 
@@ -219,20 +217,15 @@ namespace RTC
 
 		private:
 			const size_t maxPayloadBytes;
-
 			// The current virtual time, as defined in the WFQ algorithm.
 			double virtualTime{ 0.0 };
-
 			// The current stream to send chunks from.
 			Stream* currentStream{ nullptr };
-
 			bool enableMessageInterleaving{ false };
-
-			// Indicates if the streams is currently sending a message, and should then
-			// - if message interleaving is not enabled - continue sending from this
-			// stream until that message has been sent in full.
+			// Indicates if the streams is currently sending a message, and should
+			// then (if message interleaving is not enabled) continue sending from
+			// this stream until that message has been sent in full.
 			bool currentlySendingAMessage{ false };
-
 			// The currently active streams, ordered by virtual finish time.
 			std::set<Stream*, ActiveStreamComparator> activeStreams;
 		};

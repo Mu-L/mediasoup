@@ -7,9 +7,9 @@
 #include "RTC/SCTP/association/NegotiatedCapabilities.hpp"
 #include "RTC/SCTP/association/PacketSender.hpp"
 #include "RTC/SCTP/association/StreamResetHandler.hpp"
-#include "RTC/SCTP/association/TransmissionControlBlockInterface.hpp"
+#include "RTC/SCTP/association/TransmissionControlBlockContextInterface.hpp"
 #include "RTC/SCTP/packet/Packet.hpp"
-#include "RTC/SCTP/public/AssociationListener.hpp"
+#include "RTC/SCTP/public/AssociationListenerInterface.hpp"
 #include "RTC/SCTP/public/SctpOptions.hpp"
 #include "RTC/SCTP/tx/RetransmissionErrorCounter.hpp"
 #include "RTC/SCTP/tx/RetransmissionQueue.hpp"
@@ -29,13 +29,13 @@ namespace RTC
 		 *
 		 * @see https://datatracker.ietf.org/doc/html/rfc9260#section-14
 		 */
-		class TransmissionControlBlock : public TransmissionControlBlockInterface,
+		class TransmissionControlBlock : public TransmissionControlBlockContextInterface,
 		                                 public RetransmissionQueue::Listener,
 		                                 public BackoffTimerHandleInterface::Listener
 		{
 		public:
 			TransmissionControlBlock(
-			  AssociationListener& associationListener,
+			  AssociationListenerInterface& associationListener,
 			  const SctpOptions& sctpOptions,
 			  SharedInterface* shared,
 			  SendQueueInterface& sendQueue,
@@ -57,7 +57,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			bool IsAssociationEstablished() const override
 			{
@@ -89,7 +89,7 @@ namespace RTC
 			 * Chunk.
 			 *
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			uint32_t GetLocalInitialTsn() const override
 			{
@@ -101,7 +101,7 @@ namespace RTC
 			 * INIT_ACK Chunk.
 			 *
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			uint32_t GetRemoteInitialTsn() const override
 			{
@@ -135,7 +135,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			void ObserveRttMs(uint64_t rttMs) override;
 
@@ -146,7 +146,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			uint64_t GetCurrentRtoMs() const override
 			{
@@ -160,7 +160,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			std::unique_ptr<Packet> CreatePacket() const override;
 
@@ -168,9 +168,9 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
-			void Send(Packet* packet) override;
+			bool SendPacket(Packet* packet) override;
 
 			// TODO: SCTP: Implement it.
 			// DataTracker& GetDataTracker()
@@ -225,10 +225,10 @@ namespace RTC
 			void MaySendSackChunk();
 
 			/**
-			 * Sends a FORWARD-TSN or I-FORWARD-TSN Chunk if it is needed and allowed
-			 * (rate-limited).
+			 * May add a FORWARD-TSN or I-FORWARD-TSN Chunk to the given Packet if it
+			 * is needed and allowed (rate-limited).
 			 */
-			void MaybeSendForwardTsnChunk(Packet* packet, uint64_t nowMs);
+			void MayAddForwardTsnChunk(Packet* packet, uint64_t nowMs);
 
 			void MaySendFastRetransmit();
 
@@ -248,7 +248,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			bool IncrementTxErrorCounter(std::string_view reason) override
 			{
@@ -257,7 +257,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			void ClearTxErrorCounter() override
 			{
@@ -266,7 +266,7 @@ namespace RTC
 
 			/**
 			 * @remarks
-			 * - Implements TransmissionControlBlockInterface interface.
+			 * - Implements TransmissionControlBlockContextInterface.
 			 */
 			bool HasTooManyTxErrors() const override
 			{
@@ -290,17 +290,17 @@ namespace RTC
 			  BackoffTimerHandleInterface* backoffTimer, uint64_t& baseTimeoutMs, bool& stop) override;
 
 		private:
-			AssociationListener& associationListener;
+			AssociationListenerInterface& associationListener;
 			const SctpOptions sctpOptions;
 			SharedInterface* shared;
 			PacketSender& packetSender;
-			uint32_t localVerificationTag{ 0 };
-			uint32_t remoteVerificationTag{ 0 };
-			uint32_t localInitialTsn{ 0 };
-			uint32_t remoteInitialTsn{ 0 };
-			uint32_t remoteAdvertisedReceiverWindowCredit{ 0 };
+			uint32_t localVerificationTag;
+			uint32_t remoteVerificationTag;
+			uint32_t localInitialTsn;
+			uint32_t remoteInitialTsn;
+			uint32_t remoteAdvertisedReceiverWindowCredit;
 			// Nonce, used to detect reconnections.
-			uint64_t tieTag{ 0 };
+			uint64_t tieTag;
 			NegotiatedCapabilities negotiatedCapabilities;
 			// Max SCTP Packet length.
 			const size_t maxPacketLength;
@@ -316,13 +316,11 @@ namespace RTC
 			// DataTracker dataTracker;
 			// TODO: SCTP: Implement it.
 			// ReassemblyQueue reassemblyQueue;
-			// TODO: SCTP: Implement it.
 			RetransmissionQueue retransmissionQueue;
 			StreamResetHandler streamResetHandler;
 			HeartbeatHandler heartbeatHandler;
 			// Rate limiting of FORWARD_TSN. Next can be sent at or after this
 			// timestamp.
-			// TODO: SCTP: Uncomment.
 			uint64_t limitForwardTsnUntilMs{ 0 };
 			// Only valid when state is State::COOKIE_ECHOED. In this state, the
 			// Association must wait for COOKIE_ACK to continue sending any packets (not
