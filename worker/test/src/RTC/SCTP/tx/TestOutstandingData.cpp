@@ -8,6 +8,7 @@
 #include "RTC/SCTP/public/SctpTypes.hpp"
 #include "RTC/SCTP/tx/OutstandingData.hpp"
 #include <catch2/catch_test_macros.hpp>
+#include <stdexcept>
 #include <vector>
 
 SCENARIO("SCTP OutstandingData", "[sctp][outstandingdata]")
@@ -73,7 +74,7 @@ SCENARIO("SCTP OutstandingData", "[sctp][outstandingdata]")
 	constexpr uint64_t NowMs{ 42 };
 	constexpr uint32_t OutgoingMessageId{ 17 };
 
-	RTC::SCTP::OutstandingData::UnwrappedTsn::Unwrapper unwrapper;
+	RTC::SCTP::Types::UnwrappedTsn::Unwrapper unwrapper;
 	DiscardFromSendQueueTester discardFromSendQueueTester;
 
 	auto discardFromSendQueue =
