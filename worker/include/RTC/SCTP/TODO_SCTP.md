@@ -35,9 +35,55 @@
 - Look for "TODO: SCTP" everywhere (also in `worker/test/`).
 
 - Test Chrome/Canary with I-DATA (message interleaving):
+
   ```bash
   /Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary \
     --force-fieldtrials="WebRTC-DataChannelMessageInterleaving/Enabled/" \
     --enable-logging=stderr \
     --v=1 \
+  ```
+
+  ### Problem in ReassemblyQueue
+
+  In dsctp there is an `absl::AnyInvocable`, which is a move-only callable, unlike `std::function` which requires the callable to be copyable. The standard equivalent is `std::move_only_function`, introduced in C++23.
+
+  If you use C++23:
+
+  ```cpp
+  std::vector<std::move_only_function<void()>> deferredActions;
+  ```
+
+  In C++20 there is no `std::move_only_function` (that is C++23). The problem is that `absl::AnyInvocable` accepts move-only callables, while `std::function` requires them to be copyable.
+
+  This is relevant because in dcsctp the lambda captures `data = std::move(data)`, and `UserData` has its copy constructor deleted, so the resulting lambda is not copyable and `std::function` will reject it.
+
+  The solution for C++20 is to move the `UserData` into a `shared_ptr` so that the lambda becomes copyable:
+
+  ```cpp
+  std::vector<std::function<void()>> deferredActions;
+  ```
+
+  And when adding the action, instead of:
+
+  ```cpp
+  // dcsctp - It works because AnyInvocable accepts move-only callables
+  deferred_actions.push_back(
+      [this, tsn, data = std::move(data)]() mutable {
+          queued_bytes_ -= data.size();
+          Add(tsn, std::move(data));
+      });
+  ```
+
+  In your code:
+
+  ```cpp
+  // C++20 - UserData is not copyable, so it is wrapped in shared_ptr
+  auto sharedData = std::make_shared<UserData>(std::move(data));
+
+  this->deferredResetStreams->deferredActions.push_back(
+    [this, tsn, sharedData]() mutable
+    {
+        this->queuedBytes -= sharedData->GetPayloadLength();
+        this->Add(tsn, std::move(*sharedData));
+    });
   ```
