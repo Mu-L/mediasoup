@@ -188,8 +188,9 @@ namespace RTC
 		if (Settings::configuration.useBuiltInSctpStack)
 		{
 			// NOTE: When using the built-in SCTP stack we don't do anything here since
-			// the `Destroying()` method has already been called by the Transport subclas
-			// and it closed the SCTP Association.
+			// the `SetDestroying()` method has already been called by the Transport
+			// subclass and it closed the SCTP Association.
+			//
 			// NOTE: We cannot do it here in the destructor because here we are no longer
 			// the Transport subclass but Transport parent (this is how the destruction
 			// chain works in C++).
@@ -1631,7 +1632,7 @@ namespace RTC
 		}
 	}
 
-	void Transport::Destroying()
+	void Transport::SetDestroying()
 	{
 		MS_TRACE();
 
@@ -1647,7 +1648,7 @@ namespace RTC
 			}
 		}
 
-		this->destroying = true;
+		this->isDestroying = true;
 	}
 
 	void Transport::Connected()
@@ -1874,6 +1875,128 @@ namespace RTC
 		{
 			this->oldSctpAssociation->ProcessSctpData(data, len);
 		}
+	}
+
+	// TODO: SCTP: Remove when we have our own SCTP stack running.
+	void Transport::SendSctpMessage(
+	  RTC::DataConsumer* dataConsumer, const uint8_t* msg, size_t len, uint32_t ppid, onQueuedCallback* cb)
+	{
+		MS_TRACE();
+
+		MS_ASSERT(
+		  !Settings::configuration.useBuiltInSctpStack,
+		  "cannot use this method when built-in SCTP stack is enabled");
+
+		if (!this->oldSctpAssociation)
+		{
+			MS_THROW_ERROR("SCTP not enabled");
+
+			if (cb)
+			{
+				(*cb)(false, false);
+				delete cb;
+			}
+
+			return;
+		}
+
+		this->oldSctpAssociation->SendSctpMessage(dataConsumer, msg, len, ppid, cb);
+	}
+
+	void Transport::SendSctpMessage(
+	  RTC::DataConsumer* dataConsumer, RTC::SCTP::Message message, onQueuedCallback* cb)
+	{
+		MS_TRACE();
+
+		// NOTE: The `message` must already have its `streamId` pointing to the same
+		// as in the `dataConsumer` if its type is "sctp", or 0 otherwise.
+
+		MS_ASSERT(
+		  Settings::configuration.useBuiltInSctpStack,
+		  "cannot use this method when built-in SCTP stack is not enabled");
+
+		if (!this->sctpAssociation)
+		{
+			MS_THROW_ERROR("SCTP not enabled");
+
+			if (cb)
+			{
+				(*cb)(false, false);
+				delete cb;
+			}
+
+			return;
+		}
+
+		const auto& sctpStreamParameters = dataConsumer->GetSctpStreamParameters();
+		const RTC::SCTP::SendMessageOptions sendMessageOptions{
+			.unordered          = !sctpStreamParameters.ordered,
+			.lifetimeMs         = sctpStreamParameters.ordered
+			                        ? std::nullopt
+			                        : std::optional<uint64_t>(sctpStreamParameters.maxPacketLifeTime),
+			.maxRetransmissions = sctpStreamParameters.ordered
+			                        ? std::nullopt
+			                        : std::optional<uint64_t>(sctpStreamParameters.maxRetransmits),
+			// NOTE: We don't set `lifecyleId` in production.
+		};
+
+		const auto sendStatus =
+		  this->sctpAssociation->SendMessage(std::move(message), sendMessageOptions);
+
+		switch (sendStatus)
+		{
+			case RTC::SCTP::Types::SendMessageStatus::SUCCESS:
+			{
+				if (cb)
+				{
+					(*cb)(true, /*sctpSendBufferFull*/ false);
+				}
+
+				break;
+			}
+
+			case RTC::SCTP::Types::SendMessageStatus::ERROR_RESOURCE_EXHAUSTION:
+			{
+				const auto sendStatusStringView = RTC::SCTP::Types::SendMessageStatusToString(sendStatus);
+
+				MS_WARN_TAG(
+				  sctp,
+				  "failed to send SCTP message [sendStatus:%.*s]",
+				  static_cast<int>(sendStatusStringView.size()),
+				  sendStatusStringView.data());
+
+				if (cb)
+				{
+					(*cb)(false, /*sctpSendBufferFull*/ true);
+				}
+
+				// TODO: SCTP: We don't want this probably since we have events in Association
+				// for this.
+				dataConsumer->SctpAssociationSendBufferFull();
+
+				break;
+			}
+
+			default:
+			{
+				const auto sendStatusStringView = RTC::SCTP::Types::SendMessageStatusToString(sendStatus);
+
+				MS_WARN_TAG(
+				  sctp,
+				  "failed to send SCTP message [sendStatus:%.*s]",
+				  static_cast<int>(sendStatusStringView.size()),
+				  sendStatusStringView.data());
+
+				if (cb)
+				{
+					(*cb)(false, /*sctpSendBufferFull*/ false);
+				}
+
+				break;
+			}
+		}
+
+		delete cb;
 	}
 
 	void Transport::CheckNoDataProducer(const std::string& dataProducerId) const
@@ -2936,6 +3059,18 @@ namespace RTC
 		  this, dataProducer, msg, len, ppid, subchannels, requiredSubchannel);
 	}
 
+	void Transport::OnDataProducerMessageReceived(
+	  RTC::DataProducer* dataProducer,
+	  RTC::SCTP::Message message,
+	  std::vector<uint16_t>& subchannels,
+	  std::optional<uint16_t> requiredSubchannel)
+	{
+		MS_TRACE();
+
+		this->listener->OnTransportDataProducerMessageReceived(
+		  this, dataProducer, std::move(message), subchannels, requiredSubchannel);
+	}
+
 	void Transport::OnDataProducerPaused(RTC::DataProducer* dataProducer)
 	{
 		MS_TRACE();
@@ -2950,12 +3085,21 @@ namespace RTC
 		this->listener->OnTransportDataProducerResumed(this, dataProducer);
 	}
 
+	// TODO: SCTP: Remove once we only use built-in SCTP stack.
 	void Transport::OnDataConsumerSendMessage(
 	  RTC::DataConsumer* dataConsumer, const uint8_t* msg, size_t len, uint32_t ppid, onQueuedCallback* cb)
 	{
 		MS_TRACE();
 
 		SendMessage(dataConsumer, msg, len, ppid, cb);
+	}
+
+	void Transport::OnDataConsumerSendMessage(
+	  RTC::DataConsumer* dataConsumer, RTC::SCTP::Message message, onQueuedCallback* cb)
+	{
+		MS_TRACE();
+
+		SendMessage(dataConsumer, std::move(message), cb);
 	}
 
 	void Transport::OnDataConsumerNeedBufferedAmount(
@@ -2965,7 +3109,6 @@ namespace RTC
 
 		if (Settings::configuration.useBuiltInSctpStack && this->sctpAssociation)
 		{
-			// TODO: SCTP
 			// TODO: SCTP: Let's see how to obtain `streamId` argument from the DataConsumer.
 			// bufferedAmount = this->sctpAssociation->GetStreamBufferedAmount(streamId);
 		}
@@ -3021,15 +3164,15 @@ namespace RTC
 		// Ignore if destroying.
 		// NOTE: This is because when the child class (i.e. WebRtcTransport) is deleted,
 		// its destructor is called first and then the parent Transport's destructor,
-		// and we would end here calling SendSctpData() which is an abstract method.
-		if (this->destroying)
+		// and we would end here calling SendData() which is an abstract method.
+		if (this->isDestroying)
 		{
 			MS_WARN_DEV("ignoring sending data because Transport is being destroying");
 
 			return false;
 		}
 
-		return SendSctpData(data, len);
+		return SendData(data, len);
 	}
 
 	void Transport::OnAssociationConnecting()
@@ -3075,14 +3218,23 @@ namespace RTC
 		  sctpStateChangeOffset);
 
 		// TODO: SCTP: REMOVE
-		MS_DUMP("---- SCTP Association connected, dump():");
+		MS_DUMP("---- SCTP association connected, dump():");
 		this->sctpAssociation->Dump();
 	}
 
-	void Transport::OnAssociationFailed(
-	  RTC::SCTP::Types::ErrorKind /*errorKind*/, std::string_view /*errorMessage*/)
+	void Transport::OnAssociationFailed(RTC::SCTP::Types::ErrorKind errorKind, std::string_view errorMessage)
 	{
 		MS_TRACE();
+
+		const auto errorKindStringView = RTC::SCTP::Types::ErrorKindToString(errorKind);
+
+		MS_WARN_TAG(
+		  sctp,
+		  "SCTP association failed [errorKind:%.*s, message:%.*s]",
+		  static_cast<int>(errorKindStringView.size()),
+		  errorKindStringView.data(),
+		  static_cast<int>(errorMessage.size()),
+		  errorMessage.data());
 
 		// Tell all DataConsumers.
 		for (auto& kv : this->mapDataConsumers)
@@ -3107,10 +3259,22 @@ namespace RTC
 		  sctpStateChangeOffset);
 	}
 
-	void Transport::OnAssociationClosed(
-	  RTC::SCTP::Types::ErrorKind /*errorKind*/, std::string_view /*errorMessage*/)
+	void Transport::OnAssociationClosed(RTC::SCTP::Types::ErrorKind errorKind, std::string_view errorMessage)
 	{
 		MS_TRACE();
+
+		if (errorKind != RTC::SCTP::Types::ErrorKind::SUCCESS)
+		{
+			const auto errorKindStringView = RTC::SCTP::Types::ErrorKindToString(errorKind);
+
+			MS_WARN_TAG(
+			  sctp,
+			  "SCTP association closed [errorKind:%.*s, message:%.*s]",
+			  static_cast<int>(errorKindStringView.size()),
+			  errorKindStringView.data(),
+			  static_cast<int>(errorMessage.size()),
+			  errorMessage.data());
+		}
 
 		// Tell all DataConsumers.
 		for (auto& kv : this->mapDataConsumers)
@@ -3139,7 +3303,7 @@ namespace RTC
 	{
 		MS_TRACE();
 
-		// TODO: SCTP
+		MS_DEBUG_TAG(sctp, "SCTP association restarted");
 	}
 
 	void Transport::OnAssociationError(RTC::SCTP::Types::ErrorKind errorKind, std::string_view errorMessage)
@@ -3150,18 +3314,45 @@ namespace RTC
 
 		MS_WARN_TAG(
 		  sctp,
-		  "SCTP Association error [kind:%.*s, message:%.*s]",
+		  "SCTP association error [errorKind:%.*s, message:%.*s]",
 		  static_cast<int>(errorKindStringView.size()),
 		  errorKindStringView.data(),
 		  static_cast<int>(errorMessage.size()),
 		  errorMessage.data());
 	}
 
-	void Transport::OnAssociationMessageReceived(RTC::SCTP::Message /*message*/)
+	void Transport::OnAssociationMessageReceived(RTC::SCTP::Message message)
 	{
 		MS_TRACE();
 
-		// TODO: SCTP
+		RTC::DataProducer* dataProducer = this->sctpListener.GetDataProducer(message.GetStreamId());
+
+		if (!dataProducer)
+		{
+			MS_WARN_TAG(
+			  sctp,
+			  "no suitable DataProducer for received SCTP message [streamId:%" PRIu16 "]",
+			  message.GetStreamId());
+
+			return;
+		}
+
+		// Pass the SCTP message to the corresponding DataProducer.
+		try
+		{
+			static thread_local std::vector<uint16_t> emptySubchannels;
+
+			dataProducer->ReceiveMessage(
+			  std::move(message), emptySubchannels, /*requiredSubchannel*/ std::nullopt);
+		}
+		catch (std::exception& error)
+		{
+			MS_WARN_TAG(
+			  sctp,
+			  "DataProducer::ReceiveMessage() failed for received SCTP message [streamId:%" PRIu16 "]: %s",
+			  message.GetStreamId(),
+			  error.what());
+		}
 	}
 
 	void Transport::OnAssociationStreamsResetPerformed(std::span<const uint16_t> /*outboundStreamIds*/)
@@ -3323,14 +3514,14 @@ namespace RTC
 		// NOTE: This is because when the child class (i.e. WebRtcTransport) is deleted,
 		// its destructor is called first and then the parent Transport's destructor,
 		// and we would end here calling SendSctpData() which is an abstract method.
-		if (this->destroying)
+		if (this->isDestroying)
 		{
 			MS_WARN_DEV("ignoring sending data because Transport is being destroying");
 
 			return;
 		}
 
-		SendSctpData(data, len);
+		SendData(data, len);
 	}
 
 	void Transport::OnSctpAssociationMessageReceived(
@@ -3355,7 +3546,7 @@ namespace RTC
 		// Pass the SCTP message to the corresponding DataProducer.
 		try
 		{
-			static std::vector<uint16_t> emptySubchannels;
+			static thread_local std::vector<uint16_t> emptySubchannels;
 
 			dataProducer->ReceiveMessage(
 			  msg, len, ppid, emptySubchannels, /*requiredSubchannel*/ std::nullopt);

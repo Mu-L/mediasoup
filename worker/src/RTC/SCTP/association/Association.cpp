@@ -246,7 +246,7 @@ namespace RTC
 
 			SetState(State::COOKIE_WAIT, "Connect() called");
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 
 			this->associationListenerDeferrer.OnAssociationConnecting();
 		}
@@ -257,7 +257,7 @@ namespace RTC
 
 			if (this->state == State::NEW || this->state == State::CLOSED)
 			{
-				AssertStateIsConsistent();
+				AssertIsConsistent();
 
 				return;
 			}
@@ -297,7 +297,7 @@ namespace RTC
 				InternalClose(Types::ErrorKind::SUCCESS, "");
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 		}
 
 		void Association::Close()
@@ -306,7 +306,7 @@ namespace RTC
 
 			if (this->state == State::NEW || this->state == State::CLOSED)
 			{
-				AssertStateIsConsistent();
+				AssertIsConsistent();
 
 				return;
 			}
@@ -333,7 +333,7 @@ namespace RTC
 			}
 
 			InternalClose(Types::ErrorKind::SUCCESS, "");
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 		}
 
 		std::optional<AssociationMetrics> Association::GetMetrics() const
@@ -441,7 +441,7 @@ namespace RTC
 			this->tcb->GetStreamResetHandler().ResetStreams(outboundStreamIds);
 
 			MaySendResetStreamsRequest();
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 
 			return Types::ResetStreamsStatus::PERFORMED;
 		}
@@ -453,7 +453,7 @@ namespace RTC
 
 			const AssociationListenerDeferrer::ScopedDeferrer deferrer(this->associationListenerDeferrer);
 
-			const auto status = InternalSendMessage(message, sendMessageOptions);
+			const auto status = InternalSendMessageCheck(message, sendMessageOptions);
 
 			if (status != Types::SendMessageStatus::SUCCESS)
 			{
@@ -464,14 +464,14 @@ namespace RTC
 
 			this->privateMetrics.txMessagesCount++;
 
-			this->sendQueue.Add(nowMs, std::move(message), sendMessageOptions);
+			this->sendQueue.AddMessage(nowMs, std::move(message), sendMessageOptions);
 
 			if (this->tcb)
 			{
 				this->tcb->SendBufferedPackets(nowMs);
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 
 			return Types::SendMessageStatus::SUCCESS;
 		}
@@ -491,7 +491,7 @@ namespace RTC
 
 			for (auto& message : messages)
 			{
-				const auto status = InternalSendMessage(message, sendMessageOptions);
+				const auto status = InternalSendMessageCheck(message, sendMessageOptions);
 
 				statuses.push_back(status);
 
@@ -502,7 +502,7 @@ namespace RTC
 
 				this->privateMetrics.txMessagesCount++;
 
-				this->sendQueue.Add(nowMs, std::move(message), sendMessageOptions);
+				this->sendQueue.AddMessage(nowMs, std::move(message), sendMessageOptions);
 			}
 
 			if (this->tcb)
@@ -510,7 +510,7 @@ namespace RTC
 				this->tcb->SendBufferedPackets(nowMs);
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 
 			return statuses;
 		}
@@ -557,7 +557,7 @@ namespace RTC
 				this->associationListenerDeferrer.OnAssociationError(
 				  Types::ErrorKind::PARSE_FAILED, "failed to parse received SCTP packet");
 
-				AssertStateIsConsistent();
+				AssertIsConsistent();
 
 				return;
 			}
@@ -583,12 +583,11 @@ namespace RTC
 
 			if (this->tcb)
 			{
-				// TODO: SCTP: Implement it.
-				// this->tcb->GetDadaTracker().ObservePacketEnd();
+				this->tcb->GetDataTracker().ObservePacketEnd();
 				this->tcb->MaySendSackChunk();
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 		}
 
 		void Association::InternalClose(Types::ErrorKind errorKind, const std::string_view& message)
@@ -795,11 +794,10 @@ namespace RTC
 
 			AssertHasTcb();
 
-			auto packet               = this->tcb->CreatePacket();
-			const auto* shutdownChunk = packet->BuildChunkInPlace<ShutdownChunk>();
+			auto packet         = this->tcb->CreatePacket();
+			auto* shutdownChunk = packet->BuildChunkInPlace<ShutdownChunk>();
 
-			// TODO: SCTP: Implement it.
-			// shutdownChunk->SetCumulativeTsnAck(this->tcb->GetDataTracker().GetLastCumulativeAckedTsn());
+			shutdownChunk->SetCumulativeTsnAck(this->tcb->GetDataTracker().GetLastCumulativeAckedTsn());
 			shutdownChunk->Consolidate();
 
 			this->packetSender.SendPacket(packet.get());
@@ -927,7 +925,7 @@ namespace RTC
 			}
 		}
 
-		Types::SendMessageStatus Association::InternalSendMessage(
+		Types::SendMessageStatus Association::InternalSendMessageCheck(
 		  const Message& message, const SendMessageOptions& sendMessageOptions)
 		{
 			MS_TRACE();
@@ -1671,11 +1669,6 @@ namespace RTC
 				  cookie->GetNegotiatedCapabilities());
 			}
 
-			auto packet                = this->tcb->CreatePacket();
-			const auto* cookieAckChunk = packet->BuildChunkInPlace<CookieAckChunk>();
-
-			cookieAckChunk->Consolidate();
-
 			// https://datatracker.ietf.org/doc/html/rfc9260#section-5.1
 			//
 			// "A COOKIE ACK chunk MAY be bundled with any pending DATA chunks (and/or
@@ -1683,7 +1676,7 @@ namespace RTC
 			// packet."
 			const uint64_t nowMs = this->shared->GetTimeMs();
 
-			this->tcb->SendBufferedPackets(packet.get(), nowMs);
+			this->tcb->SendBufferedPackets(nowMs, /*addCookieAckChunk*/ true);
 		}
 
 		bool Association::HandleReceivedCookieEchoChunkWithTcb(
@@ -2104,7 +2097,7 @@ namespace RTC
 		}
 
 		void Association::HandleReceivedAnyForwardTsnChunk(
-		  const Packet* /*receivedPacket*/, const AnyForwardTsnChunk* /*receivedAnyForwardTsnChunk*/)
+		  const Packet* /*receivedPacket*/, const AnyForwardTsnChunk* receivedAnyForwardTsnChunk)
 		{
 			MS_TRACE();
 
@@ -2125,7 +2118,7 @@ namespace RTC
 				  abortAssociationChunk->BuildErrorCauseInPlace<ProtocolViolationErrorCause>();
 
 				protocolViolationErrorCause->SetAdditionalInformation(
-				  "FORWARD_TSN or I_FORWARD_TSN-TSN chunk received but partial reliability is not negotiated");
+				  "FORWARD-TSN or I_FORWARD-TSN chunk received but partial reliability is not negotiated");
 
 				protocolViolationErrorCause->Consolidate();
 				abortAssociationChunk->Consolidate();
@@ -2134,19 +2127,17 @@ namespace RTC
 
 				this->associationListenerDeferrer.OnAssociationError(
 				  Types::ErrorKind::PROTOCOL_VIOLATION,
-				  "received FORWARD_TSN or I_FORWARD_TSN-TSN chunk but partial reliability is not negotiated");
+				  "received FORWARD-TSN or I-FORWARD-TSN chunk but partial reliability is not negotiated");
 
 				return;
 			}
 
-			// TODO: SCTP: Implement it.
-			// if
-			// (this->tcb->GetDataTracker().HandleForwardTsn(receivedAnyForwardTsnChunk->GetNewCumulativeTsn()))
-			// {
-			// 	this->tcb->GetReassemblyQueue().HandleForwardTsn(
-			// 		receivedAnyForwardTsnChunk->GetNewCumulativeTsn(),
-			// 		receivedAnyForwardTsnChunk->GetSkippedStreams());
-			// }
+			if (this->tcb->GetDataTracker().HandleForwardTsn(receivedAnyForwardTsnChunk->GetNewCumulativeTsn()))
+			{
+				this->tcb->GetReassemblyQueue().HandleForwardTsn(
+				  receivedAnyForwardTsnChunk->GetNewCumulativeTsn(),
+				  receivedAnyForwardTsnChunk->GetSkippedStreams());
+			}
 
 			// A forward TSN (for ordered streams) may allow messages to be delivered.
 			MayDeliverMessages();
@@ -2178,9 +2169,8 @@ namespace RTC
 				return;
 			}
 
-			const uint32_t tsn = receivedAnyDataChunk->GetTsn();
-			// TODO: SCTP: Uncomment.
-			// const bool immediateAck = receivedAnyDataChunk->GetI();
+			const uint32_t tsn      = receivedAnyDataChunk->GetTsn();
+			const bool immediateAck = receivedAnyDataChunk->GetI();
 
 			if (receivedAnyDataChunk->GetUserDataPayloadLength() == 0)
 			{
@@ -2196,7 +2186,7 @@ namespace RTC
 				this->packetSender.SendPacket(packet.get());
 
 				this->associationListenerDeferrer.OnAssociationError(
-				  Types::ErrorKind::PROTOCOL_VIOLATION, "received DATA or I_DATA chunk with no user data");
+				  Types::ErrorKind::PROTOCOL_VIOLATION, "received DATA or I-DATA chunk with no user data");
 
 				return;
 			}
@@ -2254,34 +2244,32 @@ namespace RTC
 			{
 				MS_WARN_TAG(sctp, "reassembly queue is above watermark");
 
-				// TODO: SCTP: Implement.
-				// if (this->tcb->GetDataTracker()->WillIncreaseCumAckTsn(tsn))
-				// {
-				// 	MS_WARN_TAG(sctp, "reassembly queue is above watermark");
+				if (!this->tcb->GetDataTracker().WillIncreaseCumAckTsn(tsn))
+				{
+					MS_WARN_TAG(sctp, "reassembly queue is above watermark");
 
-				// 	this->tcb->GetDataTracker()->ForceImmediateSack();
+					this->tcb->GetDataTracker().ForceImmediateSack();
 
-				// 	return;
-				// }
+					return;
+				}
 			}
 
-			// TODO: SCTP: Implement it.
-			// if (this->tcb->GetDataTracker()->IsTsnValid(tsn))
-			// {
-			// 	MS_WARN_TAG(sctp, "data rejected because of failing TSN validity");
+			if (!this->tcb->GetDataTracker().IsTsnValid(tsn))
+			{
+				MS_WARN_TAG(sctp, "data rejected because of failing TSN validity");
 
-			// 	return;
-			// }
+				return;
+			}
 
-			// TODO: SCTP: Implement it.
-			// if (this->tcb->GetDataTracker()->Observe(tsn, immediateAck))
-			// {
-			// 	// TODO: SCTP: Here we should have a std::vector<uint8_t> holding the data so
-			// 	// we can move it.
-			// 	this->tcb->GetReassemblyQueue().Add(tsn, std::move(data));
+			if (this->tcb->GetDataTracker().Observe(tsn, immediateAck))
+			{
+				// NOTE: Here we are passing an UserData r-value created and returned by
+				// receivedAnyDataChunk->MakeUserData() so there is only one copy here.
+				// And ReassemblyQueue::AddData() will std::move() it internally.
+				this->tcb->GetReassemblyQueue().AddData(tsn, receivedAnyDataChunk->MakeUserData());
 
-			// 	MayDeliverMessages();
-			// }
+				MayDeliverMessages();
+			}
 		}
 
 		void Association::HandleReceivedSackChunk(
@@ -2397,7 +2385,7 @@ namespace RTC
 				InternalClose(Types::ErrorKind::TOO_MANY_RETRIES, "no INIT_ACK chunk received");
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 		}
 
 		void Association::OnT1CookieTimer(uint64_t& /*baseTimeoutMs*/, bool& /*stop*/)
@@ -2419,7 +2407,7 @@ namespace RTC
 				InternalClose(Types::ErrorKind::TOO_MANY_RETRIES, "no COOKIE_ACK chunk received");
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 		}
 
 		void Association::OnT2ShutdownTimer(uint64_t& baseTimeoutMs, bool& /*stop*/)
@@ -2458,7 +2446,7 @@ namespace RTC
 				this->packetSender.SendPacket(packet.get());
 
 				InternalClose(Types::ErrorKind::TOO_MANY_RETRIES, "no SHUTDOWN_ACK chunk received");
-				AssertStateIsConsistent();
+				AssertIsConsistent();
 
 				return;
 			}
@@ -2482,7 +2470,7 @@ namespace RTC
 				SendShutdownChunk();
 			}
 
-			AssertStateIsConsistent();
+			AssertIsConsistent();
 
 			baseTimeoutMs = this->tcb->GetCurrentRtoMs();
 		}
@@ -2575,9 +2563,13 @@ namespace RTC
 			}
 		}
 
-		void Association::AssertStateIsConsistent() const
+		void Association::AssertIsConsistent() const
 		{
 			MS_TRACE();
+
+			MS_ASSERT(
+			  !(this->tcb && this->tcb->GetReassemblyQueue().HasMessages()),
+			  "this->tcb && this->tcb->GetReassemblyQueue().HasMessages()");
 
 			switch (this->state)
 			{
@@ -2748,7 +2740,7 @@ namespace RTC
 
 			MS_DEBUG_TAG(
 			  sctp,
-			  "%s timer has expired %zu/%s]",
+			  "%s timer has expired [expìrations:%zu/%s]",
 			  backoffTimer->GetLabel().c_str(),
 			  backoffTimer->GetExpirationCount(),
 			  maxRestarts ? std::to_string(maxRestarts.value()).c_str() : "Infinite");

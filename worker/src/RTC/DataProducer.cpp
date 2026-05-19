@@ -4,6 +4,7 @@
 #include "RTC/DataProducer.hpp"
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
+#include "Settings.hpp"
 #include <vector>
 
 namespace RTC
@@ -228,7 +229,21 @@ namespace RTC
 					requiredSubchannel = body->requiredSubchannel();
 				}
 
-				ReceiveMessage(data, len, body->ppid(), subchannels, requiredSubchannel);
+				if (Settings::configuration.useBuiltInSctpStack)
+				{
+					const uint16_t streamId =
+					  this->type == DataProducer::Type::SCTP ? this->sctpStreamParameters.streamId : 0;
+
+					// NOTE: We are creating a copy of the data here, otherwise we cannot
+					// move the Message and pass its ownership to the SCTP stack.
+					RTC::SCTP::Message message(streamId, body->ppid(), std::vector<uint8_t>(data, data + len));
+
+					ReceiveMessage(std::move(message), subchannels, requiredSubchannel);
+				}
+				else
+				{
+					ReceiveMessage(data, len, body->ppid(), subchannels, requiredSubchannel);
+				}
 
 				// Increase receive transmission.
 				this->listener->OnDataProducerReceiveData(this, len);
@@ -243,6 +258,7 @@ namespace RTC
 		}
 	}
 
+	// TODO: SCTP: Remove when we migrate to the new SCTP stack.
 	void DataProducer::ReceiveMessage(
 	  const uint8_t* msg,
 	  size_t len,
@@ -263,5 +279,25 @@ namespace RTC
 
 		this->listener->OnDataProducerMessageReceived(
 		  this, msg, len, ppid, subchannels, requiredSubchannel);
+	}
+
+	void DataProducer::ReceiveMessage(
+	  RTC::SCTP::Message message,
+	  std::vector<uint16_t>& subchannels,
+	  std::optional<uint16_t> requiredSubchannel)
+	{
+		MS_TRACE();
+
+		this->messagesReceived++;
+		this->bytesReceived += message.GetPayloadLength();
+
+		// If paused stop here.
+		if (this->paused)
+		{
+			return;
+		}
+
+		this->listener->OnDataProducerMessageReceived(
+		  this, std::move(message), subchannels, requiredSubchannel);
 	}
 } // namespace RTC

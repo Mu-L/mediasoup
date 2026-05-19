@@ -4,6 +4,7 @@
 #include "RTC/DataConsumer.hpp"
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
+#include "Settings.hpp"
 
 namespace RTC
 {
@@ -296,7 +297,21 @@ namespace RTC
 
 				static std::vector<uint16_t> emptySubchannels;
 
-				SendMessage(data, len, body->ppid(), emptySubchannels, std::nullopt, cb);
+				if (Settings::configuration.useBuiltInSctpStack)
+				{
+					const uint16_t streamId =
+					  this->type == DataConsumer::Type::SCTP ? this->sctpStreamParameters.streamId : 0;
+
+					// NOTE: We are creating a copy of the data here, otherwise we cannot
+					// move the Message and pass its ownership to the SCTP stack.
+					RTC::SCTP::Message message(streamId, body->ppid(), std::vector<uint8_t>(data, data + len));
+
+					SendMessage(std::move(message), emptySubchannels, std::nullopt, cb);
+				}
+				else
+				{
+					SendMessage(data, len, body->ppid(), emptySubchannels, std::nullopt, cb);
+				}
 
 				break;
 			}
@@ -506,6 +521,7 @@ namespace RTC
 		this->listener->OnDataConsumerDataProducerClosed(this);
 	}
 
+	// TODO: SCTP: Remove when we migrate to the new SCTP stack.
 	bool DataConsumer::SendMessage(
 	  const uint8_t* msg,
 	  size_t len,
@@ -591,6 +607,95 @@ namespace RTC
 		this->bytesSent += len;
 
 		this->listener->OnDataConsumerSendMessage(this, msg, len, ppid, cb);
+
+		return true;
+	}
+
+	bool DataConsumer::SendMessage(
+	  RTC::SCTP::Message message,
+	  std::vector<uint16_t>& subchannels,
+	  std::optional<uint16_t> requiredSubchannel,
+	  const onQueuedCallback* cb)
+	{
+		MS_TRACE();
+
+		if (!IsActive())
+		{
+			if (cb)
+			{
+				(*cb)(false, false);
+				delete cb;
+			}
+
+			return false;
+		}
+
+		// If a required subchannel is given, verify that this data consumer is
+		// subscribed to it.
+		if (
+		  requiredSubchannel.has_value() &&
+		  this->subchannels.find(requiredSubchannel.value()) == this->subchannels.end())
+		{
+			if (cb)
+			{
+				(*cb)(false, false);
+				delete cb;
+			}
+
+			return false;
+		}
+
+		// If subchannels are given, verify that this data consumer is subscribed
+		// to at least one of them.
+		if (!subchannels.empty())
+		{
+			bool subchannelMatched{ false };
+
+			for (const auto subchannel : subchannels)
+			{
+				if (this->subchannels.find(subchannel) != this->subchannels.end())
+				{
+					subchannelMatched = true;
+
+					break;
+				}
+			}
+
+			if (!subchannelMatched)
+			{
+				if (cb)
+				{
+					(*cb)(false, false);
+					delete cb;
+				}
+
+				return false;
+			}
+		}
+
+		const size_t messageLen = message.GetPayloadLength();
+
+		if (messageLen > this->maxMessageSize)
+		{
+			MS_WARN_TAG(
+			  message,
+			  "given message exceeds maxMessageSize value [maxMessageSize:%zu, len:%zu]",
+			  messageLen,
+			  this->maxMessageSize);
+
+			if (cb)
+			{
+				(*cb)(false, false);
+				delete cb;
+			}
+
+			return false;
+		}
+
+		this->messagesSent++;
+		this->bytesSent += messageLen;
+
+		this->listener->OnDataConsumerSendMessage(this, std::move(message), cb);
 
 		return true;
 	}

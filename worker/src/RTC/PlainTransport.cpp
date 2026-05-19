@@ -266,7 +266,7 @@ namespace RTC
 
 		// Tell the Transport parent class that we are about to destroy
 		// the class instance.
-		Destroying();
+		SetDestroying();
 
 		this->shared->GetChannelMessageRegistrator()->UnregisterHandler(this->id);
 
@@ -898,23 +898,24 @@ namespace RTC
 		RTC::Transport::DataSent(len);
 	}
 
+	// TODO: SCTP: Remove once we only use built-in SCTP stack.
 	void PlainTransport::SendMessage(
 	  RTC::DataConsumer* dataConsumer, const uint8_t* msg, size_t len, uint32_t ppid, onQueuedCallback* cb)
 	{
 		MS_TRACE();
 
-		if (Settings::configuration.useBuiltInSctpStack)
-		{
-			// TODO: SCTP
-		}
-		// TODO: SCTP: Remove once we only use built-in SCTP stack.
-		else
-		{
-			this->oldSctpAssociation->SendSctpMessage(dataConsumer, msg, len, ppid, cb);
-		}
+		SendSctpMessage(dataConsumer, msg, len, ppid, cb);
 	}
 
-	bool PlainTransport::SendSctpData(const uint8_t* data, size_t len)
+	void PlainTransport::SendMessage(
+	  RTC::DataConsumer* dataConsumer, RTC::SCTP::Message message, onQueuedCallback* cb)
+	{
+		MS_TRACE();
+
+		SendSctpMessage(dataConsumer, std::move(message), cb);
+	}
+
+	bool PlainTransport::SendData(const uint8_t* data, size_t len)
 	{
 		MS_TRACE();
 

@@ -105,6 +105,7 @@ namespace RTC
 				this->associationListener.OnAssociationLifecycleMessageEnd(lifecycleId);
 			}
 
+			// Add lifecycle events for abandoned messages.
 			for (const uint64_t lifecycleId : ackInfo.abandonedLifecycleIds)
 			{
 				MS_DEBUG_TAG(
@@ -212,7 +213,8 @@ namespace RTC
 
 			MS_DEBUG_TAG(
 			  sctp,
-			  "T3-rtx timer has expired [cwnd:%zu, oldCwnd:%zu, ssthresh:%zu, unackedPacketBytes:%zu, oldUnackedPacketBytes:%zu]",
+			  "%s timer has expired [cwnd:%zu, oldCwnd:%zu, ssthresh:%zu, unackedPacketBytes:%zu, oldUnackedPacketBytes:%zu]",
+			  this->t3RtxTimer->GetLabel().c_str(),
 			  this->cwnd,
 			  oldCwnd,
 			  this->ssthresh,

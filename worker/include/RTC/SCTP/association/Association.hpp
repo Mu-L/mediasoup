@@ -374,7 +374,7 @@ namespace RTC
 			 */
 			void MayDeliverMessages();
 
-			Types::SendMessageStatus InternalSendMessage(
+			Types::SendMessageStatus InternalSendMessageCheck(
 			  const Message& message, const SendMessageOptions& sendMessageOptions);
 
 			bool ValidateReceivedPacket(const Packet* receivedPacket);
@@ -459,7 +459,7 @@ namespace RTC
 
 			void AssertHasTcb() const;
 
-			void AssertStateIsConsistent() const;
+			void AssertIsConsistent() const;
 
 			/* Pure virtual methods inherited from PacketSender::Listener. */
 		public:
