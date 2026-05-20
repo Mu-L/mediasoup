@@ -3217,9 +3217,11 @@ namespace RTC
 		  FBS::Notification::Body::Transport_SctpStateChangeNotification,
 		  sctpStateChangeOffset);
 
-		// TODO: SCTP: REMOVE
-		MS_DUMP("---- SCTP association connected, dump():");
+// For debugging purposes.
+#if MS_LOG_DEV_LEVEL == 3
+		MS_DUMP("--- SCTP association connected:");
 		this->sctpAssociation->Dump();
+#endif
 	}
 
 	void Transport::OnAssociationFailed(RTC::SCTP::Types::ErrorKind errorKind, std::string_view errorMessage)
