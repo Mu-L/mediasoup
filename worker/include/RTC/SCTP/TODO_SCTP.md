@@ -12,12 +12,6 @@
 
 - Rename all "Packet", "Chunk", "Parameter", "Error Cause", "Association", etc to lowcase everywhere (in code and comments).
 
-- Is it normal to see those logs even in local in the demo?
-
-  ```
-  RTC::SCTP::HeartbeatHandler::OnBackoffTimer() | sctp-heartbeat-interval timer has expired [expìrations:2/Infinite]
-  ```
-
 - Rename all "I_DATA" etc to `I-DATA" everywhere (in code and comments).
 
 - Probably add many more fields in `SctpOptions` given to the `Association` in `Transport.cpp`.
