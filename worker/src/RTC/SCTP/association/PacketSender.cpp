@@ -33,12 +33,12 @@ namespace RTC
 				packet->WriteCRC32cChecksum();
 			}
 
-			// TODO: SCTP: For testing purposes. Must be removed.
-			{
-				MS_DUMP(">>> sending SCTP packet:");
+// For debugging purposes.
+#if MS_LOG_DEV_LEVEL == 3
+			MS_DUMP(">>> sending SCTP packet:");
 
-				packet->Dump();
-			}
+			packet->Dump();
+#endif
 
 			MS_ASSERT(!packet->NeedsConsolidation(), "cannot send a SCTP packet that needs consolidation");
 

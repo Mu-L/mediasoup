@@ -1,6 +1,5 @@
 #define MS_CLASS "RTC::SCTP::TraditionalReassemblyStreams"
-// TODO: SCTP: COMMENT
-#define MS_LOG_DEV_LEVEL 3
+// #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SCTP/rx/TraditionalReassemblyStreams.hpp"
 #include "Logger.hpp"

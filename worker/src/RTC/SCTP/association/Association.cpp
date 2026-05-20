@@ -1,6 +1,5 @@
 #define MS_CLASS "RTC::SCTP::Association"
-// TODO: SCTP: COMMENT
-#define MS_LOG_DEV_LEVEL 3
+// #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SCTP/association/Association.hpp"
 #include "Logger.hpp"
@@ -519,23 +518,23 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			// TODO: SCTP: For testing purposes. Must be removed.
+// For debugging purposes.
+#if MS_LOG_DEV_LEVEL == 3
+			MS_DUMP("<<< received SCTP packet:");
+
+			const auto* packet = RTC::SCTP::Packet::Parse(data, len);
+
+			if (packet)
 			{
-				MS_DUMP("<<< received SCTP packet:");
+				packet->Dump();
 
-				const auto* packet = RTC::SCTP::Packet::Parse(data, len);
-
-				if (packet)
-				{
-					packet->Dump();
-
-					delete packet;
-				}
-				else
-				{
-					MS_ABORT("RTC::SCTP::Packet::Parse() failed to parse received SCTP data");
-				}
+				delete packet;
 			}
+			else
+			{
+				MS_ERROR("RTC::SCTP::Packet::Parse() failed to parse received SCTP data");
+			}
+#endif
 
 			this->privateMetrics.rxPacketsCount++;
 

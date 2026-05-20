@@ -1,6 +1,5 @@
 #define MS_CLASS "RTC::SCTP::DataTracker"
-// TODO: SCTP: COMMENT
-#define MS_LOG_DEV_LEVEL 3
+// #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SCTP/rx/DataTracker.hpp"
 #include "Logger.hpp"
@@ -181,8 +180,10 @@ namespace RTC
 			// about partly received (or not received at all) data, up until
 			// `newCumulativeTsn`.
 
-			const Types::UnwrappedTsn unwrappedTsn      = this->tsnUnwrapper.Unwrap(newCumulativeTsn);
+			const Types::UnwrappedTsn unwrappedTsn = this->tsnUnwrapper.Unwrap(newCumulativeTsn);
+#if MS_LOG_DEV_LEVEL == 3
 			const Types::UnwrappedTsn prevLastCumAckTsn = this->lastCumulativeAckedTsn;
+#endif
 
 			// Old chunk already seen before?
 			if (unwrappedTsn <= this->lastCumulativeAckedTsn)
@@ -332,10 +333,10 @@ namespace RTC
 
 			if (newAckState != this->ackState)
 			{
+#if MS_LOG_DEV_LEVEL == 3
 				const auto& previousAckStateStrView = DataTracker::AckStateToString(this->ackState);
 				const auto& newAckStateStrView      = DataTracker::AckStateToString(newAckState);
 
-#if MS_LOG_DEV_LEVEL == 3
 				MS_DEBUG_DEV(
 				  "ack state changed from %.*s to %.*s due to %.*s",
 				  static_cast<int>(previousAckStateStrView.size()),

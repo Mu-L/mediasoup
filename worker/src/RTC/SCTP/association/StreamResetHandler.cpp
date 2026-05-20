@@ -1,6 +1,5 @@
 #define MS_CLASS "RTC::SCTP::StreamResetHandler"
-// TODO: SCTP: COMMENT
-#define MS_LOG_DEV_LEVEL 3
+// #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SCTP/association/StreamResetHandler.hpp"
 #include "Logger.hpp"
@@ -300,10 +299,6 @@ namespace RTC
 			// a new SN after "In Progress", or a compliant client retransmitting an
 			// "In Progress" request. In all cases, re-evaluate the state.
 			this->lastProcessedReqSeqNbr = requestSn;
-
-			// TODO: SCTP: Remove (it's just to avoid "private field 'reassemblyQueue'
-			// is not used" wargning).
-			(void)this->reassemblyQueue;
 
 			if (
 			  this->dataTracker->IsLaterThanCumulativeAckedTsn(
