@@ -327,7 +327,11 @@ namespace RTC
 			UpdateAckState(AckState::IMMEDIATE, "delayed ack timer expired");
 		}
 
+#if MS_LOG_DEV_LEVEL == 3
 		void DataTracker::UpdateAckState(AckState newAckState, std::string_view reason)
+#else
+		void DataTracker::UpdateAckState(AckState newAckState, std::string_view /*reason*/)
+#endif
 		{
 			MS_TRACE();
 
