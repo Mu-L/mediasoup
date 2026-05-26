@@ -22,9 +22,7 @@ type TestContext = {
 const ctx: TestContext = {};
 
 beforeEach(async () => {
-	ctx.worker = await mediasoup.createWorker({
-		disableLiburing: true,
-	});
+	ctx.worker = await mediasoup.createWorker();
 
 	ctx.router = await ctx.worker.createRouter();
 
@@ -34,7 +32,6 @@ beforeEach(async () => {
 		// So we don't need to call plainTransport.connect().
 		comedia: true,
 		enableSctp: true,
-		numSctpStreams: { OS: 256, MIS: 256 },
 	});
 
 	// Create an explicit SCTP outgoing stream id.
@@ -115,6 +112,10 @@ afterEach(async () => {
 
 test('SCTP state is connected', () => {
 	expect(ctx.plainTransport!.sctpState).toBe('connected');
+	expect(ctx.plainTransport!.sctpNegotiatedCapabilities).toEqual({
+		negotiatedMaxOutboundStreams: 65535,
+		negotiatedMaxInboundStreams: 65535,
+	});
 	expect(ctx.sctpClient!.associationState).toBe(SCTP_STATE.ESTABLISHED);
 });
 

@@ -72,7 +72,7 @@ namespace RTC
 			 * Retrieves the latest metrics. If the Association is not fully connected,
 			 * `std::nullopt` will be returned.
 			 */
-			virtual std::optional<AssociationMetrics> GetMetrics() const = 0;
+			virtual std::optional<AssociationMetrics> MakeMetrics() const = 0;
 
 			/**
 			 * Returns the currently set priority for an outgoing stream. The initial
@@ -93,6 +93,12 @@ namespace RTC
 			virtual void SetMaxSendMessageSize(size_t maxMessageSize) = 0;
 
 			/**
+			 * Returns the number of bytes of data currently queued to be sent in
+			 * total.
+			 */
+			virtual size_t GetTotalBufferedAmount() const = 0;
+
+			/**
 			 * Returns the number of bytes of data currently queued to be sent on a
 			 * given stream.
 			 */
@@ -109,7 +115,7 @@ namespace RTC
 			 * considered "low" for a given stream, which will trigger
 			 * `OnAssociationStreamBufferedAmountLow()` event. The default value is 0.
 			 */
-			virtual void SetBufferedAmountLowThreshold(uint16_t streamId, size_t bytes) = 0;
+			virtual void SetStreamBufferedAmountLowThreshold(uint16_t streamId, size_t bytes) = 0;
 
 			/**
 			 * Resetting streams is an asynchronous operation and the results will be
@@ -171,6 +177,20 @@ namespace RTC
 			 * Receives SCTP data (hopefully an SCTP Packet) from the remote peer.
 			 */
 			virtual void ReceiveSctpData(const uint8_t* data, size_t len) = 0;
+
+			/**
+			 * Get negotiated max outbound streams. Returns 0 if the association is
+			 * not yet connected.
+			 */
+			virtual uint16_t GetNegotiatedMaxOutboundStreams() const = 0;
+
+			/**
+			 * Get negotiated max inbound streams. Returns 0 if the association is
+			 * not yet connected.
+			 */
+			virtual uint16_t GetNegotiatedMaxInboundStreams() const = 0;
+
+			virtual bool IsDataChannel() const = 0;
 		};
 	} // namespace SCTP
 } // namespace RTC

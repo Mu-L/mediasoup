@@ -2,7 +2,7 @@
 #define MS_RTC_SCTP_ASSOCIATION_HPP
 
 #include "common.hpp"
-#include "SharedInterface.hpp"
+#include "handles/BackoffTimerHandleInterface.hpp"
 #include "RTC/SCTP/association/AssociationListenerDeferrer.hpp"
 #include "RTC/SCTP/association/NegotiatedCapabilities.hpp"
 #include "RTC/SCTP/association/PacketSender.hpp"
@@ -38,7 +38,7 @@
 #include "RTC/SCTP/public/SctpOptions.hpp"
 #include "RTC/SCTP/public/SctpTypes.hpp"
 #include "RTC/SCTP/tx/RoundRobinSendQueue.hpp"
-#include "handles/BackoffTimerHandleInterface.hpp"
+#include "SharedInterface.hpp"
 #include <FBS/sctpParameters.h>
 #include <span>
 #include <string_view>
@@ -171,7 +171,8 @@ namespace RTC
 			explicit Association(
 			  const SctpOptions& sctpOptions,
 			  AssociationListenerInterface* listener,
-			  SharedInterface* shared);
+			  SharedInterface* shared,
+			  bool isDataChannel);
 
 			~Association() override;
 
@@ -225,7 +226,7 @@ namespace RTC
 			 * Retrieves the latest metrics. If the Association is not fully connected,
 			 * `std::nullopt` will be returned.
 			 */
-			std::optional<AssociationMetrics> GetMetrics() const override;
+			std::optional<AssociationMetrics> MakeMetrics() const override;
 
 			/**
 			 * Returns the currently set priority for an outgoing stream. The initial
@@ -246,6 +247,12 @@ namespace RTC
 			void SetMaxSendMessageSize(size_t maxMessageSize) override;
 
 			/**
+			 * Returns the number of bytes of data currently queued to be sent in
+			 * total.
+			 */
+			size_t GetTotalBufferedAmount() const override;
+
+			/**
 			 * Returns the number of bytes of data currently queued to be sent on a
 			 * given stream.
 			 */
@@ -262,7 +269,7 @@ namespace RTC
 			 * considered "low" for a given stream, which will trigger
 			 * `OnAssociationStreamBufferedAmountLow()` event. The default value is 0.
 			 */
-			void SetBufferedAmountLowThreshold(uint16_t streamId, size_t bytes) override;
+			void SetStreamBufferedAmountLowThreshold(uint16_t streamId, size_t bytes) override;
 
 			/**
 			 * Resetting streams is an asynchronous operation and the results will be
@@ -324,6 +331,23 @@ namespace RTC
 			 * Receives SCTP data (hopefully an SCTP Packet) from the remote peer.
 			 */
 			void ReceiveSctpData(const uint8_t* data, size_t len) override;
+
+			/**
+			 * Get negotiated max outbound streams. Returns 0 if the association is
+			 * not yet connected.
+			 */
+			uint16_t GetNegotiatedMaxOutboundStreams() const override;
+
+			/**
+			 * Get negotiated max inbound streams. Returns 0 if the association is
+			 * not yet connected.
+			 */
+			uint16_t GetNegotiatedMaxInboundStreams() const override;
+
+			bool IsDataChannel() const override
+			{
+				return this->isDataChannel;
+			}
 
 		private:
 			void InternalClose(Types::ErrorKind errorKind, const std::string_view& message);
@@ -500,6 +524,8 @@ namespace RTC
 			const std::unique_ptr<BackoffTimerHandleInterface> t2ShutdownTimer;
 			// Max SCTP Packet length.
 			const size_t maxPacketLength;
+			// Whether this is DataChannel based SCTP.
+			bool isDataChannel;
 		};
 	} // namespace SCTP
 } // namespace RTC

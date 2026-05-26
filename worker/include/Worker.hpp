@@ -1,13 +1,13 @@
 #ifndef MS_WORKER_HPP
 #define MS_WORKER_HPP
 
-#include "SharedInterface.hpp"
 #include "Channel/ChannelRequest.hpp"
 #include "Channel/ChannelSocket.hpp"
 #include "FBS/worker.h"
+#include "handles/SignalHandle.hpp"
 #include "RTC/Router.hpp"
 #include "RTC/WebRtcServer.hpp"
-#include "handles/SignalHandle.hpp"
+#include "SharedInterface.hpp"
 #include <flatbuffers/flatbuffer_builder.h>
 #include <absl/container/flat_hash_map.h>
 #include <string>
@@ -26,8 +26,8 @@ private:
 	flatbuffers::Offset<FBS::Worker::ResourceUsageResponse> FillBufferResourceUsage(
 	  flatbuffers::FlatBufferBuilder& builder) const;
 	void SetNewRouterId(std::string& routerId) const;
-	RTC::WebRtcServer* GetWebRtcServer(const std::string& webRtcServerId) const;
-	RTC::Router* GetRouter(const std::string& routerId) const;
+	RTC::WebRtcServer* AssertAndGetWebRtcServerById(const std::string& webRtcServerId) const;
+	RTC::Router* AssertAndGetRouterById(const std::string& routerId) const;
 	void CheckNoWebRtcServer(const std::string& webRtcServerId) const;
 	void CheckNoRouter(const std::string& routerId) const;
 

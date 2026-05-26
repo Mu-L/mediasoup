@@ -2,11 +2,11 @@
 #define MS_RTC_DATA_CONSUMER_HPP
 
 #include "common.hpp"
-#include "SharedInterface.hpp"
 #include "Channel/ChannelRequest.hpp"
 #include "Channel/ChannelSocket.hpp"
 #include "RTC/SCTP/public/Message.hpp"
 #include "RTC/SctpDictionaries.hpp"
+#include "SharedInterface.hpp"
 #include <absl/container/flat_hash_set.h>
 #include <string>
 
@@ -24,17 +24,14 @@ namespace RTC
 			virtual ~Listener() = default;
 
 		public:
-			// TODO: SCTP: Remove when we migrate to the new SCTP stack.
-			virtual void OnDataConsumerSendMessage(
-			  RTC::DataConsumer* dataConsumer,
-			  const uint8_t* msg,
-			  size_t len,
-			  uint32_t ppid,
-			  onQueuedCallback* cb) = 0;
 			virtual void OnDataConsumerSendMessage(
 			  RTC::DataConsumer* dataConsumer, RTC::SCTP::Message message, onQueuedCallback* cb) = 0;
 			virtual void OnDataConsumerNeedBufferedAmount(
-			  RTC::DataConsumer* dataConsumer, uint32_t& bufferedAmount)                   = 0;
+			  const RTC::DataConsumer* dataConsumer, uint32_t& bufferedAmount) const = 0;
+			virtual void OnDataConsumerNeedBufferedAmountLowThreshold(
+			  const RTC::DataConsumer* dataConsumer, uint32_t& bufferedAmountLowThreshold) const = 0;
+			virtual void OnDataConsumerSetBufferedAmountLowThreshold(
+			  const RTC::DataConsumer* dataConsumer, uint32_t bytes) const                 = 0;
 			virtual void OnDataConsumerDataProducerClosed(RTC::DataConsumer* dataConsumer) = 0;
 		};
 
@@ -96,17 +93,9 @@ namespace RTC
 		void DataProducerResumed();
 		void SctpAssociationConnected();
 		void SctpAssociationClosed();
-		void SetSctpAssociationBufferedAmount(uint32_t bufferedAmount);
-		void SctpAssociationSendBufferFull();
+		void SctpBufferedAmountLow(uint32_t bufferedAmount) const;
+		void SctpSendBufferFull() const;
 		void DataProducerClosed();
-		// TODO: SCTP: Remove when we migrate to the new SCTP stack.
-		bool SendMessage(
-		  const uint8_t* msg,
-		  size_t len,
-		  uint32_t ppid,
-		  std::vector<uint16_t>& subchannels,
-		  std::optional<uint16_t> requiredSubchannel,
-		  const onQueuedCallback* cb = nullptr);
 		bool SendMessage(
 		  RTC::SCTP::Message message,
 		  std::vector<uint16_t>& subchannels,
@@ -140,9 +129,6 @@ namespace RTC
 		bool dataProducerClosed{ false };
 		size_t messagesSent{ 0u };
 		size_t bytesSent{ 0u };
-		uint32_t bufferedAmount{ 0u };
-		uint32_t bufferedAmountLowThreshold{ 0u };
-		bool forceTriggerBufferedAmountLow{ false };
 	};
 } // namespace RTC
 

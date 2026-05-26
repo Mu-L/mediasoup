@@ -724,7 +724,7 @@ namespace RTC
 			{
 				MS_DEBUG_DEV(
 				  "triggering OnAssociationLifecycleMessageExpired(%" PRIu64 "), /*maybeDelivered*/ false)",
-				  item.attributes.lifecycleId);
+				  item.attributes.lifecycleId.value());
 
 				this->parent.associationListener.OnAssociationLifecycleMessageExpired(
 				  item.attributes.lifecycleId.value(), /*maybeDelivered*/ false);

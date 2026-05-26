@@ -2,11 +2,11 @@
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/WebRtcTransport.hpp"
+#include "FBS/webRtcTransport.h"
 #include "Logger.hpp"
 #include "MediaSoupErrors.hpp"
 #include "Settings.hpp"
 #include "Utils.hpp"
-#include "FBS/webRtcTransport.h"
 #include <cmath> // std::pow()
 
 namespace RTC
@@ -857,15 +857,6 @@ namespace RTC
 
 		// Increase send transmission.
 		RTC::Transport::DataSent(len);
-	}
-
-	// TODO: SCTP: Remove once we only use built-in SCTP stack.
-	void WebRtcTransport::SendMessage(
-	  RTC::DataConsumer* dataConsumer, const uint8_t* msg, size_t len, uint32_t ppid, onQueuedCallback* cb)
-	{
-		MS_TRACE();
-
-		SendSctpMessage(dataConsumer, msg, len, ppid, cb);
 	}
 
 	void WebRtcTransport::SendMessage(

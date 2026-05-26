@@ -3,7 +3,6 @@
 
 #include "RTC/SCTP/association/Association.hpp"
 #include "Logger.hpp"
-#include "Utils.hpp"
 #include "RTC/SCTP/packet/errorCauses/CookieReceivedWhileShuttingDownErrorCause.hpp"
 #include "RTC/SCTP/packet/errorCauses/NoUserDataErrorCause.hpp"
 #include "RTC/SCTP/packet/errorCauses/OutOfResourceErrorCause.hpp"
@@ -14,6 +13,7 @@
 #include "RTC/SCTP/packet/parameters/StateCookieParameter.hpp"
 #include "RTC/SCTP/packet/parameters/SupportedExtensionsParameter.hpp"
 #include "RTC/SCTP/packet/parameters/ZeroChecksumAcceptableParameter.hpp"
+#include "Utils.hpp"
 #include <limits>  // std::numeric_limits()
 #include <sstream> // std::ostringstream
 #include <string>
@@ -37,7 +37,10 @@ namespace RTC
 		/* Instance methods. */
 
 		Association::Association(
-		  const SctpOptions& sctpOptions, AssociationListenerInterface* listener, SharedInterface* shared)
+		  const SctpOptions& sctpOptions,
+		  AssociationListenerInterface* listener,
+		  SharedInterface* shared,
+		  bool isDataChannel)
 		  : sctpOptions(sctpOptions),
 		    // Our `listener` member is a `AssociationListenerDeferrer` which takes
 		    // `listener` argument as constructor argument.
@@ -74,7 +77,8 @@ namespace RTC
 		        .backoffAlgorithm    = BackoffTimerHandleInterface::BackoffAlgorithm::EXPONENTIAL,
 		        .maxBackoffTimeoutMs = sctpOptions.timerMaxBackoffTimeoutMs,
 		        .maxRestarts         = sctpOptions.maxRetransmissions })),
-		    maxPacketLength(Utils::Byte::PadDownTo4Bytes(this->sctpOptions.mtu))
+		    maxPacketLength(Utils::Byte::PadDownTo4Bytes(this->sctpOptions.mtu)),
+		    isDataChannel(isDataChannel)
 		{
 			MS_TRACE();
 		}
@@ -108,7 +112,7 @@ namespace RTC
 				this->tcb->Dump(indentation + 1);
 			}
 
-			const auto metrics = GetMetrics();
+			const auto metrics = MakeMetrics();
 
 			if (metrics.has_value())
 			{
@@ -125,26 +129,13 @@ namespace RTC
 
 			return FBS::SctpParameters::CreateSctpParameters(
 			  builder,
-			  // Add port.
-			  this->sctpOptions.sourcePort,
-			  // Add OS.
-			  // TODO: SCTP: We should put here current value which may be different after
-			  // negotiation with peer and reconfig.
-			  this->sctpOptions.announcedMaxOutboundStreams,
-			  // Add MIS.
-			  // TODO: SCTP: We should put here current value which may be different after
-			  // negotiation with peer and reconfig.
-			  this->sctpOptions.announcedMaxInboundStreams,
-			  // Add maxMessageSize.
-			  this->sctpOptions.maxSendMessageSize,
-			  // Add sendBufferSize.
-			  this->sctpOptions.maxSendBufferSize,
-			  // Add sctpBufferedAmountLowThreshold.
-			  this->sctpOptions.totalBufferedAmountLowThreshold,
-			  // Add isDataChannel.
-			  // TODO: SCTP: Have a member for this.
-			  // TODO: SCTP: So remove this hardcoded `true`.
-			  /*isDataChannel*/ true);
+			  /*port*/ this->sctpOptions.sourcePort,
+			  /*maxSendMessageSize*/ this->sctpOptions.maxSendMessageSize,
+			  /*maxReceiveMessageSize*/ this->sctpOptions.maxReceiveMessageSize,
+			  /*sctpSendBufferSize*/ this->sctpOptions.maxSendBufferSize,
+			  /*sctpPerStreamSendQueueLimit*/ this->sctpOptions.perStreamSendQueueLimit,
+			  /*sctpMaxReceiverWindowBufferSize*/ this->sctpOptions.maxReceiverWindowBufferSize,
+			  /*isDataChannel*/ this->isDataChannel);
 		}
 
 		Types::AssociationState Association::GetAssociationState() const
@@ -334,10 +325,11 @@ namespace RTC
 			}
 
 			InternalClose(Types::ErrorKind::SUCCESS, "");
+
 			AssertIsConsistent();
 		}
 
-		std::optional<AssociationMetrics> Association::GetMetrics() const
+		std::optional<AssociationMetrics> Association::MakeMetrics() const
 		{
 			if (!this->tcb)
 			{
@@ -394,6 +386,13 @@ namespace RTC
 			this->sctpOptions.maxSendMessageSize = maxMessageSize;
 		}
 
+		size_t Association::GetTotalBufferedAmount() const
+		{
+			MS_TRACE();
+
+			return this->sendQueue.GetTotalBufferedAmount();
+		}
+
 		size_t Association::GetStreamBufferedAmount(uint16_t streamId) const
 		{
 			MS_TRACE();
@@ -408,7 +407,7 @@ namespace RTC
 			return this->sendQueue.GetStreamBufferedAmountLowThreshold(streamId);
 		}
 
-		void Association::SetBufferedAmountLowThreshold(uint16_t streamId, size_t bytes)
+		void Association::SetStreamBufferedAmountLowThreshold(uint16_t streamId, size_t bytes)
 		{
 			MS_TRACE();
 
@@ -442,6 +441,7 @@ namespace RTC
 			this->tcb->GetStreamResetHandler().ResetStreams(outboundStreamIds);
 
 			MaySendResetStreamsRequest();
+
 			AssertIsConsistent();
 
 			return Types::ResetStreamsStatus::PERFORMED;
@@ -522,12 +522,12 @@ namespace RTC
 
 // For debugging purposes.
 #if MS_LOG_DEV_LEVEL == 3
-			MS_DUMP("<<< received SCTP packet:");
-
 			const auto* packet = RTC::SCTP::Packet::Parse(data, len);
 
 			if (packet)
 			{
+				MS_DUMP("<<< received SCTP packet:");
+
 				packet->Dump();
 
 				delete packet;
@@ -589,6 +589,42 @@ namespace RTC
 			}
 
 			AssertIsConsistent();
+		}
+
+		uint16_t Association::GetNegotiatedMaxOutboundStreams() const
+		{
+			MS_TRACE();
+
+			if (this->tcb)
+			{
+				return this->tcb->GetNegotiatedCapabilities().negotiatedMaxOutboundStreams;
+			}
+			else
+			{
+				MS_WARN_TAG(
+				  sctp,
+				  "calling Association::GetNegotiatedMaxOutboundStreams() before TCB is created returns 0");
+
+				return 0;
+			}
+		}
+
+		uint16_t Association::GetNegotiatedMaxInboundStreams() const
+		{
+			MS_TRACE();
+
+			if (this->tcb)
+			{
+				return this->tcb->GetNegotiatedCapabilities().negotiatedMaxInboundStreams;
+			}
+			else
+			{
+				MS_WARN_TAG(
+				  sctp,
+				  "calling Association::GetNegotiatedMaxInboundStreams() before TCB is created returns 0");
+
+				return 0;
+			}
 		}
 
 		void Association::InternalClose(Types::ErrorKind errorKind, const std::string_view& message)
@@ -922,6 +958,18 @@ namespace RTC
 			while (std::optional<Message> message = this->tcb->GetReassemblyQueue().GetNextMessage())
 			{
 				this->privateMetrics.rxMessagesCount++;
+
+				if (message->GetPayloadLength() > this->sctpOptions.maxReceiveMessageSize)
+				{
+					MS_WARN_TAG(
+					  sctp,
+					  "dropping too large received message [messageByteLength:%zu, maxReceiveMessageSize:%zu]",
+					  message->GetPayloadLength(),
+					  this->sctpOptions.maxReceiveMessageSize);
+
+					break;
+				}
+
 				this->associationListenerDeferrer.OnAssociationMessageReceived(*std::move(message));
 			}
 		}
@@ -1584,6 +1632,7 @@ namespace RTC
 
 			this->tcb->SendBufferedPackets(nowMs);
 			this->t1CookieTimer->Start();
+
 			this->associationListenerDeferrer.OnAssociationConnecting();
 		}
 
@@ -1797,6 +1846,7 @@ namespace RTC
 			const uint64_t nowMs = this->shared->GetTimeMs();
 
 			this->tcb->SendBufferedPackets(nowMs);
+
 			this->associationListenerDeferrer.OnAssociationConnected();
 		}
 
@@ -2446,6 +2496,7 @@ namespace RTC
 				this->packetSender.SendPacket(packet.get());
 
 				InternalClose(Types::ErrorKind::TOO_MANY_RETRIES, "no SHUTDOWN_ACK chunk received");
+
 				AssertIsConsistent();
 
 				return;
@@ -2567,9 +2618,18 @@ namespace RTC
 		{
 			MS_TRACE();
 
-			MS_ASSERT(
-			  !(this->tcb && this->tcb->GetReassemblyQueue().HasMessages()),
-			  "this->tcb && this->tcb->GetReassemblyQueue().HasMessages()");
+			// NOTE: This assertion is present in dcsctp but we are removing it because
+			// it's dangerous. Depending on where `AssertIsConsistent()` is called from,
+			// it may legitimately happen that tere are SCTP full messages stored in
+			// the reassembly queue. `ReassemblyQueue::HasMessages()` can legitimately
+			// return `true` during stream deferred reset processing, which is a valid
+			// state where the reassembly queue intentionally retains messages while
+			// waiting for the TSN marked by the peer as the "Sender's Last Assigned
+			// TSN". There is no point in the code where we can guarantee that this
+			// state is not active.
+			// MS_ASSERT(
+			//   !(this->tcb && this->tcb->GetReassemblyQueue().HasMessages()),
+			//   "this->tcb && this->tcb->GetReassemblyQueue().HasMessages()");
 
 			switch (this->state)
 			{
@@ -2720,10 +2780,22 @@ namespace RTC
 			}
 		}
 
+#if MS_LOG_DEV_LEVEL == 3
+		void Association::OnPacketSenderPacketSent(
+		  PacketSender* /*packetSender*/, const Packet* packet, bool sent)
+#else
 		void Association::OnPacketSenderPacketSent(
 		  PacketSender* /*packetSender*/, const Packet* /*packet*/, bool sent)
+#endif
 		{
 			MS_TRACE();
+
+// For debugging purposes.
+#if MS_LOG_DEV_LEVEL == 3
+			MS_DUMP(">>> SCTP packet sent [sent:%s]", sent ? "yes" : "no");
+
+			packet->Dump();
+#endif
 
 			if (sent)
 			{

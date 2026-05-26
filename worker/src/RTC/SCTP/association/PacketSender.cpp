@@ -33,13 +33,6 @@ namespace RTC
 				packet->WriteCRC32cChecksum();
 			}
 
-// For debugging purposes.
-#if MS_LOG_DEV_LEVEL == 3
-			MS_DUMP(">>> sending SCTP packet:");
-
-			packet->Dump();
-#endif
-
 			MS_ASSERT(!packet->NeedsConsolidation(), "cannot send a SCTP packet that needs consolidation");
 
 			const bool sent =
