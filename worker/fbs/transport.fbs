@@ -229,7 +229,7 @@ table SctpStateChangeNotification {
 }
 
 table SctpNegotiatedCapabilitiesNotification {
-    negotiatedCapabilities: FBS.SctpAssociation.SctpNegotiatedCapabilities;
+    negotiated_capabilities: FBS.SctpAssociation.SctpNegotiatedCapabilities;
 }
 
 union TraceInfo {
