@@ -194,6 +194,14 @@ fn main() {
         fs::remove_file(wraplock).expect("Failed to remove subprojects/.wraplock");
     }
 
+    // Remove subprojects/packagecache folder created by Meson when downloading
+    // wrap dependencies. Same problem: it lives in the source tree and breaks
+    // `cargo publish` verification.
+    let packagecache = std::path::Path::new("subprojects/packagecache");
+    if packagecache.exists() {
+        fs::remove_dir_all(packagecache).expect("Failed to remove subprojects/packagecache");
+    }
+
     if env::var("KEEP_BUILD_ARTIFACTS") != Ok("1".to_string()) {
         // Clean
         if !Command::new(python)
