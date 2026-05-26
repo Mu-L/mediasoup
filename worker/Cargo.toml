@@ -16,6 +16,8 @@ include = [
     "/fbs",
     "/fuzzer/include",
     "/fuzzer/src",
+    "/mocks/include",
+    "/mocks/src",
     "/include",
     "/scripts",
     "!/scripts/node_modules",
