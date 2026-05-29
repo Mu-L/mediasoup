@@ -1,10 +1,39 @@
 export type SctpParameters = {
+	/**
+	 * SCTP source port of the transport.
+	 */
 	port: number;
+
+	/**
+	 * Maximum size for SCTP messages sent by DataConsumers (in bytes).
+	 */
 	maxSendMessageSize: number;
+
+	/**
+	 * Maximum size for SCTP messages received by DataProducers (in bytes).
+	 */
 	maxReceiveMessageSize: number;
+
+	/**
+	 * Maximum SCTP send buffer used by DataConsumers (in bytes).
+	 */
 	sendBufferSize: number;
+
+	/**
+	 * Per stream send queue size limit. Similar to `sendBufferSize`, but
+	 * limiting the size of individual streams.
+	 */
 	perStreamSendQueueLimit: number;
+
+	/**
+	 * Maximum received window buffer size (in bytes).
+	 */
 	maxReceiverWindowBufferSize: number;
+
+	/**
+	 * Whether this is a WebRTC DataChannel based SCTP association. Only `true`
+	 * in WebRTC transports.
+	 */
 	isDataChannel: boolean;
 
 	// TODO: SCTP: For backwards compatibility. Remove them in the future.
