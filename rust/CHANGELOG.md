@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 0.22.1
+
 - `DataConsumer::send()`: Return the current buffered amount size (in bytes) after sending/queuing the message (PR #1819):
   - Fix: move the `send()` method from `DirectDataConsumer` to `RegularDataConsumer` (where the worker actually accepts it).
 
