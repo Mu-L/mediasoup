@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.20.3
+
 - Fix SCTP crash when the t3-rtx timer expires ([PR #1822](https://github.com/versatica/mediasoup/pull/1822)).
 
 ### 3.20.2

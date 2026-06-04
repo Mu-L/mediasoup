@@ -2,6 +2,10 @@
 
 ### NEXT
 
+### 0.22.2
+
+- Fix SCTP crash when the t3-rtx timer expires (PR #1822).
+
 ### 0.22.1
 
 - `DataConsumer::send()`: Return the current buffered amount size (in bytes) after sending/queuing the message (PR #1819):
