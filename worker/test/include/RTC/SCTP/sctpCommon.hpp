@@ -54,7 +54,6 @@ namespace sctpCommon
 		REQUIRE(packet->GetSourcePort() == sourcePort);                                                \
 		REQUIRE(packet->GetDestinationPort() == destinationPort);                                      \
 		REQUIRE(packet->GetVerificationTag() == verificationTag);                                      \
-		REQUIRE(packet->GetChecksum() == checksum);                                                    \
 		REQUIRE(packet->ValidateCRC32cChecksum() == hasValidCrc32cChecksum);                           \
 		REQUIRE(packet->GetChecksum() == checksum);                                                    \
 		REQUIRE(packet->GetChunksCount() == chunksCount);                                              \
