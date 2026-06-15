@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 0.22.6
+
 - Fix `connect()` method in `PlainTransport` when comedia mode and SRTP mode are enabled (PR #1831).
 
 ### 0.22.5
