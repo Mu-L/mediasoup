@@ -2132,6 +2132,10 @@ namespace RTC
 				errorCausesStr.append(errorCause->ToString());
 			}
 
+			// https://datatracker.ietf.org/doc/html/rfc9260#section-3.3.7
+			//
+			// "If an endpoint receives an ABORT with a format error or no TCB is
+			// found, it MUST silently discard it."
 			if (!this->tcb)
 			{
 				MS_DEBUG_TAG(
@@ -2142,7 +2146,7 @@ namespace RTC
 				return;
 			}
 
-			MS_WARN_TAG(sctp, "received ABORT chunk, closing association: %s", errorCausesStr.c_str());
+			MS_DEBUG_TAG(sctp, "received ABORT chunk, closing association: %s", errorCausesStr.c_str());
 
 			InternalClose(Types::ErrorKind::PEER_REPORTED, errorCausesStr);
 		}
