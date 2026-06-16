@@ -70,7 +70,7 @@ namespace RTC
 			};
 
 		public:
-			static const size_t CommonHeaderLength{ 12 };
+			static constexpr size_t CommonHeaderLength{ 12 };
 
 			/**
 			 * Whether given buffer could be a valid SCTP packet.

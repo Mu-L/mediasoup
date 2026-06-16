@@ -1,5 +1,5 @@
-#ifndef MS_RTC_RTCP_PACKET_HPP
-#define MS_RTC_RTCP_PACKET_HPP
+#ifndef MS_RTC_OLD_RTCP_PACKET_HPP
+#define MS_RTC_OLD_RTCP_PACKET_HPP
 
 #include "common.hpp"
 #include <ankerl/unordered_dense.h>
