@@ -177,7 +177,6 @@ namespace RTC
 			 * Create a STUN packet.
 			 *
 			 * @remarks
-			 * - `bufferLength` must be the exact length of the STUN packet.
 			 * - If `transactionId` is not given then a random Transaction ID is
 			 *   generated.
 			 */

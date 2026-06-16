@@ -94,7 +94,6 @@ namespace RTC
 			 * Create an SCTP packet.
 			 *
 			 * @remarks
-			 * - `bufferLength` must be the exact length of the packet.
 			 * - If `transactionId` is not given then a random Transaction ID is
 			 *   generated.
 			 */
