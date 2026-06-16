@@ -1151,7 +1151,7 @@ namespace RTC
 				{
 					MS_WARN_TAG(
 					  sctp,
-					  "receievd ABORT chunk has invalid verification tag %" PRIu32 ", packet discarded",
+					  "received ABORT chunk has invalid verification tag %" PRIu32 ", packet discarded",
 					  receivedPacket->GetVerificationTag());
 
 					this->associationListenerDeferrer.OnAssociationError(
@@ -2369,11 +2369,11 @@ namespace RTC
 			// to deliver messages.
 			if (this->tcb->GetReassemblyQueue().IsAboveWatermark())
 			{
-				MS_WARN_TAG(sctp, "reassembly queue is above watermark");
+				MS_WARN_DEV("reassembly queue is above watermark");
 
 				if (!this->tcb->GetDataTracker().WillIncreaseCumAckTsn(tsn))
 				{
-					MS_WARN_TAG(sctp, "reassembly queue is above watermark");
+					MS_WARN_TAG(sctp, "rejecting received data because reassembly queue is above watermark");
 
 					this->tcb->GetDataTracker().ForceImmediateSack();
 
@@ -2383,7 +2383,7 @@ namespace RTC
 
 			if (!this->tcb->GetDataTracker().IsTsnValid(tsn))
 			{
-				MS_WARN_TAG(sctp, "data rejected because of failing TSN validity");
+				MS_WARN_TAG(sctp, "rejecting received data because of failing TSN validity");
 
 				return;
 			}
@@ -2434,8 +2434,7 @@ namespace RTC
 			}
 			else
 			{
-				MS_WARN_TAG(
-				  sctp,
+				MS_WARN_DEV(
 				  "dropping received out-of-order SACK [TSN:%" PRIu32 "]",
 				  receivedSackChunk->GetCumulativeTsnAck());
 			}
