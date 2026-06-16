@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.20.7
+
 - CI: Add `ubuntu-26.04` hosts ([PR #1830](https://github.com/versatica/mediasoup/pull/1830)).
 - Worker: Remove `io_uring` support ([PR #1832](https://github.com/versatica/mediasoup/pull/1832)).
 

@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 0.22.7
+
 - Worker: Remove `io_uring` support (PR #1832).
 
 ### 0.22.6
