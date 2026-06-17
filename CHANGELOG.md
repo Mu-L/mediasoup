@@ -2,7 +2,9 @@
 
 ### NEXT
 
-- Worker `Consumer`: Fix crash when using simple producer stream mode ([PR #XXXX](https://github.com/versatica/mediasoup/pull/XXXX)).
+### 3.20.8
+
+- Worker `Consumer`: Fix crash when using simple producer stream mode ([PR #XXXX](https://github.com/versatica/mediasoup/pull/1835)).
 
 ### 3.20.7
 
