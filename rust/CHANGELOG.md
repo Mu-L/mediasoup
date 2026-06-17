@@ -4,7 +4,7 @@
 
 ### 0.22.8
 
-- Worker `Consumer`: Fix crash when using simple producer stream mode ([PR #XXXX](https://github.com/versatica/mediasoup/pull/1835)).
+- Worker `Consumer`: Fix crash when using simple producer stream mode ([PR #1835](https://github.com/versatica/mediasoup/pull/1835)).
 
 ### 0.22.7
 
