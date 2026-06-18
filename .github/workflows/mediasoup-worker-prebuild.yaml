@@ -7,6 +7,10 @@ on:
 
 jobs:
   ci:
+    # Only run for Node releases (tag X.Y.Z) and not for Rust releases (tag
+    # rust-X.Y.Z), which are created by rust-scripts.mjs and must not trigger
+    # mediasoup-worker prebuilds.
+    if: ${{ !startsWith(github.event.release.tag_name, 'rust-') }}
     strategy:
       # Here we want to see all errors, not just the first one.
       fail-fast: false
