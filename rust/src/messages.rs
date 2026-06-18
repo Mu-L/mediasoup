@@ -18,7 +18,7 @@ use crate::rtp_observer::RtpObserverId;
 use crate::transport::{TransportId, TransportTraceEventType};
 use crate::webrtc_server::{
     WebRtcServerDump, WebRtcServerIceUsernameFragment, WebRtcServerId, WebRtcServerIpPort,
-    WebRtcServerListenInfos, WebRtcServerTupleHash,
+    WebRtcServerListenInfos,
 };
 use crate::webrtc_transport::{
     WebRtcTransportListen, WebRtcTransportListenInfos, WebRtcTransportOptions,
@@ -353,14 +353,6 @@ impl Request for WebRtcServerDumpRequest {
                         .parse()
                         .unwrap(),
                     webrtc_transport_id: username_fragment.web_rtc_transport_id.parse().unwrap(),
-                })
-                .collect(),
-            tuple_hashes: data
-                .tuple_hashes
-                .into_iter()
-                .map(|tuple_hash| WebRtcServerTupleHash {
-                    tuple_hash: tuple_hash.tuple_hash,
-                    webrtc_transport_id: tuple_hash.web_rtc_transport_id.parse().unwrap(),
                 })
                 .collect(),
         })
