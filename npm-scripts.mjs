@@ -612,7 +612,7 @@ async function release({ args = '' } = {}) {
 	// mediasoup-npm-publish.yaml, which checks, creates the GitHub release and
 	// publishes to NPM; on its success mediasoup-worker-prebuild.yaml builds and
 	// uploads the prebuilt binaries.
-	executeCmd(`git commit -am 'v${version}'`);
+	executeCmd(`git commit -am 'release ${version}'`);
 	executeCmd(`git tag -a ${version} -m '${version}'`);
 	executeCmd(`git push origin ${MAIN_BRANCH}`);
 	executeCmd(`git push origin '${version}'`);

@@ -112,7 +112,7 @@ Prepares and triggers the release of a new NPM version "x.y.z" of mediasoup. The
 
 - Performs checks (lint + test + build + publish dry-run + `CHANGELOG.md` entry check). It runs before the version bump, so the CHANGELOG check validates the previous version's entry (still in package.json), which is harmless.
 - Bumps the version to "x.y.z" in `package.json` and `package-lock.json` with `npm version x.y.z --no-git-tag-version`, and sets the top `### NEXT` heading of `CHANGELOG.md` to `### x.y.z`.
-- Commits the bump as "version x.y.z", creates the "x.y.z" tag, and pushes the branch and the tag.
+- Commits the bump, creates the "x.y.z" tag, and pushes the branch and the tag.
 
 Requirements for it to work:
 
