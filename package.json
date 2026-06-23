@@ -121,17 +121,17 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-jest": "^29.15.2",
 		"eslint-plugin-prettier": "^5.5.6",
-		"globals": "^17.6.0",
+		"globals": "^17.7.0",
 		"ini": "^7.0.0",
 		"jest": "^30.4.2",
-		"knip": "^6.17.1",
+		"knip": "^6.18.0",
 		"marked": "^18.0.5",
 		"open-cli": "^9.0.0",
 		"pick-port": "^2.2.1",
 		"prettier": "^3.8.4",
 		"ts-jest": "^29.4.11",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.61.1",
+		"typescript-eslint": "^8.62.0",
 		"werift-sctp": "^0.0.11"
 	}
 }
