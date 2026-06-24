@@ -75,6 +75,7 @@
 	"scripts": {
 		"prepare": "node npm-scripts.mjs prepare",
 		"postinstall": "node npm-scripts.mjs postinstall",
+		"prepublishOnly": "node npm-scripts.mjs prepublishOnly",
 		"typescript:build": "node npm-scripts.mjs typescript:build",
 		"typescript:watch": "node npm-scripts.mjs typescript:watch",
 		"worker:build": "node npm-scripts.mjs worker:build",

@@ -138,6 +138,12 @@ async function run() {
 			break;
 		}
 
+		case 'prepublishOnly': {
+			prepublishOnly();
+
+			break;
+		}
+
 		case 'typescript:build': {
 			buildTypescript({ force: true, args: taskArgs });
 
@@ -522,6 +528,24 @@ function installNodeDeps() {
 	// Check vulnerabilities in deps.
 	executeCmd('npm audit --omit dev');
 	executeCmd('npm audit --prefix worker/scripts');
+}
+
+// `prepublishOnly` is run by NPM only on `npm publish` (not on `npm pack`,
+// `npm install` or `npm ci`). We use it to forbid publishing mediasoup from a
+// local machine. The package must only be published by the
+// mediasoup-npm-publish.yaml workflow, which runs inside GitHub Actions (where
+// GITHUB_ACTIONS environment variable is set to 'true') and uses OIDC trusted
+// publishing.
+function prepublishOnly() {
+	logInfo('prepublishOnly()');
+
+	if (process.env.GITHUB_ACTIONS !== 'true') {
+		logError(
+			"prepublishOnly() | refusing to 'npm publish' outside of GitHub Actions: mediasoup is published only by the mediasoup-npm-publish.yaml workflow (triggered by pushing a release tag via 'npm run release')"
+		);
+
+		exitWithError();
+	}
 }
 
 function publishDryRun() {
