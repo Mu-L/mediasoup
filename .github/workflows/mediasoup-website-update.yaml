@@ -1,7 +1,7 @@
-name: mediasoup-website-publish
+name: mediasoup-website-update
 
 # Triggered when mediasoup-npm-publish.yaml finishes successfully (workflow_run).
-# It triggers the `website-publish` workflow in versatica/mediasoup-website (via
+# It triggers the `update-website` workflow in versatica/mediasoup-website (via
 # workflow_dispatch, no inputs), which builds the website and deploys it.
 #
 # It can also be triggered manually (workflow_dispatch) to re-trigger the website
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Trigger the `website-publish` workflow in versatica/mediasoup-website.
+  # Trigger the `update-website` workflow in versatica/mediasoup-website.
   trigger:
     # Run only when triggered manually, or when the upstream mediasoup-npm-publish
     # run finished successfully. This guarantees we never update the website for a
@@ -44,7 +44,7 @@ jobs:
           owner: versatica
           repositories: mediasoup-website
 
-      - name: Trigger website-publish workflow
+      - name: Trigger update-website workflow
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: gh workflow run website-publish.yaml --repo versatica/mediasoup-website
+        run: gh workflow run update-website.yaml --repo versatica/mediasoup-website
