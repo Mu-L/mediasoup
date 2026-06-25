@@ -36,11 +36,20 @@ env:
 jobs:
   # Decide whether this push is a crate publish and, if so, for which crate and
   # version. A `rust-X.Y.Z` tag publishes the `mediasoup` crate (with a GitHub
-  # release); a `<crate> X.Y.Z [crate-publish] [no-ci]` commit on the branch
-  # publishes that sibling crate (without a GitHub release). Any other push to the
-  # branch skips this job (the `if` below), which skips every downstream job too.
+  # release). A `<crate> X.Y.Z [crate-publish] [no-ci]` commit on the branch
+  # publishes that sibling crate (without a GitHub release). Any other push to
+  # the branch skips this job (the `if` below), which skips every downstream job
+  # too.
+  #
+  # The condition matches only commits whose first line starts with a sibling
+  # crate name followed by a space (the `<crate> X.Y.Z [crate-publish] [no-ci]`
+  # format that `release:rust` produces).
   setup:
-    if: ${{ github.ref_type == 'tag' || contains(github.event.head_commit.message, '[crate-publish]') }}
+    if: >-
+      ${{ github.ref_type == 'tag' ||
+      ((startsWith(github.event.head_commit.message, 'mediasoup-sys ') ||
+      startsWith(github.event.head_commit.message, 'mediasoup-types ')) &&
+      contains(github.event.head_commit.message, '[crate-publish]')) }}
     runs-on: ubuntu-26.04
     outputs:
       crate: ${{ steps.detect.outputs.crate }}
