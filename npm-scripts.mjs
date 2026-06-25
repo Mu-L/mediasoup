@@ -530,12 +530,14 @@ function installNodeDeps() {
 	executeCmd('npm audit --prefix worker/scripts');
 }
 
-// `prepublishOnly` is run by NPM only on `npm publish` (not on `npm pack`,
-// `npm install` or `npm ci`). We use it to forbid publishing mediasoup from a
-// local machine. The package must only be published by the
-// mediasoup-npm-publish.yaml workflow, which runs inside GitHub Actions (where
-// GITHUB_ACTIONS environment variable is set to 'true') and uses OIDC trusted
-// publishing.
+/**
+ * `prepublishOnly` is run by NPM only on `npm publish` (not on `npm pack`,
+ * `npm install` or `npm ci`). We use it to forbid publishing mediasoup from a
+ * local machine. The package must only be published by the
+ * `mediasoup-npm-publish.yaml` workflow, which runs inside GitHub Actions (where
+ * GITHUB_ACTIONS environment variable is set to 'true') and uses OIDC trusted
+ * publishing.
+ */
 function prepublishOnly() {
 	logInfo('prepublishOnly()');
 
@@ -633,9 +635,9 @@ async function release({ args = '' } = {}) {
 	await updateChangelog(version);
 
 	// Commit the bump, tag it, and push both. The pushed tag triggers
-	// mediasoup-npm-publish.yaml, which checks, creates the GitHub release and
-	// publishes to NPM; on its success mediasoup-worker-prebuild.yaml builds and
-	// uploads the prebuilt binaries.
+	// `mediasoup-npm-publish.yaml`, which checks, creates the GitHub release and
+	// publishes to NPM; on its success `mediasoup-worker-prebuild.yaml` builds
+	// and uploads the prebuilt binaries.
 	//
 	// The commit message carries a "[no-ci]" marker so the regular branch CI
 	// workflows (node, worker, rust, fuzzer, codeql) skip this commit: it only
