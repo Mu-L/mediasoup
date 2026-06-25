@@ -910,11 +910,14 @@ async function updateChangelog(version) {
 	fs.writeFileSync('./CHANGELOG.md', updatedChangelog);
 }
 
-function executeCmd(command) {
-	logInfo(`executeCmd(): ${command}`);
+function executeCmd(command, { cwd } = {}) {
+	logInfo(`executeCmd(): ${command}${cwd ? ` [cwd:${cwd}]` : ''}`);
 
 	try {
-		execSync(command, { stdio: ['ignore', process.stdout, process.stderr] });
+		execSync(command, {
+			cwd,
+			stdio: ['ignore', process.stdout, process.stderr],
+		});
 	} catch (error) {
 		logError(`executeCmd() failed, exiting: ${error}`);
 
