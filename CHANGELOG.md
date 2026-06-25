@@ -2,6 +2,8 @@
 
 ### NEXT
 
+### 3.20.10
+
 - Worker: Handle new STUN "NOMINATION" attribute `0x0030` ([1846](https://github.com/versatica/mediasoup/pull/1846)).
 
 ### 3.20.9
