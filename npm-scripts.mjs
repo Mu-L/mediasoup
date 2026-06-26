@@ -635,9 +635,9 @@ async function release({ args = '' } = {}) {
 	await updateChangelog(version);
 
 	// Commit the bump, tag it, and push both. The pushed tag triggers
-	// `mediasoup-npm-publish`, which checks, creates the GitHub release and
-	// publishes to NPM; on its success `mediasoup-worker-prebuild` builds and
-	// uploads the prebuilt binaries.
+	// `mediasoup-npm-publish` workflow, which checks, creates the GitHub release
+	// and publishes to NPM; on its success `mediasoup-worker-prebuild` builds
+	// and uploads the prebuilt binaries.
 	//
 	// The commit message carries a "[no-ci]" marker so the regular branch CI
 	// workflows (node, worker, rust, fuzzer, codeql) skip this commit: it only
@@ -645,8 +645,8 @@ async function release({ args = '' } = {}) {
 	// and the release is driven by the tag-triggered workflows instead.
 	//
 	// NOTE: "[no-ci]" (with a hyphen) is a custom marker, NOT GitHub's native
-	// "[skip ci]"/"[no ci]" (which would also skip `mediasoup-npm-publish`, since
-	// the tag push shares this same commit).
+	// "[skip ci]"/"[no ci]" (which would also skip `mediasoup-npm-publish`
+	// workflow, since the tag push shares this same commit).
 	executeCmd(`git commit -am 'release ${version} [no-ci]'`);
 	executeCmd(`git tag -a ${version} -m '${version}'`);
 	executeCmd(`git push origin ${MAIN_BRANCH}`);
